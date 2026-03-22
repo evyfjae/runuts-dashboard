@@ -1320,7 +1320,14 @@ startAutoRefresh();
   function unlock() {
     document.getElementById('authGate').style.display = 'none';
     var root = document.getElementById('dashboardRoot');
-    if (root) root.style.display = 'block';
+    if (root) {
+      root.style.display = 'block';
+    } else {
+      // 새로고침 시 dashboardRoot가 아직 DOM에 없을 수 있음 — CSS 오버라이드 삽입
+      var s = document.createElement('style');
+      s.textContent = '#dashboardRoot { display: block !important; }';
+      document.head.appendChild(s);
+    }
   }
   if (isDev || sessionStorage.getItem('rn_auth') === HASH) {
     unlock();
