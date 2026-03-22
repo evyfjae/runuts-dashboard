@@ -1,0 +1,3243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RUNuts 마케팅 대시보드</title>
+<script>
+// 대시보드 자동 새로고침 (10분마다)
+const AUTO_REFRESH_INTERVAL = 10 * 60 * 1000; // 10분
+let autoRefreshTimer = null;
+function startAutoRefresh() {
+  autoRefreshTimer = setInterval(() => {
+    if (!document.hidden) location.reload();
+  }, AUTO_REFRESH_INTERVAL);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  } else if (!document.hidden && !autoRefreshTimer) {
+    startAutoRefresh();
+  }
+});
+startAutoRefresh();
+</script>
+<style>
+    :root {
+    --bg: #0c0e14;
+    --card: #161822;
+    --card-hover: #1c1f2e;
+    --border: #252838;
+    --text: #eaedf3;
+    --muted: #8b92a5;
+    --accent: #6366f1;
+    --accent2: #818cf8;
+    --accent-soft: rgba(99, 102, 241, 0.12);
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --orange: #f97316;
+    --cyan: #06b6d4;
+    --funnel1: #6366f1;
+    --funnel2: #818cf8;
+    --funnel3: #06b6d4;
+    --funnel4: #22c55e;
+    --funnel5: #eab308;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .header h1 span { color: var(--accent); }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+  }
+  .lsd-toggle {
+    display: flex;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    gap: 0;
+  }
+  .lsd-toggle button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 8px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .lsd-toggle button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+  .lsd-toggle button:hover:not(.active) {
+    color: var(--text);
+  }
+  .theme-toggle {
+    display: flex;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .theme-toggle:hover {
+    border-color: var(--accent);
+  }
+    html[data-theme="light"] {
+    --bg: #f4f6f9;
+    --card: #ffffff;
+    --card-hover: #f7f8fb;
+    --border: #e0e3ea;
+    --text: #1e2130;
+    --muted: #6c7389;
+    --accent: #4338ca;
+    --accent2: #5b52e0;
+    --accent-soft: rgba(67, 56, 202, 0.06);
+    --green: #059669;
+    --yellow: #b45309;
+    --red: #dc2626;
+    --orange: #c2410c;
+    --cyan: #0e7490;
+  }
+  [data-theme="light"] .kpi-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.03);
+  }
+  [data-theme="light"] .kpi-card:hover {
+    background: var(--card-hover);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  [data-theme="dark"] .kpi-card:hover {
+    background: var(--card-hover);
+  }
+  [data-theme="light"] .card,
+  [data-theme="light"] .chart-container,
+  [data-theme="light"] .table-container,
+  [data-theme="light"] .funnel-container {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.02);
+  }
+  [data-theme="light"] .header {
+    border-bottom: 1px solid var(--border);
+  }
+  [data-theme="light"] .nav button.active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  [data-theme="light"] .nav button {
+    color: var(--muted);
+  }
+  [data-theme="light"] .nav button:hover {
+    color: var(--text);
+  }
+  [data-theme="light"] table thead th {
+    background: #f0f2f6;
+    color: #4a4f63;
+  }
+  [data-theme="light"] table tbody tr:hover {
+    background: #f5f7fa;
+  }
+  [data-theme="light"] .funnel-bar {
+    background: linear-gradient(90deg, #6366f1, #818cf8) !important;
+  }
+  [data-theme="light"] .badge.runuts_grp {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  [data-theme="light"] .badge.lsd {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  [data-theme="light"] .growth-stat-card {
+    background: #f8f9fc;
+    border-color: #e5e7ee;
+  }
+  [data-theme="light"] .user-detail-section {
+    background: #f8f9fc;
+  }
+  [data-theme="light"] .filter-pill {
+    background: #f0f2f6;
+    color: #4a4f63;
+    border-color: #dde0e7;
+  }
+  [data-theme="light"] .filter-pill.active {
+    background: var(--accent);
+    color: #fff;
+  }
+  [data-theme="light"] .loading-overlay {
+    background: rgba(244, 246, 249, 0.9);
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .status-dot.live { background: var(--green); }
+  .status-dot.demo { background: var(--yellow); }
+  .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
+  .status-label { font-size: 13px; color: var(--muted); }
+
+  /* Loading Overlay */
+  .loading-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 17, 23, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    gap: 16px;
+    transition: opacity 0.3s;
+  }
+  .loading-overlay.hidden { display: none; }
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .loading-text { font-size: 14px; color: var(--muted); }
+
+  /* Fetch Error Banner */
+  .fetch-error-banner {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .fetch-error-banner.hidden { display: none; }
+  .fetch-error-banner .error-msg { font-size: 13px; color: var(--red); flex: 1; }
+  .fetch-error-banner button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .fetch-error-banner button:hover { opacity: 0.9; }
+
+  .nav {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .nav button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 12px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav button:hover { color: var(--text); }
+  .nav button.active {
+    color: var(--accent2);
+    border-bottom-color: var(--accent);
+  }
+  .nav-divider {
+    width: 1px;
+    background: var(--border);
+    height: 16px;
+    margin: 0 8px;
+  }
+  .nav-right {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .kpi-card:hover {
+    border-color: var(--accent);
+    background: rgba(99,102,241,0.05);
+  }
+  .kpi-card .label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .kpi-card .value {
+    font-size: 28px;
+    font-weight: 700;
+  }
+  .kpi-card .change {
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .kpi-card .change.up { color: var(--green); }
+  .kpi-card .change.down { color: var(--red); }
+  .kpi-card .change.flat { color: var(--muted); }
+  .sparkline {
+    height: 24px;
+    width: 80px;
+    margin-top: 4px;
+  }
+  .sparkline polyline {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.5;
+  }
+  [data-tooltip] {
+    position: relative;
+  }
+  [data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 400;
+    white-space: normal;
+    max-width: 300px;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    line-height: 1.4;
+  }
+  [data-tooltip]:hover::after {
+    opacity: 1;
+  }
+
+  /* Funnel */
+  .funnel-container {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .funnel-bar-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .funnel-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .funnel-label {
+    width: 160px;
+    font-size: 13px;
+    text-align: right;
+    color: var(--muted);
+    flex-shrink: 0;
+    position: relative;
+    cursor: help;
+  }
+  .funnel-label .tooltip {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 6px;
+    background: var(--card);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    width: 260px;
+    text-align: left;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    white-space: normal;
+  }
+  .funnel-label:hover .tooltip { display: block; }
+  .funnel-bar-wrap {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    height: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .funnel-bar {
+    height: 100%;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    transition: width 0.6s ease;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%) !important;
+  }
+
+  /* Task 3: Funnel page differentiation */
+  #page-funnel .funnel-page-header {
+    background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(129,140,248,0.1) 100%);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  #page-funnel .funnel-page-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 8px 0;
+  }
+  #page-funnel .funnel-page-header p {
+    color: var(--muted);
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  #page-funnel .funnel-container {
+    background: rgba(99,102,241,0.04);
+    border: 1px solid rgba(99,102,241,0.15);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  #page-funnel .section-title {
+    color: var(--accent);
+  }
+  .funnel-pct {
+    width: 60px;
+    text-align: right;
+    font-size: 13px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .funnel-arrow {
+    text-align: center;
+    color: var(--muted);
+    font-size: 18px;
+    padding-left: 176px;
+  }
+
+  /* Chart area */
+  .chart-container {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .chart-canvas-wrap {
+    width: 100%;
+    height: 300px;
+    position: relative;
+  }
+  canvas { width: 100% !important; height: 100% !important; }
+
+  /* Growth Stats Row — integrated with chart */
+  .growth-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .growth-stat-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .growth-stat-info {
+    flex-shrink: 0;
+  }
+  .growth-stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .growth-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .growth-stat-spark {
+    flex: 1;
+    max-width: 100px;
+    height: 36px;
+  }
+  .growth-stat-spark svg {
+    width: 100%;
+    height: 100%;
+  }
+  .growth-stat-spark polyline {
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .growth-stat-card:hover {
+    border-color: var(--accent);
+    background: var(--card-hover);
+  }
+  .growth-stat-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 2px 8px rgba(99,102,241,0.15);
+  }
+  .growth-stat-card:not(.active) {
+    opacity: 0.55;
+  }
+  .growth-stat-card:not(.active):hover {
+    opacity: 0.85;
+  }
+  .dataset-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .growth-stat-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    opacity: 0.8;
+  }
+  @media (max-width: 900px) {
+    .growth-stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Tables */
+  .table-container {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  th.sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+  th.sortable:hover {
+    color: var(--text);
+  }
+  th.sortable .sort-arrow {
+    font-size: 10px;
+    margin-left: 2px;
+    opacity: 0.6;
+  }
+  .sort-indicator {
+    font-size: 10px;
+    margin-left: 4px;
+    opacity: 0.4;
+  }
+  .sort-indicator.asc::after {
+    content: '▲';
+  }
+  .sort-indicator.desc::after {
+    content: '▼';
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Search */
+  .search-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .search-bar input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+  .search-bar button {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .search-bar button:hover { background: var(--accent2); }
+
+  /* User detail card */
+  .user-detail {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .user-detail h3 {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+  .user-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .user-info-item {
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 8px;
+  }
+  .user-info-item .label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .user-info-item .value {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  /* Pipeline stages */
+  .pipeline-stages {
+    display: flex;
+    gap: 4px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .pipeline-stage {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.06);
+    color: var(--muted);
+  }
+  .pipeline-stage.completed {
+    background: rgba(34,197,94,0.15);
+    color: var(--green);
+  }
+  .pipeline-stage.current {
+    background: rgba(99,102,241,0.2);
+    color: var(--accent2);
+    border: 1px solid var(--accent);
+  }
+
+  /* Settings panel */
+  .settings-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .settings-panel label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    margin-top: 12px;
+  }
+  .settings-panel label:first-child { margin-top: 0; }
+  .settings-panel input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+  .settings-panel input[type="text"]:focus { border-color: var(--accent); }
+  .btn-save {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 16px;
+  }
+  .btn-save:hover { background: var(--accent2); }
+  .help-text {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* Tabs for page */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Badge */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge.active { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge.left { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge.pre_registered { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .badge.lsd { background: rgba(156,163,175,0.2); color: #9ca3af; font-size: 10px; }
+  .badge.runuts_grp { background: rgba(99,102,241,0.15); color: var(--accent2); font-size: 10px; }
+  .badge.applied { background: rgba(6,182,212,0.15); color: var(--cyan); }
+  .badge.approved { background: rgba(99,102,241,0.15); color: var(--accent2); }
+  .badge.linked { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .badge.dev { background: rgba(249,115,22,0.15); color: var(--orange); font-size: 10px; }
+
+  /* Info page */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 20px;
+  }
+  .info-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .info-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    color: var(--accent2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .info-card h3 .icon { font-size: 18px; }
+  .info-card p, .info-card li {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .info-card ul { list-style: none; padding: 0; }
+  .info-card li { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .info-card li:last-child { border: none; }
+  .info-card .val { color: var(--text); font-weight: 600; }
+  .info-card .warn { color: var(--yellow); }
+  .info-card .good { color: var(--green); }
+  .info-card .bad { color: var(--red); }
+  .info-card .tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 4px;
+  }
+  .info-card .tag.ok { background: rgba(34,197,94,0.15); color: var(--green); }
+  .info-card .tag.gap { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .info-card .tag.empty { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-state h3 { font-size: 16px; margin-bottom: 8px; color: var(--text); }
+
+  /* Period filter buttons */
+  .period-filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .period-filter button {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .period-filter button:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .period-filter button.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* User filter pills */
+  .user-filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .filter-group label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    min-width: 50px;
+  }
+  .filter-pill {
+    padding: 6px 12px;
+    border-radius: 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-pill:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .filter-pill.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .filter-pill-toggle {
+    padding: 6px 12px;
+    border-radius: 16px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: auto;
+  }
+  .filter-pill-toggle:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .filter-pill-toggle.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .filter-result-count {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  /* Table zebra striping and hover */
+  tbody tr:nth-child(even) {
+    background: rgba(255,255,255,0.02);
+  }
+  tbody tr:hover td {
+    background: rgba(99,102,241,0.1);
+  }
+  tr:hover td { background: rgba(99,102,241,0.1); }
+
+  /* Slide panel */
+  .user-detail-panel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 999;
+  }
+  .user-detail-panel-overlay.active {
+    display: block;
+  }
+  .user-detail-panel {
+    position: fixed;
+    top: 0;
+    right: -440px;
+    width: 420px;
+    height: 100vh;
+    background: var(--card);
+    border-left: 1px solid var(--border);
+    z-index: 999;
+    overflow-y: auto;
+    transition: right 0.3s ease;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+  }
+  .user-detail-panel.active {
+    right: 0;
+  }
+  .user-detail-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    z-index: 10;
+  }
+  .user-detail-panel-header h3 {
+    font-size: 16px;
+    margin: 0;
+  }
+  .user-detail-panel-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+  }
+  .user-detail-panel-close:hover {
+    color: var(--text);
+  }
+  .user-detail-panel-content {
+    padding: 20px;
+  }
+  .user-detail-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .user-detail-section {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .user-detail-section .section-header {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .user-detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+  }
+  .detail-label {
+    font-size: 13px;
+    color: var(--muted);
+    flex-shrink: 0;
+    margin-right: 12px;
+  }
+  .detail-value {
+    font-size: 13px;
+    color: var(--text);
+    text-align: right;
+    word-break: break-all;
+    max-width: 60%;
+  }
+  /* Pipeline visualization for 테스터 여정 */
+  .pipeline-visualization {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    padding-left: 16px;
+  }
+  .pipeline-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    position: relative;
+  }
+  .pipeline-step::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .pipeline-step:first-child::before { top: 50%; }
+  .pipeline-step:last-child::before { bottom: 50%; }
+  .step-circle {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .pipeline-step.completed .step-circle {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .pipeline-step.current .step-circle {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+  }
+  .step-label {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .pipeline-step.completed .step-label {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .pipeline-step.current .step-label {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Task 2: Funnel drill-down modal */
+  .funnel-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .funnel-modal-overlay.active {
+    display: flex;
+    opacity: 1;
+    align-items: center;
+    justify-content: center;
+  }
+  .funnel-modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 24px;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .funnel-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .funnel-modal-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .funnel-modal-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+  }
+  .funnel-modal-close:hover {
+    color: var(--text);
+  }
+  .funnel-modal-content {
+    color: var(--text);
+  }
+  .funnel-user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .funnel-user-item {
+    padding: 12px;
+    background: rgba(99,102,241,0.08);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .funnel-user-item-main {
+    flex: 1;
+  }
+  .funnel-user-item-name {
+    font-weight: 500;
+    color: var(--text);
+  }
+  .funnel-user-item-meta {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .funnel-user-item-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .header {
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      gap: 12px;
+    }
+    .header h1 {
+      font-size: 16px;
+    }
+    .header-right {
+      flex-wrap: wrap;
+      width: 100%;
+      justify-content: space-between;
+    }
+    .nav {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 16px;
+    }
+    .nav button {
+      padding: 8px 12px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .nav-divider {
+      display: none;
+    }
+    .main {
+      padding: 16px;
+    }
+    .kpi-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .kpi-card {
+      padding: 12px;
+    }
+    .kpi-card .value {
+      font-size: 20px;
+    }
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+    .table-container {
+      padding: 12px;
+    }
+    .funnel-label {
+      width: 80px;
+      font-size: 11px;
+    }
+    .user-detail-panel { width: 420px !important; }
+    .user-filter-bar {
+      padding: 8px;
+    }
+    .search-bar input {
+      font-size: 13px;
+    }
+    .lsd-toggle button {
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .kpi-grid {
+      grid-template-columns: 1fr;
+    }
+    .header-status .status-label {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">Google Sheets에서 데이터를 불러오는 중...</div>
+</div>
+
+<div class="header">
+  <h1><span>RUNuts</span> 마케팅 대시보드</h1>
+  <div class="header-right">
+    <div class="header-status">
+      <span class="status-dot loading" id="statusDot"></span>
+      <span class="status-label" id="statusLabel">로딩 중...</span>
+      <span id="lastDataDate" style="color: var(--muted); font-size: 13px;"></span>
+    </div>
+    <div class="lsd-toggle">
+      <button onclick="setLSDToggle(false)">RUNuts만</button>
+      <button class="active" onclick="setLSDToggle(true)">전체 (LSD 포함)</button>
+    </div>
+    <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="active" onclick="showPage('overview')">개요</button>
+  <button onclick="showPage('funnel')">퍼널</button>
+  <span class="nav-divider"></span>
+  <button onclick="showPage('discord')">디스코드</button>
+  <button onclick="showPage('sns')">유튜브 / 틱톡</button>
+  <span class="nav-divider"></span>
+  <button onclick="showPage('users')">유저</button>
+  <div class="nav-right">
+    <span class="nav-divider"></span>
+    <button onclick="showPage('info')">정보</button>
+    <button onclick="showPage('settings')">설정</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Fetch Error Banner -->
+  <div class="fetch-error-banner hidden" id="fetchErrorBanner">
+    <span class="error-msg" id="fetchErrorMsg"></span>
+    <button onclick="retryLoad()">재시도</button>
+  </div>
+
+  <!-- ===== 개요 페이지 ===== -->
+  <div id="page-overview" class="page active">
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="funnel-container">
+      <div class="section-title">테스터 전환 파이프라인</div>
+      <div class="funnel-bar-group" id="funnelBars"></div>
+    </div>
+    <!-- 멤버 성장 추이 (개요용 — 심플 라인) -->
+    <div class="chart-container">
+      <div class="section-title">멤버 성장 추이</div>
+      <div class="chart-canvas-wrap">
+        <canvas id="chartOverviewGrowth"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 퍼널 페이지 ===== -->
+  <div id="page-funnel" class="page">
+    <!-- Task 3: Funnel page header -->
+    <div class="funnel-page-header">
+      <h2>테스터 전환 퍼널 분석</h2>
+      <p>Discord 가입부터 게임 플레이까지 사용자 여정 추적. 각 단계를 클릭하면 해당 유저 목록을 확인할 수 있습니다.</p>
+    </div>
+
+    <div class="funnel-container">
+      <div class="section-title">테스터 전환 파이프라인 (상세)</div>
+      <div class="funnel-bar-group" id="funnelBarsFull"></div>
+    </div>
+    <div class="table-container">
+      <div class="section-title">월간 지표 추이</div>
+      <table id="funnelTable">
+        <thead><tr>
+          <th>월</th><th>RUNuts 가입</th><th>YT 조회수</th><th>TT 조회수</th>
+          <th>테스터 승인</th><th>이탈</th><th>RUNuts 누적</th>
+        </tr></thead>
+        <tbody id="funnelTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== 디스코드 페이지 ===== -->
+  <div id="page-discord" class="page">
+    <div class="kpi-grid" id="discordKpi"></div>
+    <!-- 멤버 증감 분석 — 토글 카드 + 멀티 데이터셋 차트 -->
+    <div class="chart-container">
+      <div class="section-title">멤버 증감 분석</div>
+      <div id="growthStageCards" class="growth-stats-row"></div>
+      <div class="chart-canvas-wrap">
+        <canvas id="chartMembers"></canvas>
+      </div>
+    </div>
+    <div class="chart-container">
+      <div class="section-title">일간 활동 (메시지 & 보이스)</div>
+      <div class="period-filter" id="periodFilter2"></div>
+      <div class="chart-canvas-wrap">
+        <canvas id="chartDiscordActivity"></canvas>
+      </div>
+    </div>
+    <div class="table-container">
+      <div class="section-title">일간 기록</div>
+      <div class="period-filter" id="periodFilter3"></div>
+      <table>
+        <thead><tr>
+          <th>날짜</th><th>총 멤버</th><th>가입</th><th>탈퇴</th><th>순증</th>
+          <th>메시지</th><th>보이스</th><th>활성</th>
+        </tr></thead>
+        <tbody id="discordTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== SNS 페이지 ===== -->
+  <div id="page-sns" class="page">
+    <div class="kpi-grid" id="snsKpi"></div>
+    <div class="table-container">
+      <div class="section-title">유튜브 영상별 지표</div>
+      <table>
+        <thead><tr>
+          <th class="sortable" onclick="sortYtTable('date')" id="ytSortDate">게시일 <span class="sort-arrow">▼</span></th>
+          <th>제목</th>
+          <th class="sortable" onclick="sortYtTable('views')" id="ytSortViews">조회수 <span class="sort-arrow"></span></th>
+          <th>좋아요</th><th>댓글</th>
+          <th>구독자</th><th>분류</th>
+        </tr></thead>
+        <tbody id="ytTableBody"></tbody>
+      </table>
+    </div>
+    <div class="table-container">
+      <div class="section-title">틱톡 영상별 지표</div>
+      <table>
+        <thead><tr>
+          <th>게시일</th><th>제목</th><th>조회수</th><th>좋아요</th><th>댓글</th>
+          <th>공유</th><th>저장</th><th>팔로워</th>
+        </tr></thead>
+        <tbody id="ttTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== 유저 페이지 ===== -->
+  <div id="page-users" class="page">
+    <div class="search-bar">
+      <input type="text" id="userSearch" placeholder="디스코드 유저명 또는 ID로 검색..." oninput="debounceSearch()">
+    </div>
+    <div class="user-filter-bar" id="userFilterBar">
+      <div class="filter-group">
+        <label>그룹:</label>
+        <button class="filter-pill active" data-filter="group" data-value="">전체</button>
+        <button class="filter-pill" data-filter="group" data-value="RUNuts">RUNuts</button>
+        <button class="filter-pill" data-filter="group" data-value="LSD">LSD</button>
+        <button class="filter-pill" data-filter="group" data-value="DEV">DEV</button>
+      </div>
+      <div class="filter-group">
+        <label>상태:</label>
+        <button class="filter-pill active" data-filter="status" data-value="">전체</button>
+        <button class="filter-pill" data-filter="status" data-value="active">활동 중</button>
+        <button class="filter-pill" data-filter="status" data-value="left">탈퇴</button>
+        <button class="filter-pill" data-filter="status" data-value="pre_registered">사전등록</button>
+      </div>
+      <div class="filter-group">
+        <label>테스터:</label>
+        <button class="filter-pill active" data-filter="tester" data-value="">전체</button>
+        <button class="filter-pill" data-filter="tester" data-value="approved">승인</button>
+        <button class="filter-pill" data-filter="tester" data-value="applied">신청</button>
+        <button class="filter-pill" data-filter="tester" data-value="none">미신청</button>
+      </div>
+      <div class="filter-group">
+        <button class="filter-pill-toggle" id="leftUsersToggle" onclick="toggleLeftUsers()">탈퇴 유저 보기</button>
+      </div>
+    </div>
+    <div class="filter-result-count" id="filterResultCount"></div>
+    <div class="table-container">
+      <div class="section-title">최근 멤버</div>
+      <table>
+        <thead><tr>
+          <th class="sortable" onclick="sortUsersTable('discord_id')">Discord ID <span class="sort-indicator" id="sort-discord_id"></span></th>
+          <th class="sortable" onclick="sortUsersTable('discord_username')">유저명 <span class="sort-indicator" id="sort-discord_username"></span></th>
+          <th class="sortable" onclick="sortUsersTable('join_date')">가입일 <span class="sort-indicator" id="sort-join_date"></span></th>
+          <th class="sortable" onclick="sortUsersTable('group')">그룹 <span class="sort-indicator" id="sort-group"></span></th>
+          <th>상태</th>
+          <th>유입 경로</th><th>테스터</th><th>Meta 매칭</th>
+        </tr></thead>
+        <tbody id="usersTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- User Detail Panel -->
+  <div class="user-detail-panel-overlay" id="userDetailOverlay" onclick="closeUserPanel()"></div>
+  <div class="user-detail-panel" id="userDetailPanel">
+    <div class="user-detail-panel-header">
+      <h3 id="userDetailName"></h3>
+      <button class="user-detail-panel-close" onclick="closeUserPanel()">&times;</button>
+    </div>
+    <div class="user-detail-panel-content" id="userDetailContent"></div>
+  </div>
+
+  <!-- Task 2: Funnel drill-down modal -->
+  <div class="funnel-modal-overlay" id="funnelModalOverlay" onclick="closeFunnelModal(event)">
+    <div class="funnel-modal" id="funnelModal" onclick="event.stopPropagation()">
+      <div class="funnel-modal-header">
+        <h2 id="funnelModalTitle"></h2>
+        <button class="funnel-modal-close" onclick="closeFunnelModal()">&times;</button>
+      </div>
+      <div class="funnel-modal-content">
+        <div id="funnelModalCount"></div>
+        <div class="funnel-user-list" id="funnelUserList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 정보 페이지 ===== -->
+  <div id="page-info" class="page">
+    <div class="info-grid" id="infoGrid"></div>
+  </div>
+
+  <!-- ===== 설정 페이지 ===== -->
+  <div id="page-settings" class="page">
+    <div class="settings-panel">
+      <div class="section-title">빠른 설정 (권장)</div>
+      <p class="help-text" style="margin-bottom:12px">
+        Google Sheets의 웹에 게시 URL만 입력하면 모든 시트 URL이 자동 생성됩니다.<br>
+        <strong>사전 조건:</strong> Google Sheets에서 "파일 > 공유 > 웹에 게시" → 전체 문서를 게시해야 합니다.
+      </p>
+      <label>웹에 게시 URL</label>
+      <input type="text" id="sheetsId" placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-.../pub">
+      <button class="btn-save" onclick="autoFillUrls()" style="margin-bottom:24px">URL 자동 입력</button>
+
+      <div class="section-title">수동 설정 (개별 URL 입력)</div>
+      <p class="help-text" style="margin-bottom:16px">
+        개별 시트의 CSV URL을 직접 입력할 수도 있습니다.
+      </p>
+      <label>User Master CSV URL</label>
+      <input type="text" id="urlUserMaster" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+      <label>Discord Daily CSV URL</label>
+      <input type="text" id="urlDiscordDaily" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+      <label>YouTube Metrics CSV URL</label>
+      <input type="text" id="urlYouTube" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+      <label>TikTok Metrics CSV URL</label>
+      <input type="text" id="urlTikTok" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+      <label>Tester Pipeline CSV URL</label>
+      <input type="text" id="urlTesterPipeline" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+      <label>Funnel Tracker CSV URL</label>
+      <input type="text" id="urlFunnelTracker" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+      <label>KPI Dashboard CSV URL</label>
+      <input type="text" id="urlKpiDashboard" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+      <label>UGC Archive CSV URL</label>
+      <input type="text" id="urlContentCalendar" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+      <button class="btn-save" onclick="saveSettings()">저장 후 데이터 갱신</button>
+      <p class="help-text" style="margin-top:12px">설정은 브라우저 localStorage에 저장됩니다.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<script>
+// Chart.js instances
+let chartMembersInstance, chartGrowthInstance;
+// ========== CONFIG ==========
+const SHEET_KEYS = [
+  'urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok',
+  'urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlContentCalendar'
+];
+let config = {};
+let data = {
+  userMaster: [], discordDaily: [], youtube: [], tiktok: [],
+  testerPipeline: [], funnelTracker: [], kpiDashboard: [], contentCalendar: [], acquisitionEvents: []
+};
+let charts = {};
+let isLive = false;
+
+// ========== GLOBAL STATE ==========
+let showLSDData = true;
+let discordPeriod = 'all'; // values: '30', '90', 'all'
+let ytSortKey = 'date'; // 'date' or 'views'
+let ytSortDir = 'desc'; // 'asc' or 'desc'
+let showLeftUsers = false; // Task 1: Toggle for left users view
+let userFilters = {
+  group: '',
+  status: '',
+  tester: ''
+};
+const DATA_CUTOFF = '2025-10-01';
+
+// ========== HELPER: Global LSD Toggle ==========
+function setLSDToggle(show) {
+  showLSDData = show;
+  const buttons = document.querySelectorAll('.lsd-toggle button');
+  buttons.forEach(b => b.classList.remove('active'));
+  if (show) {
+    buttons[1].classList.add('active');
+  } else {
+    buttons[0].classList.add('active');
+  }
+  renderAll();
+}
+
+// ========== HELPER: Discord Period Filter ==========
+function setDiscordPeriod(period) {
+  discordPeriod = period;
+  renderDiscordPage();
+  // Update filter buttons
+  document.querySelectorAll('.period-filter button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// ========== HELPER: Filter Discord Data ==========
+function getFilteredDiscordData() {
+  let filtered = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
+  const now = new Date();
+  if (discordPeriod === '30') {
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - 30);
+    filtered = filtered.filter(r => r.date >= cutoff.toISOString().split('T')[0]);
+  } else if (discordPeriod === '90') {
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - 90);
+    filtered = filtered.filter(r => r.date >= cutoff.toISOString().split('T')[0]);
+  }
+  return filtered;
+}
+
+// ========== HELPER: User Filter Functions ==========
+function setUserFilter(filterType, value) {
+  userFilters[filterType] = value;
+  document.querySelectorAll(`[data-filter="${filterType}"]`).forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-filter="${filterType}"][data-value="${value}"]`).classList.add('active');
+  filterUsersTable();
+}
+
+function getFilteredUsers() {
+  let filtered = [...data.userMaster];
+
+  // Apply group filter
+  if (userFilters.group === 'DEV') {
+    filtered = filtered.filter(isDev);
+  } else if (userFilters.group === 'RUNuts') {
+    filtered = filtered.filter(isRUNuts);
+  } else if (userFilters.group === 'LSD') {
+    filtered = filtered.filter(isLSD);
+  }
+
+  // Apply status filter
+  if (userFilters.status) {
+    filtered = filtered.filter(u => u.status === userFilters.status);
+  }
+
+  // Apply tester filter
+  if (userFilters.tester === 'approved') {
+    filtered = filtered.filter(u => u.tester_approved === 'O' || u.tester_approved === 'TRUE');
+  } else if (userFilters.tester === 'applied') {
+    filtered = filtered.filter(u => (u.tester_applied === 'O' || u.tester_applied === 'TRUE') && !(u.tester_approved === 'O' || u.tester_approved === 'TRUE'));
+  } else if (userFilters.tester === 'none') {
+    filtered = filtered.filter(u => !(u.tester_applied === 'O' || u.tester_applied === 'TRUE'));
+  }
+
+  return filtered;
+}
+
+// ========== HELPER: 최신 퍼널 데이터 가져오기 ==========
+function getLatestFunnel() {
+  if (!data.funnelTracker || data.funnelTracker.length === 0) return {};
+  return data.funnelTracker[data.funnelTracker.length - 1];
+}
+
+// ========== DEMO DATA ==========
+function generateDemoData() {
+  const today = new Date();
+  // Discord Daily — 최근 14일
+  let totalMembers = 980;
+  data.discordDaily = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const joins = Math.floor(Math.random()*8)+2;
+    const leaves = Math.floor(Math.random()*3);
+    totalMembers += joins - leaves;
+    data.discordDaily.push({
+      date: d.toISOString().split('T')[0],
+      total_members: totalMembers,
+      new_joins: joins,
+      leaves: leaves,
+      net_growth: joins - leaves,
+      messages_count: Math.floor(Math.random()*80)+20,
+      voice_participants: Math.floor(Math.random()*12)+3,
+      voice_minutes: Math.floor(Math.random()*200)+30,
+      active_members: Math.floor(Math.random()*40)+15,
+      tester_role_count: Math.floor(Math.random()*5)+45,
+      reactions_count: Math.floor(Math.random()*30)+5
+    });
+  }
+
+  // User Master — 20 샘플
+  const sources = ['youtube_est','tiktok_est','invite','unknown','unknown','unknown'];
+  const statuses = ['active','active','active','active','left'];
+  data.userMaster = [];
+  for (let i = 0; i < 20; i++) {
+    const jd = new Date(today); jd.setDate(jd.getDate() - Math.floor(Math.random()*60));
+    const st = statuses[Math.floor(Math.random()*statuses.length)];
+    const tApplied = Math.random() > 0.4;
+    const tApproved = tApplied && Math.random() > 0.3;
+    const gLinked = tApproved && Math.random() > 0.5;
+    data.userMaster.push({
+      discord_id: '10000000000' + (1000+i),
+      discord_username: 'user_' + (1000+i),
+      discord_display_name: '플레이어 ' + (i+1),
+      join_date: jd.toISOString().split('T')[0],
+      leave_date: st==='left' ? new Date(jd.getTime()+86400000*Math.floor(Math.random()*20)).toISOString().split('T')[0] : '',
+      status: st,
+      invite_code: Math.random()>0.7 ? 'INV'+Math.floor(Math.random()*100) : '',
+      invited_by: Math.random()>0.7 ? '10000000000' + (1000+Math.floor(Math.random()*i||0)) : '',
+      estimated_source: sources[Math.floor(Math.random()*sources.length)],
+      tester_applied: tApplied ? 'O' : 'X',
+      tester_approved: tApproved ? 'O' : 'X',
+      meta_matched: gLinked ? 'O' : '',
+      game_id: gLinked ? 'PF_'+Math.floor(Math.random()*99999) : ''
+    });
+  }
+
+  // YouTube
+  data.youtube = [
+    {collected_date:'2026-03-17',video_title:'RUNuts 게임플레이 트레일러',views:12400,likes:340,comments:45,shares:82,channel_subscribers:2150},
+    {collected_date:'2026-03-10',video_title:'RUNuts 비행 가이드',views:8700,likes:210,comments:32,shares:55,channel_subscribers:2080},
+    {collected_date:'2026-03-03',video_title:'RUNuts 개발 로그 #3',views:4300,likes:150,comments:18,shares:25,channel_subscribers:2010}
+  ];
+
+  // TikTok
+  data.tiktok = [
+    {collected_date:'2026-03-16',video_title:'비행 트릭 모음',views:45000,likes:3200,comments:120,shares:850,saves:410,account_followers:5200},
+    {collected_date:'2026-03-09',video_title:'VR 멀티플레이 하이라이트',views:32000,likes:2100,comments:88,shares:620,saves:280,account_followers:4900}
+  ];
+
+  // Funnel Tracker
+  data.funnelTracker = [
+    {period_type:'monthly',period_start:'2026-02-01',period_end:'2026-02-28',acq_discord_joins:30,acq_youtube_views:8700,acq_tiktok_views:32000,act_tester_applied:9,act_tester_approved:7,act_game_linked:4,eng_active_discord:35,eng_voice_participants:11,ret_member_retention:89,ref_invite_joins:5,cvr_join_to_apply:30,cvr_apply_to_approve:77.8,cvr_approve_to_link:57.1},
+    {period_type:'monthly',period_start:'2026-03-01',period_end:'2026-03-16',acq_discord_joins:38,acq_youtube_views:12400,acq_tiktok_views:45000,act_tester_applied:12,act_tester_approved:9,act_game_linked:5,eng_active_discord:42,eng_voice_participants:15,ret_member_retention:92,ref_invite_joins:8,cvr_join_to_apply:31.6,cvr_apply_to_approve:75,cvr_approve_to_link:55.6}
+  ];
+}
+
+// ========== CSV/TSV PARSER ==========
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  // Auto-detect: 탭이 있으면 TSV
+  const firstLine = lines[0];
+  const isTSV = firstLine.includes('\t') && !firstLine.includes('","');
+  if (isTSV) {
+    const headers = firstLine.split('\t').map(h => h.trim().replace(/^"|"$/g,''));
+    return lines.slice(1).map(line => {
+      const vals = line.split('\t').map(v => v.trim().replace(/^"|"$/g,''));
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
+      return obj;
+    });
+  }
+  // CSV
+  const headers = firstLine.split(',').map(h => h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).map(line => {
+    const vals = [];
+    let current = '', inQuotes = false;
+    for (let ch of line) {
+      if (ch === '"') { inQuotes = !inQuotes; }
+      else if (ch === ',' && !inQuotes) { vals.push(current.trim()); current = ''; }
+      else { current += ch; }
+    }
+    vals.push(current.trim());
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
+    return obj;
+  });
+}
+
+// ========== LOADING UI ==========
+const SHEET_LABELS = {
+  urlUserMaster: 'User Master',
+  urlDiscordDaily: 'Discord Daily',
+  urlYouTube: 'YouTube Metrics',
+  urlTikTok: 'TikTok Metrics',
+  urlTesterPipeline: 'Tester Pipeline',
+  urlFunnelTracker: 'Funnel Tracker',
+  urlKpiDashboard: 'KPI Dashboard',
+  urlContentCalendar: 'UGC Archive'
+};
+
+function showLoading(show) {
+  const overlay = document.getElementById('loadingOverlay');
+  if (show) {
+    overlay.classList.remove('hidden');
+  } else {
+    overlay.classList.add('hidden');
+  }
+}
+
+function showFetchError(failedSheets) {
+  const banner = document.getElementById('fetchErrorBanner');
+  const msg = document.getElementById('fetchErrorMsg');
+  if (failedSheets.length === 0) {
+    banner.classList.add('hidden');
+    return;
+  }
+  const names = failedSheets.map(k => SHEET_LABELS[k] || k).join(', ');
+  if (failedSheets.length === Object.keys(SHEET_LABELS).length) {
+    msg.textContent = `데이터를 불러올 수 없습니다. Google Sheets 웹 게시 상태를 확인하세요. (Sheets > 파일 > 공유 > 웹에 게시)`;
+  } else {
+    msg.textContent = `일부 시트를 불러오지 못했습니다: ${names}`;
+  }
+  banner.classList.remove('hidden');
+}
+
+function retryLoad() {
+  document.getElementById('fetchErrorBanner').classList.add('hidden');
+  loadAllData();
+}
+
+// ========== FETCH DATA ==========
+async function fetchSheetData(url) {
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const text = await res.text();
+    return parseCSV(text);
+  } catch (e) {
+    console.warn('Fetch 실패:', url, e);
+    return null;
+  }
+}
+
+async function loadAllData() {
+  showLoading(true);
+  showFetchError([]);
+
+  const sheetKeys = ['urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok','urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlContentCalendar'];
+  const fetched = await Promise.all(
+    sheetKeys.map(k => fetchSheetData(config[k]))
+  );
+
+  const dataKeys = ['userMaster','discordDaily','youtube','tiktok','testerPipeline','funnelTracker','kpiDashboard','contentCalendar'];
+  let anyLive = false;
+  const failedSheets = [];
+  const numericFields = new Set([
+    'total_members','new_joins','leaves','net_growth','messages_count','voice_participants',
+    'voice_minutes','active_members','tester_role_count','reactions_count',
+    'views','likes','comments','shares','saves','subscribers_gained','impressions','channel_subscribers','account_followers',
+    'acq_discord_joins','acq_youtube_views','acq_tiktok_views','act_tester_applied','act_tester_approved','act_game_linked',
+    'eng_active_discord','eng_voice_participants','ret_member_retention','ref_invite_joins',
+    'cvr_join_to_apply','cvr_apply_to_approve','cvr_approve_to_link',
+    'current_value','target_value','achievement_rate',
+    'estimated_joins','days_to_approve','days_to_play'
+  ]);
+  dataKeys.forEach((k, i) => {
+    if (fetched[i] && fetched[i].length > 0) {
+      data[k] = fetched[i].map(row => {
+        const parsed = {...row};
+        for (const [field, val] of Object.entries(parsed)) {
+          if (numericFields.has(field) && val !== '' && val !== null && val !== undefined) {
+            const n = Number(val);
+            if (!isNaN(n)) parsed[field] = n;
+          }
+        }
+        return parsed;
+      });
+      anyLive = true;
+    } else if (config[sheetKeys[i]]) {
+      // URL이 설정되어 있는데 fetch 실패
+      failedSheets.push(sheetKeys[i]);
+    }
+  });
+
+  isLive = anyLive;
+  if (!anyLive) generateDemoData();
+
+  // Discord Daily 정렬 및 샘플/수식 행 필터링
+  if (data.discordDaily.length > 0) {
+    data.discordDaily = data.discordDaily
+      .filter(r => r.date && !String(r.net_growth).startsWith('=')) // 수식 텍스트 행 제거
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  }
+
+  showLoading(false);
+  showFetchError(failedSheets);
+  updateStatus();
+  renderAll();
+}
+
+function updateStatus() {
+  const dot = document.getElementById('statusDot');
+  const label = document.getElementById('statusLabel');
+  const dateEl = document.getElementById('lastDataDate');
+
+  if (isLive) {
+    dot.className = 'status-dot live';
+    label.textContent = '실시간 데이터';
+  } else {
+    dot.className = 'status-dot demo';
+    label.textContent = '데모 모드';
+  }
+
+  // Show last data date from Discord Daily
+  const dd = data.discordDaily;
+  if (dd && dd.length > 0) {
+    const lastDate = dd[dd.length - 1].date || '';
+    dateEl.textContent = lastDate ? `최종 데이터: ${lastDate}` : '';
+  }
+}
+
+// ========== LSD/RUNuts 유저 그룹 판별 ==========
+const RUNUTS_CUTOFF = '2025-11-17';
+function getUserGroup(u) {
+  // user_group 컬럼이 있으면 우선
+  if (u.user_group) return u.user_group;
+  // join_date 기반 판별
+  if (!u.join_date) return 'unknown';
+  const jd = String(u.join_date).substring(0, 10);
+  return jd < RUNUTS_CUTOFF ? 'LSD' : 'RUNuts';
+}
+function isDev(u) { return u.is_dev === 'TRUE' || u.is_dev === true; }
+function isRUNuts(u) { return !isDev(u) && getUserGroup(u) !== 'LSD'; }
+function isLSD(u) { return !isDev(u) && getUserGroup(u) === 'LSD'; }
+function isRealUser(u) { return !isDev(u); }
+
+// ========== RENDER ==========
+function renderAll() {
+  initializeFilterButtons();
+  renderKPI();
+  renderFunnel('funnelBars');
+  renderFunnel('funnelBarsFull');
+  renderOverviewGrowthChart();
+  renderGrowthStageCards();
+  renderMultiDatasetChart();
+  renderDiscordPage();
+  renderFunnelTable();
+  renderSNS();
+  renderUsersTable();
+  renderInfo();
+}
+
+function initializeFilterButtons() {
+  // Initialize user filter buttons
+  const filterButtons = document.querySelectorAll('.filter-pill');
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const filterType = this.getAttribute('data-filter');
+      const value = this.getAttribute('data-value');
+      setUserFilter(filterType, value);
+    });
+  });
+}
+
+function renderKPI() {
+  // Discord Daily: 전체 기간 기준 (LSD 토글은 현재 멤버에 영향 주지 않음)
+  const ddAll = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
+  const latestAll = ddAll[ddAll.length - 1] || {};
+
+  // 주간 가입 계산용: LSD 토글 시 RUNuts 시기만
+  let ddForWeekly = ddAll;
+  if (!showLSDData) {
+    ddForWeekly = ddAll.filter(r => r.date >= RUNUTS_CUTOFF);
+  }
+
+  // 현재 멤버: 항상 Discord total_members 그대로 (dev 포함 — 디스코드에서 보는 숫자와 동일)
+  const currentMembers = latestAll.total_members
+    ? parseInt(latestAll.total_members)
+    : data.userMaster.filter(u => u.status === 'active').length;
+
+  // User Master 기준 그룹 분류 (dev 제외)
+  const allRealUsers = data.userMaster.filter(isRealUser);
+  const allRUNuts = data.userMaster.filter(isRUNuts);
+  const allLSD = data.userMaster.filter(isLSD);
+  const devCount = data.userMaster.filter(isDev).length;
+
+  // RUNuts 유저 기준 KPI (토글과 무관하게 항상 RUNuts 기준)
+  const runutsUsers = allRUNuts;
+  const lsdUsers = allLSD;
+  const runutsTotal = runutsUsers.length;
+  const lsdTotal = lsdUsers.length;
+
+  const applied = runutsUsers.filter(u => u.tester_applied === 'O' || u.tester_applied === 'TRUE' || u.tester_applied === true).length;
+  const testers = runutsUsers.filter(u => u.tester_approved === 'O' || u.tester_approved === 'TRUE' || u.tester_approved === true).length;
+  const linked = runutsUsers.filter(u => u.meta_matched === 'O' || u.game_linked === 'TRUE' || u.game_linked === true).length;
+  const activeCount = runutsUsers.filter(u => u.status === 'active').length;
+  const preRegCount = runutsUsers.filter(u => u.status === 'pre_registered').length;
+  const leftRUNuts = runutsUsers.filter(u => u.status === 'left').length;
+  const leftLSD = lsdUsers.filter(u => u.status === 'left').length;
+  // 잔존율: 분모는 가입 이력이 있는 RUNuts (active + left). pre_registered는 디스코드 미가입이라 제외
+  const runutsJoined = activeCount + leftRUNuts;
+  const retentionPct = runutsJoined > 0 ? Math.round(activeCount / runutsJoined * 100) : 0;
+
+  // 서브텍스트: 현재 멤버 = 현재 서버에 남아있는 멤버 (활성)
+  const memberSub = showLSDData
+    ? `RUNuts ${fmt(activeCount)} / LSD ${fmt(lsdUsers.filter(u => u.status === 'active').length)} / DEV ${fmt(devCount)}`
+    : `누적 가입 ${fmt(runutsJoined)}명 중 잔존`;
+
+  // Generate sparkline SVG for current members (7-day total_members trend)
+  const sparklineMembers = (() => {
+    const last7 = ddForWeekly.slice(-7);
+    if (last7.length < 2) return '';
+    const values = last7.map(r => r.total_members ? parseInt(r.total_members) : 0);
+    const maxVal = Math.max(...values);
+    const minVal = Math.min(...values);
+    const range = maxVal - minVal || 1;
+    const points = values.map((v, i) => {
+      const x = (i / (values.length - 1)) * 80;
+      const y = 24 - ((v - minVal) / range) * 20;
+      return `${x},${y}`;
+    }).join(' ');
+    return `<svg class="sparkline" viewBox="0 0 80 24" xmlns="http://www.w3.org/2000/svg"><polyline points="${points}"/></svg>`;
+  })();
+
+  // Generate sparkline SVG for weekly joins (7-day new_joins trend)
+  const sparklineWeekly = (() => {
+    const last7 = ddForWeekly.slice(-7);
+    if (last7.length < 2) return '';
+    const values = last7.map(r => r.new_joins ? parseInt(r.new_joins) : 0);
+    const maxVal = Math.max(...values, 1);
+    const range = maxVal;
+    const points = values.map((v, i) => {
+      const x = (i / (values.length - 1)) * 80;
+      const y = 24 - (v / range) * 20;
+      return `${x},${y}`;
+    }).join(' ');
+    return `<svg class="sparkline" viewBox="0 0 80 24" xmlns="http://www.w3.org/2000/svg"><polyline points="${points}"/></svg>`;
+  })();
+
+  const kpis = [
+    { label: '현재 멤버', value: fmt(currentMembers), change: memberSub, dir: 'flat', tooltip: '디스코드 서버의 실제 총 멤버 수 (Discord Server Insights 기준)', link: 'users', spark: sparklineMembers },
+    { label: '주간 가입', value: fmt(ddForWeekly.slice(-7).reduce((s,r) => s + (r.new_joins||0), 0)), change: '최근 7일', dir: 'flat', tooltip: '최근 7일간 새로 가입한 유저 수', link: 'discord', spark: sparklineWeekly },
+    { label: '테스터 신청', value: fmt(applied), change: `현재 멤버 대비 ${activeCount > 0 ? Math.round(applied/activeCount*100) : 0}%`, dir: 'flat', tooltip: '현재 멤버 중 테스터 신청서를 작성한 유저 수', link: 'funnel' },
+    { label: '테스터 승인', value: fmt(testers), change: `신청 대비 ${applied > 0 ? Math.round(testers/applied*100) : 0}%`, dir: 'flat', tooltip: '디스코드에서 테스터 역할을 부여받은 유저 수', link: 'funnel' },
+    { label: 'Meta 매칭', value: fmt(linked), change: `승인 대비 ${testers > 0 ? Math.round(linked/testers*100) : 0}%`, dir: 'flat', tooltip: 'Meta Quest 계정과 디스코드 계정이 연동된 유저 수', link: 'funnel' },
+    { label: '잔존율', value: retentionPct + '%', change: `이탈 ${fmt(leftRUNuts)}명 (누적 ${fmt(runutsJoined)}명 중 ${fmt(activeCount)}명 잔존)`, dir: 'flat', tooltip: '누적 가입자 중 현재 서버에 남아있는 비율. 이탈자 = 서버를 떠난 유저', link: 'funnel' }
+  ];
+
+  document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
+    <div class="kpi-card"${k.tooltip ? ' data-tooltip="' + k.tooltip + '"' : ''} onclick="showPageDirect('${k.link}')">
+      <div class="label">${k.label}</div>
+      <div class="value">${k.value}</div>
+      ${k.spark ? k.spark : ''}
+      <div class="change ${k.dir}">${k.change}</div>
+    </div>
+  `).join('');
+}
+
+function renderFunnel(containerId) {
+  // 퍼널은 RUNuts 유저만 대상 (LSD 유저 제외) — LSD 토글 고려
+  let um = data.userMaster.filter(isRUNuts);
+  if (showLSDData) {
+    um = data.userMaster.filter(isRealUser);
+  }
+
+  const lsdCount = data.userMaster.filter(isLSD).length;
+  const totalEver = um.length;
+  const approved = um.filter(u => u.tester_approved === 'O' || u.tester_approved === 'TRUE').length;
+  const metaMatched = um.filter(u => u.meta_matched === 'O').length;
+  const played = um.filter(u => u.first_play_date && u.first_play_date !== '').length;
+  const metaAndActive = um.filter(u => u.meta_matched === 'O' && u.status === 'active').length;
+
+  const groupLabel = showLSDData ? '전체' : 'RUNuts';
+  const stages = [
+    { label: '디스코드 가입', sublabel: `${groupLabel} 유저 누적`, value: totalEver, color: 'var(--funnel1)',
+      tip: showLSDData
+        ? `전체 유저 수 (개발자 제외, RUNuts ${fmt(data.userMaster.filter(isRUNuts).length)} + LSD ${fmt(lsdCount)})`
+        : `RUNuts 시작(2025-11-17) 이후 가입한 유저 수 (LSD 레거시 ${fmt(lsdCount)}명 제외)`,
+      stageKey: 'discord' },
+    { label: '테스터 승인', sublabel: '디스코드 테스터 역할', value: approved, color: 'var(--funnel2)',
+      tip: `디스코드에서 테스터 역할(Role)을 부여받은 ${groupLabel} 유저 수`,
+      stageKey: 'tester' },
+    { label: 'Meta 매칭', sublabel: '게임 채널 접근', value: metaMatched, color: 'var(--funnel3)',
+      tip: 'Meta Quest 계정과 디스코드 계정이 매칭된 유저 수. 실제 게임 빌드 다운로드 가능',
+      stageKey: 'meta' },
+    { label: '게임 플레이', sublabel: '플레이 경험', value: played, color: 'var(--funnel4)',
+      tip: '실제 게임을 1회 이상 플레이한 유저 수. 현재 플레이 데이터 수집 준비 중',
+      stageKey: 'play' },
+    { label: '잔존', sublabel: '매칭 후 활동 유지', value: metaAndActive, color: 'var(--funnel5)',
+      tip: `Meta 매칭 완료자 중 현재도 디스코드에서 활동 중인 ${groupLabel} 유저 수`,
+      stageKey: 'retain' }
+  ];
+  const maxVal = Math.max(...stages.map(s => s.value), 1);
+
+  document.getElementById(containerId).innerHTML = stages.map((s, i) => {
+    const pct = Math.round(s.value / maxVal * 100);
+    const prevVal = stages[i-1]?.value || 0;
+    const noData = s.value === 0 && (s.label === '게임 플레이');
+    const cvr = i > 0 && prevVal > 0 ? Math.round(s.value / prevVal * 100) : (i === 0 ? 100 : 0);
+    const clickHandler = `onclick="openFunnelModal('${s.stageKey}', '${s.label}')"`;
+    return `
+      ${i > 0 ? '<div class="funnel-arrow">↓ ' + (noData ? '-' : cvr + '%') + '</div>' : ''}
+      <div class="funnel-row" ${clickHandler} style="cursor:pointer;">
+        <div class="funnel-label">${s.label}<br><small>${s.sublabel}</small><span class="tooltip">${s.tip}</span></div>
+        <div class="funnel-bar-wrap">
+          <div class="funnel-bar" style="width:${noData ? 5 : Math.max(pct,5)}%;background:${s.color}${noData ? ';opacity:0.3' : ''}">${noData ? '데이터 준비 중' : fmt(s.value)}</div>
+        </div>
+        <div class="funnel-pct">${noData ? '-' : pct + '%'}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ========== 개요 탭: 멤버 성장 추이 (심플 라인) ==========
+function renderOverviewGrowthChart() {
+  let dd = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
+  if (!showLSDData) {
+    dd = dd.filter(r => r.date >= RUNUTS_CUTOFF);
+  }
+  if (dd.length === 0) return;
+
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const tickColor = isLight ? '#6c7389' : '#9ca3af';
+  const gridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.04)';
+  const tooltipBg = isLight ? '#ffffff' : '#2a2d3a';
+  const tooltipText = isLight ? '#1e2130' : '#e4e4e7';
+  const tooltipBorder = isLight ? '#e0e3ea' : '#3a3d4a';
+
+  const labels = dd.map(r => r.date.slice(5));
+  const memberData = dd.map(r => parseInt(r.total_members) || 0);
+
+  if (charts.overviewGrowth) charts.overviewGrowth.destroy();
+  charts.overviewGrowth = new Chart(document.getElementById('chartOverviewGrowth'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '총 멤버 수',
+        data: memberData,
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,0.08)',
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#6366f1',
+        borderWidth: 2.5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: tooltipBg,
+          titleColor: tooltipText,
+          bodyColor: tooltipText,
+          borderColor: tooltipBorder,
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: function(ctx) {
+              return ` 멤버: ${Number(ctx.parsed.y).toLocaleString()}명`;
+            },
+            afterLabel: function(ctx) {
+              const idx = ctx.dataIndex;
+              const d = dd[idx];
+              const joins = d.new_joins || 0;
+              const leaves = d.leaves || 0;
+              let extra = `가입 +${joins}`;
+              if (leaves > 0) extra += ` / 이탈 -${leaves}`;
+              return extra;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: tickColor, maxTicksLimit: 12, maxRotation: 0, font: { size: 11 } }, grid: { color: gridColor } },
+        y: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor } }
+      }
+    }
+  });
+}
+
+function renderDiscordPage() {
+  const dd = getFilteredDiscordData();
+  const latest = dd[dd.length-1] || {};
+  const week7 = dd.slice(-7);
+  const weekJoins = week7.reduce((s,r)=>s+(r.new_joins||0),0);
+  const weekLeaves = week7.reduce((s,r)=>s+(r.leaves||0),0);
+  const weekNet = weekJoins - weekLeaves;
+
+  // Render period filter buttons (활동 차트 + 테이블)
+  ['periodFilter2', 'periodFilter3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = `
+      <button onclick="setDiscordPeriod('all')" class="active">전체</button>
+      <button onclick="setDiscordPeriod('30')">30일</button>
+      <button onclick="setDiscordPeriod('90')">90일</button>
+    `;
+  });
+
+  // KPI 카드 — 모두 7일 기준으로 단위 통일
+  const netColor = weekNet >= 0 ? 'var(--green)' : 'var(--red)';
+  const netPrefix = weekNet >= 0 ? '+' : '';
+  document.getElementById('discordKpi').innerHTML = [
+    { label:'총 멤버', value:fmt(latest.total_members) },
+    { label:'7일 가입', value:'+'+fmt(weekJoins), color: 'var(--green)' },
+    { label:'7일 이탈', value: weekLeaves > 0 ? '-'+fmt(weekLeaves) : '-', color: weekLeaves > 0 ? 'var(--red)' : '' },
+    { label:'7일 순증', value: netPrefix+fmt(weekNet), color: netColor },
+    { label:'오늘 활성', value:fmt(latest.active_members) || '-' }
+  ].map(k=>`<div class="kpi-card"><div class="label">${k.label}</div><div class="value"${k.color?' style="color:'+k.color+'"':''}>${k.value}</div></div>`).join('');
+
+  // 활동 차트
+  const labels = dd.map(r=>r.date.slice(5));
+  if (charts.discActivity) charts.discActivity.destroy();
+  charts.discActivity = new Chart(document.getElementById('chartDiscordActivity'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        { label:'메시지', data:dd.map(r=>r.messages_count), borderColor:'#06b6d4', tension:0.3, pointRadius:3, pointHoverRadius:7 },
+        { label:'보이스 참여', data:dd.map(r=>r.voice_participants), borderColor:'#f97316', tension:0.3, pointRadius:3, pointHoverRadius:7 }
+      ]
+    },
+    options:chartOpts('횟수')
+  });
+
+  // 테이블
+  document.getElementById('discordTableBody').innerHTML = dd.slice().reverse().map(r=>`
+    <tr>
+      <td>${r.date}</td><td>${fmt(r.total_members)}</td><td>${r.new_joins||'-'}</td><td>${r.leaves||'-'}</td>
+      <td style="color:${Number(r.net_growth)>=0?'var(--green)':'var(--red)'}">${r.net_growth!=null&&r.net_growth!==''?(Number(r.net_growth)>=0?'+':'')+r.net_growth:'-'}</td>
+      <td>${r.messages_count||'-'}</td><td>${r.voice_participants||'-'}</td><td>${r.active_members||'-'}</td>
+    </tr>
+  `).join('');
+}
+
+function renderFunnelTable() {
+  // 원본 데이터에서 직접 월별 집계 (Funnel Tracker 시트 대신) — 2025-10 이후만
+  const um = data.userMaster.filter(isRealUser);
+  const yt = data.youtube;
+  const tt = data.tiktok;
+
+  // 월별 버킷 생성
+  const monthMap = {};
+  const emptyBucket = () => ({ joins: 0, joinsRUNuts: 0, joinsLSD: 0, ytViews: 0, ttViews: 0, approved: 0, cumRUNuts: 0, leaves: 0, leavesLSD: 0, leavesRUNuts: 0 });
+
+  // 1) 디스코드 가입 (User Master join_date 기준) — LSD/RUNuts 구분 — 2025-10 이후만
+  um.forEach(u => {
+    if (!u.join_date) return;
+    const m = u.join_date.substring(0, 7);
+    if (m < '2025-10') return; // Filter out pre-October 2025
+    if (!monthMap[m]) monthMap[m] = emptyBucket();
+    monthMap[m].joins++;
+    if (isLSD(u)) monthMap[m].joinsLSD++;
+    else monthMap[m].joinsRUNuts++;
+    // 이탈 집계
+    if (u.status === 'left' && u.leave_date) {
+      const lm = String(u.leave_date).substring(0, 7);
+      if (lm < '2025-10') return; // Filter out pre-October 2025
+      if (!monthMap[lm]) monthMap[lm] = emptyBucket();
+      monthMap[lm].leaves++;
+      if (isLSD(u)) monthMap[lm].leavesLSD++;
+      else monthMap[lm].leavesRUNuts++;
+    }
+  });
+
+  // 2) YT 조회수 (published_date 기준) — 2025-10 이후만
+  yt.forEach(v => {
+    const d = v.published_date || v.collected_date;
+    if (!d) return;
+    const m = d.substring(0, 7);
+    if (m < '2025-10') return; // Filter out pre-October 2025
+    if (!monthMap[m]) monthMap[m] = emptyBucket();
+    monthMap[m].ytViews += (v.views || 0);
+  });
+
+  // 3) TT 조회수 (published_date 기준) — 2025-10 이후만
+  tt.forEach(v => {
+    const d = v.published_date || v.collected_date;
+    if (!d) return;
+    const m = d.substring(0, 7);
+    if (m < '2025-10') return; // Filter out pre-October 2025
+    if (!monthMap[m]) monthMap[m] = emptyBucket();
+    monthMap[m].ttViews += (v.views || 0);
+  });
+
+  // 4) 테스터 승인 (RUNuts 유저만) — 2025-10 이후만
+  um.filter(isRUNuts).forEach(u => {
+    if (u.tester_approved_date && u.tester_approved_date !== '') {
+      const m = u.tester_approved_date.substring(0, 7);
+      if (m < '2025-10') return; // Filter out pre-October 2025
+      if (!monthMap[m]) monthMap[m] = emptyBucket();
+      monthMap[m].approved++;
+    }
+  });
+
+  // 월별 정렬 + RUNuts 누적 계산
+  const months = Object.keys(monthMap).sort();
+  let cumRN = 0;
+  months.forEach(m => {
+    cumRN += monthMap[m].joinsRUNuts;
+    monthMap[m].cumRUNuts = cumRN;
+  });
+
+  // 최근 12개월만 표시, 최신순
+  const recentMonths = months.slice(-12).reverse();
+
+  document.getElementById('funnelTableBody').innerHTML = recentMonths.map(m => {
+    const r = monthMap[m];
+    const lsdNote = r.joinsLSD > 0 ? ` <small style="color:var(--muted)">(+${r.joinsLSD} LSD)</small>` : '';
+    const leaveNote = r.leaves > 0 ? (r.leavesLSD > 0 ? `${r.leavesRUNuts} <small style="color:var(--muted)">(+${r.leavesLSD} LSD)</small>` : fmt(r.leaves)) : '-';
+    return `<tr>
+      <td>${m}</td>
+      <td>${fmt(r.joinsRUNuts)}${lsdNote}</td>
+      <td>${r.ytViews > 0 ? fmt(r.ytViews) : '-'}</td>
+      <td>${r.ttViews > 0 ? fmt(r.ttViews) : '-'}</td>
+      <td>${r.approved > 0 ? fmt(r.approved) : '-'}</td>
+      <td>${leaveNote}</td>
+      <td>${fmt(r.cumRUNuts)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function sortYtTable(key) {
+  if (ytSortKey === key) {
+    ytSortDir = ytSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    ytSortKey = key;
+    ytSortDir = 'desc';
+  }
+  renderSNS();
+}
+
+function renderSNS() {
+  let yt = data.youtube;
+  let tt = data.tiktok;
+  if (!showLSDData) {
+    yt = yt.filter(v => {
+      const d = v.published_date || v.collected_date;
+      return !d || d >= RUNUTS_CUTOFF;
+    });
+    tt = tt.filter(v => {
+      const d = v.published_date || v.collected_date;
+      return !d || d >= RUNUTS_CUTOFF;
+    });
+  }
+  const ytTotalViews = yt.reduce((s,r) => s + (r.views||0), 0);
+  const ytTotalLikes = yt.reduce((s,r) => s + (r.likes||0), 0);
+  const ttTotalViews = tt.reduce((s,r) => s + (r.views||0), 0);
+  const latestSubs = yt.length > 0 ? yt[0].channel_subscribers : 0;
+  const latestFollowers = tt.length > 0 ? tt[0].account_followers : 0;
+
+  document.getElementById('snsKpi').innerHTML = [
+    { label:'YT 총 조회수', value: fmt(ytTotalViews) },
+    { label:'YT 총 좋아요', value: fmt(ytTotalLikes) },
+    { label:'YT 구독자', value: fmt(latestSubs) },
+    { label:'YT 영상 수', value: fmt(yt.length) },
+    { label:'TT 총 조회수', value: fmt(ttTotalViews) },
+    { label:'TT 팔로워', value: fmt(latestFollowers) }
+  ].map(k=>`<div class="kpi-card"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`).join('');
+
+  // 유튜브: 정렬 상태에 따라 정렬
+  const ytSorted = [...yt].sort((a,b) => {
+    let cmp = 0;
+    if (ytSortKey === 'views') {
+      cmp = (a.views||0) - (b.views||0);
+    } else { // date
+      const da = a.published_date || a.collected_date || '';
+      const db = b.published_date || b.collected_date || '';
+      cmp = da.localeCompare(db);
+    }
+    return ytSortDir === 'desc' ? -cmp : cmp;
+  });
+
+  // 정렬 헤더 화살표 업데이트
+  const dateArrow = document.querySelector('#ytSortDate .sort-arrow');
+  const viewsArrow = document.querySelector('#ytSortViews .sort-arrow');
+  if (dateArrow) dateArrow.textContent = ytSortKey === 'date' ? (ytSortDir === 'desc' ? '▼' : '▲') : '';
+  if (viewsArrow) viewsArrow.textContent = ytSortKey === 'views' ? (ytSortDir === 'desc' ? '▼' : '▲') : '';
+
+  document.getElementById('ytTableBody').innerHTML = ytSorted.map(r=>`
+    <tr>
+      <td>${r.published_date || r.collected_date}</td>
+      <td>${r.video_title}${r.video_id ? ' <a href="https://www.youtube.com/watch?v=' + r.video_id + '" target="_blank" title="YouTube에서 보기" style="margin-left:6px;font-size:12px;text-decoration:none">▶️</a>' : ''}${r.youtube_studio_links && r.youtube_studio_links.includes('/video/') ? ' <a href="' + r.youtube_studio_links + '" target="_blank" title="YouTube Studio 분석" style="margin-left:2px;font-size:12px;text-decoration:none">📊</a>' : ''}</td>
+      <td>${fmt(r.views)}</td>
+      <td>${fmt(r.likes)}</td>
+      <td>${r.comments || '-'}</td>
+      <td>${fmt(r.channel_subscribers)}</td>
+      <td>${r.keywords || '-'}</td>
+    </tr>
+  `).join('');
+
+  // 틱톡
+  document.getElementById('ttTableBody').innerHTML = tt.map(r=>`
+    <tr>
+      <td>${r.published_date || r.collected_date}</td>
+      <td>${r.video_title}${r.video_links ? ' <a href="' + r.video_links + '" target="_blank" title="TikTok 영상으로 이동" style="margin-left:6px;font-size:12px">🔗</a>' : (r.video_id ? ' <a href="https://www.tiktok.com/search?q=' + encodeURIComponent(r.video_title || '') + '" target="_blank" title="TikTok에서 검색" style="margin-left:6px;font-size:12px;opacity:0.5">🔗</a>' : '')}</td>
+      <td>${fmt(r.views)}</td>
+      <td>${fmt(r.likes)}</td>
+      <td>${r.comments || '-'}</td>
+      <td>${r.shares || '-'}</td>
+      <td>${r.saves || '-'}</td>
+      <td>${fmt(r.account_followers)}</td>
+    </tr>
+  `).join('');
+}
+
+let userTableLimit = 100;
+let allUsersForTable = []; // Store all users for filtering
+function renderUsersTable() {
+  const sorted = [...data.userMaster].sort((a,b)=> (b.join_date||'').localeCompare(a.join_date||''));
+  allUsersForTable = sorted; // Store for filtering
+  updateSortIndicators();
+  filterUsersTable();
+  updateSortIndicators();
+}
+
+let searchDebounceTimer;
+function debounceSearch() {
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => filterUsersTable(), 300);
+}
+function filterUsersTable() {
+  const statusKo = { active: '활동 중', left: '탈퇴', pre_registered: '사전등록' };
+  const searchQuery = document.getElementById('userSearch')?.value.trim().toLowerCase() || '';
+  let filtered = getFilteredUsers();
+
+  // Task 1: Filter by left users toggle
+  if (showLeftUsers) {
+    filtered = filtered.filter(u => u.status === 'left');
+  } else {
+    filtered = filtered.filter(u => u.status !== 'left');
+  }
+
+  // Apply search filter
+  if (searchQuery) {
+    filtered = filtered.filter(u =>
+      u.discord_username.toLowerCase().includes(searchQuery) ||
+      u.discord_id.includes(searchQuery) ||
+      (u.discord_display_name||'').toLowerCase().includes(searchQuery)
+    );
+  }
+
+  // Apply sorting
+  filtered = getSortedUsers(filtered);
+
+  // Show result count
+  document.getElementById('filterResultCount').textContent = `검색 결과: ${fmt(filtered.length)}명`;
+
+  const showing = filtered.slice(0, userTableLimit);
+  const hasMore = filtered.length > userTableLimit;
+  document.getElementById('usersTableBody').innerHTML = showing.map(u=>{
+    const grp = getUserGroup(u);
+    const grpClass = grp === 'LSD' ? 'lsd' : 'runuts_grp';
+    const dev = isDev(u);
+    const rowStyle = dev ? ';opacity:0.45;font-style:italic' : (grp === 'LSD' ? ';opacity:0.65' : '');
+    return `
+    <tr onclick="openUserPanel('${u.discord_id}')" style="cursor:pointer${rowStyle}">
+      <td>${u.discord_id}</td>
+      <td>${u.discord_display_name || u.discord_username}${u.discord_display_name && u.discord_display_name !== u.discord_username ? '<br><small style=\"color:var(--muted);\">@' + u.discord_username + '</small>' : ''}${dev ? ' <span class=\"badge dev\">DEV</span>' : ''}</td>
+      <td>${u.join_date}</td>
+      <td><span class="badge ${grpClass}">${grp}</span></td>
+      <td><span class="badge ${u.status}">${statusKo[u.status] || u.status}</span></td>
+      <td>${u.estimated_source || 'unknown'}</td>
+      <td>${(u.tester_applied==='O'||u.tester_applied==='TRUE') ? ((u.tester_approved==='O'||u.tester_approved==='TRUE') ? '<span class="badge approved">승인</span>' : '<span class="badge applied">신청</span>') : '-'}</td>
+      <td>${u.meta_matched==='O' ? '<span class="badge linked">매칭</span>' : (u.game_linked==='TRUE' ? '<span class="badge linked">연동</span>' : '-')}</td>
+    </tr>`;
+  }).join('');
+  // 더 보기 버튼
+  const container = document.getElementById('usersTableBody').parentElement.parentElement;
+  let loadMoreBtn = document.getElementById('loadMoreUsers');
+  if (loadMoreBtn) loadMoreBtn.remove();
+  if (hasMore) {
+    loadMoreBtn = document.createElement('div');
+    loadMoreBtn.id = 'loadMoreUsers';
+    loadMoreBtn.style.cssText = 'text-align:center;padding:16px;';
+    loadMoreBtn.innerHTML = `<button onclick="userTableLimit+=100;filterUsersTable();" style="background:var(--accent);color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;">더 보기 (${filtered.length - userTableLimit}명 남음)</button>`;
+    container.appendChild(loadMoreBtn);
+  }
+}
+
+// Task 1: Toggle left users view
+function toggleLeftUsers() {
+  showLeftUsers = !showLeftUsers;
+  const btn = document.getElementById('leftUsersToggle');
+  btn.classList.toggle('active');
+  btn.textContent = showLeftUsers ? '활동 유저 보기' : '탈퇴 유저 보기';
+  filterUsersTable();
+}
+
+function openUserPanel(discordId) {
+  const u = data.userMaster.find(x => x.discord_id === discordId);
+  if (!u) return;
+
+  const statusKo = { active: '활동 중', left: '탈퇴', pre_registered: '사전등록' };
+  const hasPlayed = u.first_play_date && u.first_play_date !== '';
+  const stages = [
+    { name:'디스코드 가입', done: true },
+    { name:'테스터 승인', done: u.tester_approved==='O'||u.tester_approved==='TRUE' },
+    { name:'Meta 매칭', done: u.meta_matched==='O' },
+    { name:'게임 플레이', done: hasPlayed },
+    { name:'잔존', done: u.status==='active' }
+  ];
+  let currentIdx = stages.reduce((acc, s, i) => s.done ? i : acc, 0);
+
+  const grp = getUserGroup(u);
+  const devBadge = isDev(u) ? ' <span class="badge dev" style="font-size:12px;vertical-align:middle">DEV</span>' : '';
+
+  document.getElementById('userDetailName').innerHTML = `${u.discord_display_name || u.discord_username} <span class="badge ${grp==='LSD'?'lsd':'runuts_grp'}" style="font-size:12px;vertical-align:middle">${grp}</span>${devBadge}`;
+  document.getElementById('userDetailContent').innerHTML = `
+    <div class="user-detail-sections">
+      <div class="user-detail-section">
+        <div class="section-header">Discord 계정</div>
+        <div class="user-detail-grid">
+          <div class="detail-row"><span class="detail-label">Discord ID</span><span class="detail-value">${u.discord_id}</span></div>
+          <div class="detail-row"><span class="detail-label">유저명</span><span class="detail-value">@${u.discord_username}</span></div>
+          <div class="detail-row"><span class="detail-label">디스플레이 네임</span><span class="detail-value">${u.discord_display_name || u.discord_username}</span></div>
+          <div class="detail-row"><span class="detail-label">가입일</span><span class="detail-value">${u.join_date}</span></div>
+          ${u.left_date ? `<div class="detail-row"><span class="detail-label">탈퇴일</span><span class="detail-value">${u.left_date}</span></div>` : ''}
+          <div class="detail-row"><span class="detail-label">유입 경로</span><span class="detail-value">${u.estimated_source || 'unknown'}</span></div>
+          <div class="detail-row"><span class="detail-label">초대자</span><span class="detail-value">${u.invited_by || '-'}</span></div>
+        </div>
+      </div>
+      <div class="user-detail-section">
+        <div class="section-header">Meta / 게임</div>
+        <div class="user-detail-grid">
+          <div class="detail-row"><span class="detail-label">Meta 유저명</span><span class="detail-value">${u.meta_username || '-'}</span></div>
+          ${u.meta_username_prev ? `<div class="detail-row"><span class="detail-label">Meta 이전 유저명</span><span class="detail-value">${u.meta_username_prev}</span></div>` : ''}
+          <div class="detail-row"><span class="detail-label">Meta 매칭</span><span class="detail-value">${u.meta_matched==='O' ? '✅ 완료' : '❌ 미완료'}</span></div>
+          <div class="detail-row"><span class="detail-label">Game ID</span><span class="detail-value">${u.game_id || '-'}</span></div>
+          <div class="detail-row"><span class="detail-label">게임 연동</span><span class="detail-value">${u.game_linked==='TRUE' ? '✅ 완료' : '❌ 미완료'}</span></div>
+          <div class="detail-row"><span class="detail-label">첫 플레이</span><span class="detail-value">${u.first_play_date || '-'}</span></div>
+          <div class="detail-row"><span class="detail-label">총 플레이테스트</span><span class="detail-value">${u.total_playtests || '-'}</span></div>
+        </div>
+      </div>
+      <div class="user-detail-section">
+        <div class="section-header">테스터 여정</div>
+        <div class="pipeline-visualization">
+          ${stages.map((s, i) => `<div class="pipeline-step ${s.done ? 'completed' : ''} ${i === currentIdx ? 'current' : ''}"><span class="step-circle"></span><span class="step-label">${s.name}</span></div>`).join('')}
+        </div>
+      </div>
+      ${isDev(u) ? '<div class="user-detail-section" style="background:rgba(234,88,12,0.1);border:1px solid rgba(234,88,12,0.2)"><div class="section-header">개발자 계정</div><div style="font-size:13px;color:var(--orange)">KPI·퍼널 집계에서 제외됨</div></div>' : ''}
+    </div>
+  `;
+
+  // Show panel
+  document.getElementById('userDetailOverlay').classList.add('active');
+  document.getElementById('userDetailPanel').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeUserPanel() {
+  document.getElementById('userDetailOverlay').classList.remove('active');
+  document.getElementById('userDetailPanel').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Task 2: Funnel drill-down modal functions
+function openFunnelModal(stageKey, stageName) {
+  let um = data.userMaster.filter(isRUNuts);
+  if (showLSDData) {
+    um = data.userMaster.filter(isRealUser);
+  }
+
+  let users = [];
+  let title = '';
+
+  switch (stageKey) {
+    case 'discord':
+      title = '디스코드 가입';
+      users = um;
+      break;
+    case 'tester':
+      title = '테스터 승인';
+      users = um.filter(u => u.tester_approved === 'O' || u.tester_approved === 'TRUE');
+      break;
+    case 'meta':
+      title = 'Meta 매칭';
+      users = um.filter(u => u.meta_matched === 'O');
+      break;
+    case 'play':
+      title = '게임 플레이';
+      users = um.filter(u => u.first_play_date && u.first_play_date !== '');
+      break;
+    case 'retain':
+      title = '잔존';
+      users = um.filter(u => u.meta_matched === 'O' && u.status === 'active');
+      break;
+  }
+
+  const titleEl = document.getElementById('funnelModalTitle');
+  const countEl = document.getElementById('funnelModalCount');
+  const listEl = document.getElementById('funnelUserList');
+
+  titleEl.textContent = title;
+  countEl.innerHTML = `<div style="font-size:14px;color:var(--muted);margin-bottom:12px;">총 ${fmt(users.length)}명</div>`;
+
+  if (users.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;">해당하는 유저가 없습니다</div>';
+  } else {
+    listEl.innerHTML = users.slice(0, 100).map(u => {
+      const grp = getUserGroup(u);
+      return `
+        <div class="funnel-user-item">
+          <div class="funnel-user-item-main">
+            <div class="funnel-user-item-name">${u.discord_username || u.discord_display_name || 'Unknown'}</div>
+            <div class="funnel-user-item-meta">가입: ${u.join_date || '-'} | 그룹: ${grp}</div>
+          </div>
+          <div class="funnel-user-item-badge">${grp}</div>
+        </div>
+      `;
+    }).join('');
+    if (users.length > 100) {
+      listEl.innerHTML += `<div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">외 ${users.length - 100}명</div>`;
+    }
+  }
+
+  document.getElementById('funnelModalOverlay').classList.add('active');
+}
+
+function closeFunnelModal(event) {
+  if (event && event.target !== document.getElementById('funnelModalOverlay')) return;
+  document.getElementById('funnelModalOverlay').classList.remove('active');
+}
+
+// ========== 디스코드 멤버 추이 — 멀티 데이터셋 차트 ==========
+// 데이터 분석 원칙: 모든 데이터셋이 동일한 일간(daily) X축을 공유
+// 카드 = 요약 지표, 차트 = 해당 지표의 일간 시계열
+//
+// 3개 레이어 (토글 카드):
+//   total  — 일간 누적 멤버 수 (line, 왼쪽 Y축)  : 전체 성장 궤적
+//   daily  — 일간 유입 수 (bar, 오른쪽 Y축)       : 가입자 수
+//   leaves — 일간 이탈 수 (bar, 오른쪽 Y축, 음수) : 이탈자 수 (Server Insights 500명 이후)
+
+let activeGrowthDatasets = new Set(['total', 'daily']); // 기본: 누적 멤버 + 일간 유입
+
+const GROWTH_DATASET_CONFIG = {
+  total:  { label: '누적 멤버 수',    color: '#6366f1', bgColor: 'rgba(99,102,241,0.08)',  yAxis: 'y',  type: 'line', order: 2 },
+  daily:  { label: '일간 유입',       color: '#22c55e', bgColor: 'rgba(34,197,94,0.30)',   yAxis: 'y1', type: 'bar',  order: 0 },
+  leaves: { label: '일간 이탈',       color: '#ef4444', bgColor: 'rgba(239,68,68,0.30)',   yAxis: 'y1', type: 'bar',  order: 1 }
+};
+
+function renderGrowthStageCards() {
+  let dd = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
+  if (!showLSDData) {
+    dd = dd.filter(r => r.date >= RUNUTS_CUTOFF);
+  }
+
+  if (dd.length === 0) {
+    document.getElementById('growthStageCards').innerHTML = '';
+    return;
+  }
+
+  const latest = dd[dd.length - 1];
+  const totalMembers = parseInt(latest.total_members) || 0;
+
+  // Sparkline builder
+  function miniSpark(values, color) {
+    if (values.length < 2) return '';
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+    const range = max - min || 1;
+    const pts = values.map((v, i) => {
+      const x = (i / (values.length - 1)) * 96;
+      const y = 32 - ((v - min) / range) * 28;
+      return x + ',' + y;
+    }).join(' ');
+    return '<svg viewBox="0 0 96 36" xmlns="http://www.w3.org/2000/svg"><polyline points="' + pts + '" style="stroke:' + color + '"/></svg>';
+  }
+
+  const month30 = dd.slice(-30);
+  const sparkTotal = miniSpark(month30.map(r => parseInt(r.total_members) || 0), '#6366f1');
+  const sparkDaily = miniSpark(dd.slice(-14).map(r => r.new_joins || 0), '#22c55e');
+  const sparkLeaves = miniSpark(dd.slice(-14).map(r => r.leaves || 0), '#ef4444');
+
+  // 최근 날짜
+  const latestDate = latest.date.slice(5);
+  const latestJoins = latest.new_joins || 0;
+  const latestLeaves = latest.leaves || 0;
+
+  const cards = [
+    { key: 'total',  label: '누적 멤버',   value: fmt(totalMembers) + '명',  sub: '최근: ' + latestDate,  spark: sparkTotal,  dotColor: '#6366f1' },
+    { key: 'daily',  label: '일간 유입',    value: '+' + fmt(latestJoins),    sub: '최근: ' + latestDate,  spark: sparkDaily,  dotColor: '#22c55e' },
+    { key: 'leaves', label: '일간 이탈',    value: latestLeaves > 0 ? '-' + fmt(latestLeaves) : '-',  sub: latestLeaves > 0 ? '최근: ' + latestDate : '500명 이후 제공', spark: sparkLeaves, dotColor: '#ef4444', color: latestLeaves > 0 ? 'var(--red)' : 'var(--muted)' }
+  ];
+
+  document.getElementById('growthStageCards').innerHTML = cards.map(card => `
+    <div class="growth-stat-card ${activeGrowthDatasets.has(card.key) ? 'active' : ''}" onclick="toggleGrowthDataset('${card.key}')" style="cursor:pointer" title="클릭하여 차트에 추가/제거">
+      <div class="growth-stat-info">
+        <div class="growth-stat-label"><span class="dataset-dot" style="background:${card.dotColor}"></span>${card.label}</div>
+        <div class="growth-stat-value" ${card.color ? 'style="color:' + card.color + '"' : ''}>${card.value}</div>
+        <div class="growth-stat-sub">${card.sub}</div>
+      </div>
+      <div class="growth-stat-spark">${card.spark}</div>
+    </div>
+  `).join('');
+}
+
+function toggleGrowthDataset(key) {
+  if (activeGrowthDatasets.has(key)) {
+    if (activeGrowthDatasets.size <= 1) return; // 최소 1개 유지
+    activeGrowthDatasets.delete(key);
+  } else {
+    activeGrowthDatasets.add(key);
+  }
+  renderGrowthStageCards();
+  renderMultiDatasetChart();
+}
+
+function renderMultiDatasetChart() {
+  let dd = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
+  if (!showLSDData) {
+    dd = dd.filter(r => r.date >= RUNUTS_CUTOFF);
+  }
+  if (dd.length === 0) return;
+
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const tickColor = isLight ? '#6c7389' : '#9ca3af';
+  const gridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.04)';
+  const tooltipBg = isLight ? '#ffffff' : '#2a2d3a';
+  const tooltipText = isLight ? '#1e2130' : '#e4e4e7';
+  const tooltipBorder = isLight ? '#e0e3ea' : '#3a3d4a';
+
+  // 모든 데이터셋이 공유하는 일간 X축
+  const labels = dd.map(r => r.date.slice(5));
+
+  // 사전 계산: 일간 이탈 (음수로 표시하여 가입 바와 반대 방향)
+  const leavesMap = dd.map(r => -(r.leaves || 0));
+
+  // 활성 데이터셋 구성
+  const datasets = [];
+  const activeKeys = Array.from(activeGrowthDatasets);
+
+  // 필요한 Y축 판단
+  const needsY  = activeKeys.includes('total');
+  const needsY1 = activeKeys.includes('daily') || activeKeys.includes('leaves');
+
+  for (const key of activeKeys) {
+    const cfg = GROWTH_DATASET_CONFIG[key];
+    if (!cfg) continue;
+    let dataArr;
+
+    switch (key) {
+      case 'total':
+        dataArr = dd.map(r => parseInt(r.total_members) || 0);
+        break;
+      case 'daily':
+        dataArr = dd.map(r => r.new_joins || 0);
+        break;
+      case 'leaves':
+        dataArr = leavesMap;
+        break;
+      default:
+        continue;
+    }
+
+    // Y축 ID 결정 — 단일 축만 있으면 왼쪽으로 승격
+    let yAxisID = cfg.yAxis;
+    if (!needsY && yAxisID === 'y1') yAxisID = 'y';
+
+    const ds = {
+      label: cfg.label,
+      data: dataArr,
+      type: cfg.type,
+      yAxisID: yAxisID,
+      order: cfg.order,
+      spanGaps: true
+    };
+
+    if (key === 'leaves') {
+      // 이탈: 항상 빨간색, 음수 방향 바
+      ds.backgroundColor = cfg.bgColor;
+      ds.borderColor = cfg.color;
+      ds.borderWidth = 0;
+      ds.borderRadius = 2;
+      ds.barPercentage = 0.6;
+      ds.categoryPercentage = 0.85;
+      ds.maxBarThickness = 8;
+    } else if (cfg.type === 'line') {
+      ds.borderColor = cfg.color;
+      ds.backgroundColor = cfg.bgColor;
+      ds.fill = activeKeys.length === 1;
+      ds.tension = 0.35;
+      ds.pointRadius = activeKeys.length > 2 ? 1 : 2;
+      ds.pointHoverRadius = 6;
+      ds.pointHoverBackgroundColor = cfg.color;
+      ds.borderWidth = 2;
+    } else {
+      // daily bar
+      ds.borderColor = cfg.color;
+      ds.backgroundColor = cfg.bgColor;
+      ds.borderRadius = 2;
+      ds.borderWidth = 0;
+      ds.barPercentage = 0.6;
+      ds.categoryPercentage = 0.85;
+      ds.maxBarThickness = 8;
+    }
+
+    datasets.push(ds);
+  }
+
+  // 동적 스케일 구성
+  const scales = {
+    x: {
+      ticks: { color: tickColor, maxTicksLimit: 12, maxRotation: 0, font: { size: 11 } },
+      grid: { color: gridColor }
+    }
+  };
+
+  if (needsY) {
+    scales.y = {
+      type: 'linear', position: 'left',
+      ticks: { color: '#6366f1', font: { size: 11, weight: '500' } },
+      grid: { color: gridColor },
+      title: { display: true, text: '멤버 수', color: '#6366f1', font: { size: 11 } }
+    };
+  }
+
+  if (needsY1) {
+    const hasLeaves = activeKeys.includes('leaves');
+    const hasDaily = activeKeys.includes('daily');
+    let y1Color = '#22c55e';
+    let y1Title = '일간 유입 수';
+    if (hasDaily && hasLeaves) { y1Color = '#9ca3af'; y1Title = '일간 유입 / 이탈'; }
+    else if (hasLeaves && !hasDaily) { y1Color = '#ef4444'; y1Title = '일간 이탈 수'; }
+    scales.y1 = {
+      type: 'linear', position: needsY ? 'right' : 'left',
+      ticks: { color: y1Color, font: { size: 11, weight: '500' } },
+      grid: { drawOnChartArea: !needsY, color: gridColor },
+      title: { display: true, text: y1Title, color: y1Color, font: { size: 11 } }
+    };
+  }
+
+  // 왼쪽 축이 없을 때 fallback 승격
+  if (!needsY && !scales.y) {
+    if (needsY1) {
+      scales.y = scales.y1; scales.y.position = 'left'; delete scales.y1;
+      datasets.forEach(ds => { if (ds.yAxisID === 'y1') ds.yAxisID = 'y'; });
+    } else {
+      scales.y = { ticks: { color: tickColor }, grid: { color: gridColor } };
+    }
+  }
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        display: true,
+        labels: {
+          color: tickColor, font: { size: 11 },
+          usePointStyle: true, pointStyle: 'circle', padding: 14,
+          filter: item => item.text
+        },
+        onClick: null // 레전드 클릭 비활성 — 카드로 토글
+      },
+      tooltip: {
+        enabled: true,
+        backgroundColor: tooltipBg,
+        titleColor: tooltipText,
+        bodyColor: tooltipText,
+        borderColor: tooltipBorder,
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: true,
+        filter: item => item.raw !== null,
+        callbacks: {
+          label: function(ctx) {
+            const val = ctx.parsed.y;
+            if (val === null || val === undefined) return null;
+            if (ctx.dataset.label === '일간 이탈') {
+              return ` ${ctx.dataset.label}: ${Math.abs(val).toLocaleString()}명`;
+            }
+            return ` ${ctx.dataset.label}: ${Number(val).toLocaleString()}명`;
+          }
+        }
+      }
+    },
+    scales
+  };
+
+  if (chartMembersInstance) chartMembersInstance.destroy();
+  chartMembersInstance = new Chart(document.getElementById('chartMembers'), {
+    type: 'line',
+    data: { labels, datasets },
+    options
+  });
+}
+
+// ========== UTILS ==========
+function fmt(n) {
+  if (n === undefined || n === null || n === '') return '-';
+  return Number(n).toLocaleString();
+}
+
+function chartOpts(yLabel) {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const tickColor = isLight ? '#6c7389' : '#9ca3af';
+  const gridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.04)';
+  const tooltipBg = isLight ? '#ffffff' : '#2a2d3a';
+  const tooltipText = isLight ? '#1e2130' : '#e4e4e7';
+  const tooltipBorder = isLight ? '#e0e3ea' : '#3a3d4a';
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { color: tickColor, font: { size: 12 } } },
+      tooltip: {
+        enabled: true,
+        backgroundColor: tooltipBg,
+        titleColor: tooltipText,
+        bodyColor: tooltipText,
+        borderColor: tooltipBorder,
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: true,
+        callbacks: {
+          label: function(ctx) {
+            const val = ctx.parsed.y;
+            return ` ${ctx.dataset.label}: ${Number(val).toLocaleString()}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { color: tickColor, maxTicksLimit: 12, maxRotation: 0 }, grid: { color: gridColor } },
+      y: { ticks: { color: tickColor }, grid: { color: gridColor }, title: { display: !!yLabel, text: yLabel, color: tickColor } }
+    }
+  };
+}
+
+// ========== 정보 페이지 ==========
+function renderInfo() {
+  let um = data.userMaster;
+  let dd = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
+  let yt = data.youtube;
+  let tt = data.tiktok;
+
+  if (!showLSDData) {
+    um = um.filter(u => !isDev(u) && getUserGroup(u) !== 'LSD');
+    dd = dd.filter(r => r.date >= RUNUTS_CUTOFF);
+    yt = yt.filter(v => {
+      const d = v.published_date || v.collected_date;
+      return !d || d >= RUNUTS_CUTOFF;
+    });
+    tt = tt.filter(v => {
+      const d = v.published_date || v.collected_date;
+      return !d || d >= RUNUTS_CUTOFF;
+    });
+  }
+
+  const devCount = data.userMaster.filter(isDev).length;
+
+  // 유저 그룹 통계 (dev 제외)
+  const runutsUsers = um.filter(isRUNuts);
+  const lsdUsers = um.filter(isLSD);
+  const unknownUsers = um.filter(u => getUserGroup(u) === 'unknown');
+
+  // 상태별
+  const activeAll = um.filter(u => u.status === 'active').length;
+  const leftAll = um.filter(u => u.status === 'left').length;
+  const preRegAll = um.filter(u => u.status === 'pre_registered').length;
+
+  // Discord Daily 날짜 범위
+  const ddDates = dd.map(r => r.date).filter(Boolean).sort();
+  const ddFirst = ddDates[0] || '-';
+  const ddLast = ddDates[ddDates.length-1] || '-';
+  const ddWithActivity = dd.filter(r => r.messages_count || r.voice_participants).length;
+
+  // 데이터 필드 상태 체크
+  const hasFirstPlay = um.some(u => u.first_play_date && u.first_play_date !== '');
+  const hasTotalPlay = um.some(u => u.total_playtests && u.total_playtests !== '' && u.total_playtests !== '0');
+  const hasLeaveDate = um.filter(u => u.leave_date && u.leave_date !== '').length;
+  const metaMatched = um.filter(u => u.meta_matched === 'O').length;
+  const metaTotal = um.length;
+
+  // 제외된 계정 정보 (is_dev=TRUE 기준, 하드코딩 폴백 없음)
+  const devAccounts = um.filter(isDev).map(u => u.discord_username).filter(Boolean);
+
+  function tag(status, label) {
+    return `<span class="tag ${status}">${label}</span>`;
+  }
+
+  const cards = [];
+
+  // 1. 데이터 범위
+  cards.push(`<div class="info-card">
+    <h3><span class="icon">📊</span> 데이터 범위</h3>
+    <ul>
+      <li>User Master: <span class="val">${fmt(um.length)}명</span> (전체 누적, 개발자 ${devCount}명 포함)</li>
+      <li>Discord Daily: <span class="val">${fmt(dd.length)}일</span> (${ddFirst} ~ ${ddLast})</li>
+      <li>활동 지표 있는 날: <span class="val">${fmt(ddWithActivity)}일</span> ${ddWithActivity < dd.length ? tag('gap','Bot 미구동 기간 공백') : tag('ok','정상')}</li>
+      <li>YouTube 영상: <span class="val">${fmt(yt.length)}개</span></li>
+      <li>TikTok 영상: <span class="val">${fmt(tt.length)}개</span></li>
+    </ul>
+  </div>`);
+
+  // 2. 유저 그룹 구성
+  cards.push(`<div class="info-card">
+    <h3><span class="icon">👥</span> 유저 그룹 구성</h3>
+    <ul>
+      <li><span class="badge runuts_grp">RUNuts</span> <span class="val">${fmt(runutsUsers.length)}명</span> — 2025-11-17 이후 가입 (현재 게임 유저)</li>
+      <li><span class="badge lsd">LSD</span> <span class="val">${fmt(lsdUsers.length)}명</span> — 2025-11-17 이전 가입 (Lift Shift Drift 시절)</li>
+      <li>unknown: <span class="val">${fmt(unknownUsers.length)}명</span> — 가입일 기록 없음 (주로 pre_registered)</li>
+    </ul>
+    <p style="margin-top:10px">KPI, 퍼널, 잔존율은 <strong>RUNuts 유저 기준</strong>으로 계산됩니다.<br>
+    LSD 유저 이탈은 별도 표기되며 성과 지표에 부정적으로 반영하지 않습니다.</p>
+  </div>`);
+
+  // 3. 유저 상태 분포
+  cards.push(`<div class="info-card">
+    <h3><span class="icon">📋</span> 유저 상태 분포</h3>
+    <ul>
+      <li><span class="badge active">활동 중</span> <span class="val">${fmt(activeAll)}명</span> (${Math.round(activeAll/um.length*100)}%)</li>
+      <li><span class="badge pre_registered">사전등록</span> <span class="val">${fmt(preRegAll)}명</span> — Playtest 폼 제출 후 디스코드 미가입, 또는 가입일 미확인 유저</li>
+      <li><span class="badge left">탈퇴</span> <span class="val">${fmt(leftAll)}명</span> (RUNuts ${runutsUsers.filter(u=>u.status==='left').length} / LSD ${lsdUsers.filter(u=>u.status==='left').length})</li>
+    </ul>
+  </div>`);
+
+  // 4. 데이터 필드 상태
+  cards.push(`<div class="info-card">
+    <h3><span class="icon">🔍</span> 데이터 필드 상태</h3>
+    <ul>
+      <li>Meta 매칭률 (RUNuts 기준): <span class="val">${runutsUsers.length > 0 ? Math.round(runutsUsers.filter(u => u.meta_matched === 'O').length/runutsUsers.length*100) : 0}%</span> (${fmt(runutsUsers.filter(u => u.meta_matched === 'O').length)}/${fmt(runutsUsers.length)}) ${tag('ok','정상')}</li>
+      <li>이탈일 기록: <span class="val">${fmt(hasLeaveDate)}건</span> ${hasLeaveDate < leftAll ? tag('gap','Bot 미구동 기간 누락') : tag('ok','정상')}</li>
+      <li>게임 플레이 기록 (first_play_date): ${hasFirstPlay ? tag('ok','데이터 있음') : tag('empty','전체 비어있음')}</li>
+      <li>플레이 횟수 (total_playtests): ${hasTotalPlay ? tag('ok','데이터 있음') : tag('empty','전체 비어있음')}</li>
+    </ul>
+    <p style="margin-top:10px;font-size:12px;color:var(--muted)">게임 플레이 데이터는 PlayFab 연동 구현 후 수집 예정입니다.</p>
+  </div>`);
+
+  // 5. 제외된 계정
+  cards.push(`<div class="info-card">
+    <h3><span class="icon">🚫</span> 제외된 계정</h3>
+    ${devAccounts.length > 0
+      ? `<p>다음 <span class="val">${devAccounts.length}개</span> 개발/운영 계정은 <code>is_dev=TRUE</code>로 태깅되어 있습니다:</p>
+         <ul>${devAccounts.map(a => `<li style="font-family:monospace;font-size:12px;color:var(--muted)">${a}</li>`).join('')}</ul>
+         <p style="margin-top:8px;font-size:12px;color:var(--muted)">📌 "현재 멤버"는 디스코드 서버 총원(dev 포함)을 표시합니다. 테스터 신청·승인·매칭 등 퍼널 KPI에서는 dev ${devAccounts.length}명이 제외됩니다.</p>`
+      : `<p style="color:var(--yellow)">is_dev=TRUE로 태깅된 계정이 없습니다. User Master에서 개발 계정을 태깅해 주세요.</p>`}
+  </div>`);
+
+  // 6. 퍼널 단계 정의
+  cards.push(`<div class="info-card">
+    <h3><span class="icon">🔄</span> 퍼널 단계 정의</h3>
+    <ul>
+      <li><span class="val">디스코드 가입</span> — 서버에 입장한 RUNuts 유저 수 (LSD 제외, 탈퇴 포함 누적)</li>
+      <li><span class="val">테스터 승인</span> — 디스코드에서 테스터 역할(Role)을 부여받은 유저. tester_approved = O</li>
+      <li><span class="val">Meta 매칭</span> — Meta Quest 계정과 디스코드가 연결된 유저. meta_matched = O</li>
+      <li><span class="val">게임 플레이</span> — 실제 게임을 1회 이상 플레이한 유저. first_play_date 기준 (현재 수집 준비 중)</li>
+      <li><span class="val">잔존</span> — Meta 매칭 완료자 중 현재 디스코드 활동 중인 유저 (meta_matched=O AND status=active)</li>
+    </ul>
+  </div>`);
+
+  // 7. 데이터 수집 체계
+  cards.push(`<div class="info-card">
+    <h3><span class="icon">⚙️</span> 데이터 수집 체계</h3>
+    <ul>
+      <li><span class="val">Discord Bot</span> — 멤버 가입/이탈, 역할 변경, 메시지/보이스 활동 자동 기록</li>
+      <li><span class="val">일일 스냅샷</span> — 매일 자정(KST) Discord Daily에 서버 상태 기록</li>
+      <li><span class="val">YouTube</span> — YouTube Data API로 영상 지표 수집</li>
+      <li><span class="val">TikTok</span> — 수동 입력 (API 자동 수집 미구현)</li>
+      <li><span class="val">유입 경로 추정</span> — Content Calendar 기반 자동 추정 (youtube_est, tiktok_est 등)</li>
+    </ul>
+    <p style="margin-top:10px;font-size:12px;color:var(--muted)">Discord Daily에서 messages, voice, active 필드는 Bot 상시 구동 시에만 수집됩니다.<br>
+    Bot 미구동 기간의 해당 필드는 복원 불가합니다.</p>
+  </div>`);
+
+  // 8. 알려진 제약사항
+  cards.push(`<div class="info-card">
+    <h3><span class="icon">⚠️</span> 알려진 제약사항</h3>
+    <ul>
+      <li>Bot 상시 구동 미설정 → 메시지/보이스 활동 데이터 수집 불완전</li>
+      <li>PlayFab 연동 미구현 → 게임 플레이 퍼널 단계 데이터 없음</li>
+      <li>TikTok API 자동 수집 미구현 → 수동 입력 필요</li>
+      <li>leave_date 소급 불가 → Bot 꺼진 동안 이탈한 유저의 이탈일 기록 없음</li>
+      <li>unknown 그룹 ${fmt(unknownUsers.length)}명 → 가입일 없어 LSD/RUNuts 분류 불가 (대부분 사전등록)</li>
+    </ul>
+  </div>`);
+
+  document.getElementById('infoGrid').innerHTML = cards.join('');
+}
+
+// ========== NAV ==========
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// ========== PAGE NAVIGATION (KPI Card Clickable) ==========
+const TAB_LABEL_MAP = {
+  'overview': '개요',
+  'funnel': '퍼널',
+  'discord': '디스코드',
+  'sns': '유튜브 / 틱톡',
+  'users': '유저',
+  'info': '정보',
+  'settings': '설정'
+};
+
+function showPageDirect(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  const targetLabel = TAB_LABEL_MAP[name];
+  document.querySelectorAll('.nav button').forEach(b => {
+    if (b.textContent.trim() === targetLabel) {
+      b.classList.add('active');
+    }
+  });
+}
+
+// ========== USER TABLE SORTING ==========
+let userSortState = { col: 'join_date', dir: 'desc' };
+
+function sortUsersTable(col) {
+  if (userSortState.col === col) {
+    userSortState.dir = userSortState.dir === 'desc' ? 'asc' : 'desc';
+  } else {
+    userSortState.col = col;
+    userSortState.dir = 'desc';
+  }
+  updateSortIndicators();
+  filterUsersTable();
+}
+
+function updateSortIndicators() {
+  document.querySelectorAll('.sort-indicator').forEach(el => el.classList.remove('asc', 'desc'));
+  const indicator = document.getElementById('sort-' + userSortState.col);
+  if (indicator) {
+    indicator.classList.add(userSortState.dir);
+  }
+}
+
+function getSortedUsers(users) {
+  const sorted = [...users];
+  const col = userSortState.col;
+  const dir = userSortState.dir;
+
+  sorted.sort((a, b) => {
+    let aVal, bVal;
+    if (col === 'group') {
+      aVal = getUserGroup(a);
+      bVal = getUserGroup(b);
+    } else {
+      aVal = a[col] || '';
+      bVal = b[col] || '';
+    }
+
+    if (col === 'join_date') {
+      aVal = new Date(aVal).getTime() || 0;
+      bVal = new Date(bVal).getTime() || 0;
+      return dir === 'desc' ? bVal - aVal : aVal - bVal;
+    } else {
+      aVal = String(aVal).toLowerCase();
+      bVal = String(bVal).toLowerCase();
+      return dir === 'desc' ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
+    }
+  });
+  return sorted;
+}
+
+// ========== THEME TOGGLE ==========
+let isDarkTheme = true;
+
+function toggleTheme() {
+  isDarkTheme = !isDarkTheme;
+  const html = document.documentElement;
+  if (isDarkTheme) {
+    html.removeAttribute('data-theme');
+    document.getElementById('themeToggle').textContent = '🌙';
+  } else {
+    html.setAttribute('data-theme', 'light');
+    document.getElementById('themeToggle').textContent = '☀️';
+  }
+  // Re-render charts so axis/grid colors match the new theme
+  if (data && data.discordDaily) {
+    renderDiscordChart();
+    renderGrowthStageCards();
+  }
+}
+
+// ========== AUTO-FILL URLS ==========
+const SHEET_GID_MAP = {
+  urlUserMaster: 0,
+  urlDiscordDaily: 1730196610,
+  urlYouTube: 1514243540,
+  urlTikTok: 427390181,
+  urlTesterPipeline: 1495282760,
+  urlContentCalendar: 1398498854,
+  urlFunnelTracker: 2053912229,
+  urlKpiDashboard: 853056757
+};
+
+const DEFAULT_PUB_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR3QcezImsy5jV2Wm_XL29Y0r-tujiIUiBG6xsDaNfES2-CNnQZLp_40YWPOtnLR7vf3M_iN4OP6YLy/pub';
+
+function autoFillUrls() {
+  const pubBase = (document.getElementById('sheetsId').value.trim()) || DEFAULT_PUB_BASE;
+  let baseUrl = pubBase;
+  if (!pubBase.includes('/pub')) {
+    baseUrl = null;
+  }
+  if (baseUrl) {
+    document.getElementById('sheetsId').value = baseUrl;
+    for (const [key, gid] of Object.entries(SHEET_GID_MAP)) {
+      const url = `${baseUrl}?gid=${gid}&single=true&output=csv`;
+      const el = document.getElementById(key);
+      if (el) el.value = url;
+    }
+  }
+  config.sheetsId = baseUrl || pubBase;
+  saveSettings();
+}
+
+// ========== SETTINGS ==========
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem('runuts_dashboard_config');
+    if (saved) config = JSON.parse(saved);
+  } catch(e) {}
+  SHEET_KEYS.forEach(k => {
+    const el = document.getElementById(k);
+    if (el && config[k]) el.value = config[k];
+  });
+  const siEl = document.getElementById('sheetsId');
+  if (siEl && config.sheetsId) siEl.value = config.sheetsId;
+}
+
+function saveSettings() {
+  SHEET_KEYS.forEach(k => {
+    const el = document.getElementById(k);
+    if (el) config[k] = el.value.trim();
+  });
+  localStorage.setItem('runuts_dashboard_config', JSON.stringify(config));
+  loadAllData();
+}
+
+// ========== INIT ==========
+loadSettings();
+// 설정된 URL이 없으면 기본값으로 자동 입력
+if (!config.urlUserMaster && !config.sheetsId) {
+  document.getElementById('sheetsId').value = DEFAULT_PUB_BASE;
+  autoFillUrls();
+} else {
+  loadAllData();
+}
+</script>
+</body>
+</html>
