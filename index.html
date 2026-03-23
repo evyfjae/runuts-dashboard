@@ -2736,7 +2736,7 @@ function showLeaveUsersModal(dateStr) {
   });
 
   const titleEl = document.getElementById('funnelModalTitle');
-  const countEl = document.getElementById('funnelUserCount');
+  const countEl = document.getElementById('funnelModalCount');
   const listEl = document.getElementById('funnelUserList');
 
   const displayDateStr = currentTZ === 'KST' ? (() => {
@@ -3032,26 +3032,31 @@ function renderMultiDatasetChart() {
     scales
   };
 
-  // 이탈 바 클릭 시 해당 날짜의 탈퇴 유저 목록 표시
-  // intersect:false 모드에서는 elements에 같은 x-index의 모든 데이터셋이 포함되므로
-  // 이탈 데이터셋을 찾아서 처리
-  options.onClick = function(event, elements) {
-    if (!elements || elements.length === 0) return;
-    // 이탈 데이터셋 찾기
-    const leaveEl = elements.find(el => datasets[el.datasetIndex]?.label === '일간 이탈');
-    if (!leaveEl) return;
-    const idx = leaveEl.index;
-    const fullDate = dd[idx]?.date;
-    if (!fullDate || !(dd[idx].leaves > 0)) return;
-    showLeaveUsersModal(fullDate);
-  };
-
   if (chartMembersInstance) chartMembersInstance.destroy();
   chartMembersInstance = new Chart(document.getElementById('chartMembers'), {
     type: 'line',
     data: { labels, datasets },
     options
   });
+
+  // 이탈 바 클릭 시 해당 날짜의 탈퇴 유저 목록 표시
+  // Chart.js 4 options.onClick이 동작하지 않는 문제 → canvas에 직접 이벤트 등록
+  // 클릭 시점에 Chart.instances에서 동적으로 차트를 찾고, dd를 재구성하여 인덱스 매칭 보장
+  document.getElementById('chartMembers').onclick = function(evt) {
+    const currentChart = Object.values(Chart.instances).find(c => c.canvas && c.canvas.id === 'chartMembers');
+    if (!currentChart) return;
+    const elements = currentChart.getElementsAtEventForMode(evt, 'index', { intersect: false }, false);
+    if (!elements || elements.length === 0) return;
+    const leaveEl = elements.find(el => currentChart.data.datasets[el.datasetIndex] && currentChart.data.datasets[el.datasetIndex].label === '일간 이탈');
+    if (!leaveEl) return;
+    const idx = leaveEl.index;
+    // dd를 클릭 시점에 재구성 (차트 렌더링과 동일한 필터링 로직)
+    let freshDD = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
+    if (!showLSDData) freshDD = freshDD.filter(r => r.date >= RUNUTS_CUTOFF);
+    const entry = freshDD[idx];
+    if (!entry || !(entry.leaves > 0)) return;
+    showLeaveUsersModal(entry.date);
+  };
 }
 
 // ========== UTILS ==========
