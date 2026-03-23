@@ -1377,10 +1377,6 @@ startAutoRefresh();
       <span class="status-label" id="statusLabel">로딩 중...</span>
       <span id="lastDataDate" style="color: var(--muted); font-size: 13px;"></span>
     </div>
-    <div class="lsd-toggle" id="tzToggle">
-      <button class="active" onclick="setTimezone('KST')">KST</button>
-      <button onclick="setTimezone('UTC')">UTC</button>
-    </div>
     <div class="lsd-toggle">
       <button onclick="setLSDToggle(false)">RUNuts만</button>
       <button class="active" onclick="setLSDToggle(true)">전체 (LSD 포함)</button>
@@ -1544,6 +1540,13 @@ startAutoRefresh();
       <div class="filter-group">
         <button class="filter-pill-toggle" id="leftUsersToggle" onclick="toggleLeftUsers()">탈퇴 유저 보기</button>
       </div>
+      <div class="filter-group">
+        <label>시간대:</label>
+        <div class="lsd-toggle" id="tzToggle" style="display:inline-flex;margin-left:4px;">
+          <button class="active" onclick="setTimezone('UTC')">UTC</button>
+          <button onclick="setTimezone('KST')">KST</button>
+        </div>
+      </div>
     </div>
     <div class="filter-result-count" id="filterResultCount"></div>
     <div class="table-container">
@@ -1552,7 +1555,7 @@ startAutoRefresh();
         <thead><tr>
           <th class="sortable" onclick="sortUsersTable('discord_id')">Discord ID <span class="sort-indicator" id="sort-discord_id"></span></th>
           <th class="sortable" onclick="sortUsersTable('discord_username')">유저명 <span class="sort-indicator" id="sort-discord_username"></span></th>
-          <th class="sortable" onclick="sortUsersTable('join_date')">가입일 <small style="color:var(--muted);font-weight:400">(KST)</small> <span class="sort-indicator" id="sort-join_date"></span></th>
+          <th class="sortable" onclick="sortUsersTable('join_date')">가입일 <small style="color:var(--muted);font-weight:400">(UTC)</small> <span class="sort-indicator" id="sort-join_date"></span></th>
           <th class="sortable" onclick="sortUsersTable('group')">그룹 <span class="sort-indicator" id="sort-group"></span></th>
           <th>상태</th>
           <th class="sortable" onclick="sortUsersTable('leave_date')">탈퇴일 <span class="sort-indicator" id="sort-leave_date"></span></th>
@@ -3065,8 +3068,8 @@ function fmt(n) {
   return Number(n).toLocaleString();
 }
 
-// 시간대 토글 상태 (기본: KST)
-let currentTZ = 'KST';
+// 시간대 토글 상태 (기본: UTC — 모든 데이터가 UTC 저장이므로)
+let currentTZ = 'UTC';
 
 function setTimezone(tz) {
   currentTZ = tz;
