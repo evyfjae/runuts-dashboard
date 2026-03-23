@@ -1112,6 +1112,17 @@ startAutoRefresh();
     color: var(--accent);
     font-weight: 600;
   }
+  .pipeline-step.leave .step-circle {
+    background: var(--red);
+    border-color: var(--red);
+  }
+  .pipeline-step.leave.current .step-circle {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+  }
+  .pipeline-step.leave .step-label {
+    color: var(--red);
+    font-weight: 600;
+  }
 
   /* Task 2: Funnel drill-down modal */
   .funnel-modal-overlay {
@@ -1544,6 +1555,7 @@ startAutoRefresh();
           <th class="sortable" onclick="sortUsersTable('join_date')">가입일 <small style="color:var(--muted);font-weight:400">(KST)</small> <span class="sort-indicator" id="sort-join_date"></span></th>
           <th class="sortable" onclick="sortUsersTable('group')">그룹 <span class="sort-indicator" id="sort-group"></span></th>
           <th>상태</th>
+          <th class="sortable" onclick="sortUsersTable('leave_date')">탈퇴일 <span class="sort-indicator" id="sort-leave_date"></span></th>
           <th>유입 경로</th><th>테스터</th><th>Meta 매칭</th>
         </tr></thead>
         <tbody id="usersTableBody"></tbody>
@@ -2546,6 +2558,7 @@ function filterUsersTable() {
       <td>${toKST(u.join_date)}</td>
       <td><span class="badge ${grpClass}">${grp}</span></td>
       <td><span class="badge ${u.status}">${statusKo[u.status] || u.status}</span></td>
+      <td>${u.leave_date ? toKST(u.leave_date) : '-'}</td>
       <td>${u.estimated_source || 'unknown'}</td>
       <td>${(u.tester_applied==='O'||u.tester_applied==='TRUE') ? ((u.tester_approved==='O'||u.tester_approved==='TRUE') ? '<span class="badge approved">승인</span>' : '<span class="badge applied">신청</span>') : '-'}</td>
       <td>${u.meta_matched==='O' ? '<span class="badge linked">매칭</span>' : (u.game_linked==='TRUE' ? '<span class="badge linked">연동</span>' : '-')}</td>
@@ -2579,14 +2592,20 @@ function openUserPanel(discordId) {
 
   const statusKo = { active: '활동 중', left: '탈퇴', pre_registered: '사전등록' };
   const hasPlayed = u.first_play_date && u.first_play_date !== '';
+  const isLeft = u.status === 'left';
   const stages = [
     { name:'디스코드 가입', done: true },
     { name:'테스터 승인', done: u.tester_approved==='O'||u.tester_approved==='TRUE' },
     { name:'Meta 매칭', done: u.meta_matched==='O' },
     { name:'게임 플레이', done: hasPlayed },
-    { name:'잔존', done: u.status==='active' }
+    ...(isLeft
+      ? [{ name:`탈퇴${u.leave_date ? ' (' + toKST(u.leave_date).substring(0,10) + ')' : ''}`, done: true, isLeave: true }]
+      : [{ name:'잔존', done: u.status==='active' }]
+    )
   ];
-  let currentIdx = stages.reduce((acc, s, i) => s.done ? i : acc, 0);
+  let currentIdx = isLeft
+    ? stages.length - 1
+    : stages.reduce((acc, s, i) => s.done ? i : acc, 0);
 
   const grp = getUserGroup(u);
   const devBadge = isDev(u) ? ' <span class="badge dev" style="font-size:12px;vertical-align:middle">DEV</span>' : '';
@@ -2621,7 +2640,7 @@ function openUserPanel(discordId) {
       <div class="user-detail-section">
         <div class="section-header">테스터 여정</div>
         <div class="pipeline-visualization">
-          ${stages.map((s, i) => `<div class="pipeline-step ${s.done ? 'completed' : ''} ${i === currentIdx ? 'current' : ''}"><span class="step-circle"></span><span class="step-label">${s.name}</span></div>`).join('')}
+          ${stages.map((s, i) => `<div class="pipeline-step ${s.done ? 'completed' : ''} ${i === currentIdx ? 'current' : ''} ${s.isLeave ? 'leave' : ''}"><span class="step-circle"></span><span class="step-label">${s.name}</span></div>`).join('')}
         </div>
       </div>
       ${isDev(u) ? '<div class="user-detail-section" style="background:rgba(234,88,12,0.1);border:1px solid rgba(234,88,12,0.2)"><div class="section-header">개발자 계정</div><div style="font-size:13px;color:var(--orange)">KPI·퍼널 집계에서 제외됨</div></div>' : ''}
@@ -2705,6 +2724,53 @@ function openFunnelModal(stageKey, stageName) {
 
 function closeFunnelModal(event) {
   if (event && event.target !== document.getElementById('funnelModalOverlay')) return;
+  document.getElementById('funnelModalOverlay').classList.remove('active');
+}
+
+// 이탈 바 클릭 → 해당 날짜의 탈퇴 유저 목록 (funnel modal 재활용)
+function showLeaveUsersModal(dateStr) {
+  // leave_date가 해당 UTC 날짜인 유저 찾기
+  const users = data.userMaster.filter(u => {
+    if (!u.leave_date) return false;
+    return String(u.leave_date).substring(0, 10) === dateStr;
+  });
+
+  const titleEl = document.getElementById('funnelModalTitle');
+  const countEl = document.getElementById('funnelUserCount');
+  const listEl = document.getElementById('funnelUserList');
+
+  const displayDateStr = currentTZ === 'KST' ? (() => {
+    try {
+      const d = new Date(dateStr + 'T00:00:00Z');
+      const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+      return kst.toISOString().substring(0, 10);
+    } catch(e) { return dateStr; }
+  })() : dateStr;
+
+  titleEl.textContent = `${displayDateStr} 탈퇴 유저`;
+  countEl.innerHTML = `<div style="font-size:14px;color:var(--muted);margin-bottom:12px;">총 ${fmt(users.length)}명</div>`;
+
+  if (users.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;">해당 날짜에 탈퇴 기록이 없습니다</div>';
+  } else {
+    listEl.innerHTML = users.map(u => {
+      const grp = getUserGroup(u);
+      return `
+        <div class="funnel-user-item" onclick="closeFunnelModalForce();openUserPanel('${u.discord_id}')" style="cursor:pointer">
+          <div class="funnel-user-item-main">
+            <div class="funnel-user-item-name">${u.discord_username || u.discord_display_name || 'Unknown'}</div>
+            <div class="funnel-user-item-meta">가입: ${toKST(u.join_date)} → 탈퇴: ${toKST(u.leave_date)} | 그룹: ${grp}</div>
+          </div>
+          <div class="funnel-user-item-badge" style="background:rgba(239,68,68,0.15);color:var(--red)">탈퇴</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('funnelModalOverlay').classList.add('active');
+}
+
+function closeFunnelModalForce() {
   document.getElementById('funnelModalOverlay').classList.remove('active');
 }
 
@@ -2964,6 +3030,19 @@ function renderMultiDatasetChart() {
       }
     },
     scales
+  };
+
+  // 이탈 바 클릭 시 해당 날짜의 탈퇴 유저 목록 표시
+  options.onClick = function(event, elements) {
+    if (!elements || elements.length === 0) return;
+    const el = elements[0];
+    const dsIndex = el.datasetIndex;
+    const ds = datasets[dsIndex];
+    if (ds.label !== '일간 이탈') return;
+    const idx = el.index;
+    const fullDate = dd[idx]?.date;
+    if (!fullDate) return;
+    showLeaveUsersModal(fullDate);
   };
 
   if (chartMembersInstance) chartMembersInstance.destroy();
@@ -3277,9 +3356,9 @@ function getSortedUsers(users) {
       bVal = b[col] || '';
     }
 
-    if (col === 'join_date') {
-      aVal = new Date(aVal).getTime() || 0;
-      bVal = new Date(bVal).getTime() || 0;
+    if (col === 'join_date' || col === 'leave_date') {
+      aVal = aVal ? new Date(aVal).getTime() || 0 : 0;
+      bVal = bVal ? new Date(bVal).getTime() || 0 : 0;
       return dir === 'desc' ? bVal - aVal : aVal - bVal;
     } else {
       aVal = String(aVal).toLowerCase();
