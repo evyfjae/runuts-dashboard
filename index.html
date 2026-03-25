@@ -323,6 +323,17 @@ startAutoRefresh();
     border-color: var(--accent);
     background: rgba(99,102,241,0.05);
   }
+  .kpi-card.kpi-alert {
+    border-color: rgba(234,179,8,0.4);
+    background: rgba(234,179,8,0.05);
+  }
+  .kpi-card.kpi-alert:hover {
+    border-color: rgba(234,179,8,0.7);
+    background: rgba(234,179,8,0.1);
+  }
+  .kpi-card.kpi-alert .label {
+    color: #b8860b;
+  }
   .kpi-card .label {
     font-size: 12px;
     color: var(--muted);
@@ -1429,7 +1440,7 @@ startAutoRefresh();
     <!-- Task 3: Funnel page header -->
     <div class="funnel-page-header">
       <h2>테스터 전환 퍼널 분석</h2>
-      <p>Discord 가입부터 Meta 계정 매칭까지 사용자 여정 추적. 각 단계를 클릭하면 해당 유저 목록을 확인할 수 있습니다.</p>
+      <p>현재 디스코드 멤버부터 Playfab 등록 및 잔존까지 사용자 여정 추적. 각 단계를 클릭하면 해당 유저 목록을 확인할 수 있습니다.</p>
     </div>
 
     <div class="funnel-container">
@@ -1636,6 +1647,8 @@ startAutoRefresh();
       <input type="text" id="urlKpiDashboard" placeholder="https://docs.google.com/spreadsheets/d/e/...">
       <label>UGC Archive CSV URL</label>
       <input type="text" id="urlUGCArchive" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+      <label>Matching Fail Users CSV URL</label>
+      <input type="text" id="urlMatchingFail" placeholder="https://docs.google.com/spreadsheets/d/e/...">
       <button class="btn-save" onclick="saveSettings()">저장 후 데이터 갱신</button>
       <p class="help-text" style="margin-top:12px">설정은 브라우저 localStorage에 저장됩니다.</p>
     </div>
@@ -1652,12 +1665,13 @@ let chartMembersInstance, chartGrowthInstance;
 // ========== CONFIG ==========
 const SHEET_KEYS = [
   'urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok',
-  'urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive'
+  'urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail'
 ];
 let config = {};
 let data = {
   userMaster: [], discordDaily: [], youtube: [], tiktok: [],
-  testerPipeline: [], funnelTracker: [], kpiDashboard: [], ugcArchive: [], acquisitionEvents: []
+  testerPipeline: [], funnelTracker: [], kpiDashboard: [], ugcArchive: [], acquisitionEvents: [],
+  matchingFail: []
 };
 let charts = {};
 let isLive = false;
@@ -1896,7 +1910,8 @@ const SHEET_LABELS = {
   urlTesterPipeline: 'Tester Pipeline',
   urlFunnelTracker: 'Funnel Tracker',
   urlKpiDashboard: 'KPI Dashboard',
-  urlUGCArchive: 'UGC Archive'
+  urlUGCArchive: 'UGC Archive',
+  urlMatchingFail: 'Matching Fail Users'
 };
 
 function showLoading(show) {
@@ -1947,12 +1962,12 @@ async function loadAllData() {
   showLoading(true);
   showFetchError([]);
 
-  const sheetKeys = ['urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok','urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive'];
+  const sheetKeys = ['urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok','urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail'];
   const fetched = await Promise.all(
     sheetKeys.map(k => fetchSheetData(config[k]))
   );
 
-  const dataKeys = ['userMaster','discordDaily','youtube','tiktok','testerPipeline','funnelTracker','kpiDashboard','ugcArchive'];
+  const dataKeys = ['userMaster','discordDaily','youtube','tiktok','testerPipeline','funnelTracker','kpiDashboard','ugcArchive','matchingFail'];
   let anyLive = false;
   const failedSheets = [];
   const numericFields = new Set([
@@ -1986,6 +2001,31 @@ async function loadAllData() {
 
   isLive = anyLive;
   if (!anyLive) generateDemoData();
+
+  // 설명행이 헤더로 파싱된 시트 재파싱 (Tester Pipeline, Matching Fail Users 등)
+  // 첫 행의 컬럼명이 실제 데이터 컬럼명(discord_id 등)이면 → 설명행이 헤더로 잘못 인식된 것
+  ['testerPipeline', 'matchingFail'].forEach(key => {
+    if (data[key].length > 0) {
+      const firstRow = data[key][0];
+      const vals = Object.values(firstRow);
+      // 첫 데이터 행에 알려진 컬럼명이 있으면 재파싱
+      const knownHeaders = ['discord_id','meta_username','playfab_id','pipeline_stage','MetaUsername','PlayFabID'];
+      const hasHeaderInData = vals.some(v => knownHeaders.includes(String(v).trim()));
+      if (hasHeaderInData) {
+        const realHeaders = vals.map(v => String(v).trim());
+        data[key] = data[key].slice(1).map(row => {
+          const obj = {};
+          const rowVals = Object.values(row);
+          realHeaders.forEach((h, i) => { if (h) obj[h] = rowVals[i] || ''; });
+          return obj;
+        }).filter(row => {
+          // 빈 행 제거
+          const v = Object.values(row);
+          return v.some(x => x && x !== '');
+        });
+      }
+    }
+  });
 
   // Discord Daily 정렬 및 샘플/수식 행 필터링
   if (data.discordDaily.length > 0) {
@@ -2087,35 +2127,39 @@ function renderKPI() {
   const allLSD = data.userMaster.filter(isLSD);
   const devCount = data.userMaster.filter(isDev).length;
 
-  // RUNuts 유저 기준 KPI (토글과 무관하게 항상 RUNuts 기준)
-  const runutsUsers = allRUNuts;
+  // LSD 토글에 따라 KPI 범위 결정 (A2/A3: KPI와 파이프라인 범위 통일)
+  const scopeUsers = showLSDData ? allRealUsers : allRUNuts;
   const lsdUsers = allLSD;
-  const runutsTotal = runutsUsers.length;
-  const lsdTotal = lsdUsers.length;
+  const devCount_val = data.userMaster.filter(isDev).length;
 
-  const applied = runutsUsers.filter(u => u.tester_applied === 'O' || u.tester_applied === 'TRUE' || u.tester_applied === true).length;
-  const testers = runutsUsers.filter(u => u.tester_approved === 'O' || u.tester_approved === 'TRUE' || u.tester_approved === true).length;
-  const linked = runutsUsers.filter(u => u.playfab_matched === 'O').length;
-  // Meta 계정 매칭 통계 (UM 시트 데이터 기반)
-  // 전체 User Master 기준 (RUNuts 필터 아닌 전체)으로 Meta 계정 수 집계
-  const allMatched = data.userMaster.filter(u => u.playfab_matched === 'O').length;
-  const allHasMetaId = data.userMaster.filter(u => u.meta_id && u.meta_id !== '').length;
-  const allEstimatedNotMatched = data.userMaster.filter(u =>
-    (u.estimated_meta_username && u.estimated_meta_username !== '') && u.playfab_matched !== 'O'
+  const applied = scopeUsers.filter(u => u.tester_applied === 'O' || u.tester_applied === 'TRUE' || u.tester_applied === true).length;
+  const testers = scopeUsers.filter(u => u.tester_approved === 'O' || u.tester_approved === 'TRUE' || u.tester_approved === true).length;
+  const linked = scopeUsers.filter(u => u.playfab_matched === 'O').length;
+  // Playfab 등록: 테스터 중 매칭된 수
+  const testersLinked = scopeUsers.filter(u =>
+    (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O'
   ).length;
-  const activeCount = runutsUsers.filter(u => u.status === 'active').length;
-  const preRegCount = runutsUsers.filter(u => u.status === 'pre_registered').length;
-  const leftRUNuts = runutsUsers.filter(u => u.status === 'left').length;
-  const leftLSD = lsdUsers.filter(u => u.status === 'left').length;
-  // 잔존율: 분모는 가입 이력이 있는 RUNuts (active + left). pre_registered는 디스코드 미가입이라 제외
-  const runutsJoined = activeCount + leftRUNuts;
-  const retentionPct = runutsJoined > 0 ? Math.round(activeCount / runutsJoined * 100) : 0;
+  // 미매칭 카드 데이터
+  // 1) 테스터인데 Playfab 미매칭
+  const testerUnmatched = scopeUsers.filter(u =>
+    (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched !== 'O'
+  ).length;
+  // 2) Playfab에 있지만 디스코드 미매칭 (Matching Fail Users 시트 기반)
+  const playfabUnmatched = data.matchingFail.length;
+
+  const activeCount = scopeUsers.filter(u => u.status === 'active').length;
+  const leftCount = scopeUsers.filter(u => u.status === 'left' || u.status === '탈퇴').length;
+  // 잔존율: 분모는 가입 이력이 있는 유저 (active + left)
+  const joinedTotal = activeCount + leftCount;
+  const retentionPct = joinedTotal > 0 ? Math.round(activeCount / joinedTotal * 100) : 0;
 
   // 현재 멤버 값 + 서브텍스트
-  const memberValue = showLSDData ? fmt(discordTotal) : fmt(activeCount);
+  const runutsActive = allRUNuts.filter(u => u.status === 'active').length;
+  const lsdActive = allLSD.filter(u => u.status === 'active').length;
+  const memberValue = showLSDData ? fmt(discordTotal) : fmt(runutsActive);
   const memberSub = showLSDData
-    ? `RUNuts ${fmt(activeCount)} / LSD ${fmt(lsdUsers.filter(u => u.status === 'active').length)} / DEV ${fmt(devCount)}`
-    : `활동 ${fmt(activeCount)} / 이탈 ${fmt(leftRUNuts)}`;
+    ? `RUNuts ${fmt(runutsActive)} / LSD ${fmt(lsdActive)} / DEV ${fmt(devCount_val)}`
+    : `활동 ${fmt(runutsActive)} / 이탈 ${fmt(allRUNuts.filter(u => u.status === 'left' || u.status === '탈퇴').length)}`;
 
   // Generate sparkline SVG for current members (7-day total_members trend)
   const sparklineMembers = (() => {
@@ -2148,17 +2192,23 @@ function renderKPI() {
     return `<svg class="sparkline" viewBox="0 0 80 24" xmlns="http://www.w3.org/2000/svg"><polyline points="${points}"/></svg>`;
   })();
 
+  // 총 Meta 계정 = 매칭 완료 + Matching Fail Users
+  const totalMetaAccounts = linked + playfabUnmatched;
+  const scopeLabel = showLSDData ? '전체' : 'RUNuts';
+
   const kpis = [
     { label: showLSDData ? '현재 멤버' : 'RUNuts 멤버', value: memberValue, change: memberSub, dir: 'flat', tooltip: showLSDData ? '디스코드 서버의 실제 총 멤버 수 (Discord Server Insights 기준)' : 'RUNuts 유저 중 현재 디스코드에 남아있는 활동 멤버 수', link: 'users', spark: sparklineMembers },
     { label: '주간 가입', value: fmt(ddForWeekly.slice(-7).reduce((s,r) => s + (r.new_joins||0), 0)), change: '최근 7일', dir: 'flat', tooltip: '최근 7일간 새로 가입한 유저 수', link: 'discord', spark: sparklineWeekly },
-    { label: '테스터 신청', value: fmt(applied), change: `현재 멤버 대비 ${activeCount > 0 ? Math.round(applied/activeCount*100) : 0}%`, dir: 'flat', tooltip: '현재 멤버 중 테스터 신청서를 작성한 유저 수', link: 'funnel' },
-    { label: '테스터 승인', value: fmt(testers), change: `신청 대비 ${applied > 0 ? Math.round(testers/applied*100) : 0}%`, dir: 'flat', tooltip: '디스코드에서 테스터 역할을 부여받은 유저 수', link: 'funnel' },
-    { label: '계정 매칭', value: fmt(linked), change: `승인 대비 ${testers > 0 ? Math.round(linked/testers*100) : 0}%`, change2: `Meta 계정 ${fmt(allMatched)}개 매칭 / ${fmt(allEstimatedNotMatched)}개 미매칭`, dir: 'flat', tooltip: '디스코드 유저 중 Meta 계정 소유자가 식별된 수 (playfab_matched=O). 미매칭은 추정 Meta 유저명이 있으나 확인되지 않은 수.', link: 'funnel' },
-    { label: '잔존율', value: retentionPct + '%', change: `${fmt(activeCount)}명 활동 / ${fmt(leftRUNuts)}명 이탈`, dir: 'flat', tooltip: `디스코드 가입 이력이 있는 RUNuts ${fmt(runutsJoined)}명 중 현재 서버에 남아있는 비율`, link: 'funnel' }
+    { label: '테스터 신청', value: fmt(applied), change: `현재 멤버 대비 ${activeCount > 0 ? Math.round(applied/activeCount*100) : 0}%`, dir: 'flat', tooltip: `${scopeLabel} 유저 중 테스터 신청서를 작성한 유저 수`, link: 'funnel' },
+    { label: '테스터 승인', value: fmt(testers), change: `신청 대비 ${applied > 0 ? Math.round(testers/applied*100) : 0}%`, dir: 'flat', tooltip: `${scopeLabel} 유저 중 디스코드에서 테스터 역할을 부여받은 수`, link: 'funnel' },
+    { label: 'Playfab 등록', value: fmt(testersLinked), change: `승인 대비 ${testers > 0 ? Math.round(testersLinked/testers*100) : 0}%`, change2: `Meta 계정 ${fmt(totalMetaAccounts)}개 중 ${fmt(playfabUnmatched)}개 미매칭`, dir: 'flat', tooltip: `테스터 승인 유저 중 PlayFab 계정이 매칭된 수. 미매칭은 PlayFab에 존재하지만 디스코드 유저와 연결되지 않은 Meta 계정 수 (Matching Fail Users 시트 기준).`, link: 'funnel' },
+    { label: '잔존율', value: retentionPct + '%', change: `${fmt(activeCount)}명 활동 / ${fmt(leftCount)}명 이탈`, dir: 'flat', tooltip: `${scopeLabel} 유저 ${fmt(joinedTotal)}명 중 현재 서버에 남아있는 비율`, link: 'funnel' },
+    { label: '테스터 미매칭', value: fmt(testerUnmatched), change: `테스터 중 Playfab 미등록`, dir: 'flat', tooltip: `테스터 승인을 받았지만 아직 PlayFab 계정이 매칭되지 않은 유저 수 (${scopeLabel} 기준)`, onClick: 'tester_unmatched', isAlert: testerUnmatched > 0 },
+    { label: 'Playfab 미매칭', value: fmt(playfabUnmatched), change: `Playfab에 있지만 디스코드 미연결`, dir: 'flat', tooltip: 'PlayFab에 계정이 존재하지만 디스코드 유저와 매칭할 수 없는 Meta 계정 수 (Matching Fail Users 시트 기준)', onClick: 'playfab_unmatched', isAlert: playfabUnmatched > 0 }
   ];
 
   document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
-    <div class="kpi-card"${k.tooltip ? ' data-tooltip="' + k.tooltip + '"' : ''} onclick="showPageDirect('${k.link}')">
+    <div class="kpi-card${k.isAlert ? ' kpi-alert' : ''}"${k.tooltip ? ' data-tooltip="' + k.tooltip + '"' : ''} onclick="${k.onClick ? `openUnmatchedModal('${k.onClick}')` : `showPageDirect('${k.link}')`}">
       <div class="label">${k.label}</div>
       <div class="value">${k.value}</div>
       ${k.spark ? k.spark : ''}
@@ -2169,34 +2219,41 @@ function renderKPI() {
 }
 
 function renderFunnel(containerId) {
-  // 퍼널은 RUNuts 유저만 대상 (LSD 유저 제외) — LSD 토글 고려
-  let um = data.userMaster.filter(isRUNuts);
-  if (showLSDData) {
-    um = data.userMaster.filter(isRealUser);
-  }
+  // A2/A3: LSD 토글에 따라 범위 통일 (KPI와 동일)
+  let um = showLSDData ? data.userMaster.filter(isRealUser) : data.userMaster.filter(isRUNuts);
 
-  const lsdCount = data.userMaster.filter(isLSD).length;
-  const totalEver = um.length;
+  // A4: 현재 디스코드 멤버 = Discord Daily total_members (현재 서버 멤버)
+  const ddAll = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
+  const latestDD = ddAll[ddAll.length - 1] || {};
+  const discordMembers = showLSDData
+    ? (latestDD.total_members ? parseInt(latestDD.total_members) : um.filter(u => u.status === 'active').length)
+    : um.filter(u => u.status === 'active').length; // RUNuts만 모드: UM 기준 active
+
   const approved = um.filter(u => u.tester_approved === 'O' || u.tester_approved === 'TRUE').length;
-  const metaMatched = um.filter(u => u.playfab_matched === 'O').length;
-  // 잔존: 계정 매칭 완료자 중 현재 디스코드 활동 중 (향후 최근 1개월 플레이 기준으로 전환 예정)
-  const matchedAndActive = um.filter(u => u.playfab_matched === 'O' && u.status === 'active').length;
+  // A1: Playfab 등록 = 테스터 승인 유저 중 playfab_matched=O
+  const playfabRegistered = um.filter(u =>
+    (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O'
+  ).length;
+  // 잔존: Playfab 등록 유저 중 최근 1달 이내 플레이 (현재 플레이 데이터 없으므로 active 상태로 대체)
+  const retainActive = um.filter(u =>
+    (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O' && u.status === 'active'
+  ).length;
 
   const groupLabel = showLSDData ? '전체' : 'RUNuts';
   const stages = [
-    { label: '디스코드 가입', sublabel: `${groupLabel} 유저 누적`, value: totalEver, color: 'var(--funnel1)',
+    { label: '현재 디스코드 멤버', sublabel: `${groupLabel} 서버 멤버`, value: discordMembers, color: 'var(--funnel1)',
       tip: showLSDData
-        ? `전체 유저 수 (개발자 제외, RUNuts ${fmt(data.userMaster.filter(isRUNuts).length)} + LSD ${fmt(lsdCount)})`
-        : `RUNuts 시작(2025-11-17) 이후 가입한 유저 수 (LSD 레거시 ${fmt(lsdCount)}명 제외)`,
+        ? '디스코드 서버의 현재 총 멤버 수 (Discord Server Insights 기준)'
+        : 'RUNuts 유저 중 현재 디스코드에 활동 중인 멤버 수',
       stageKey: 'discord' },
     { label: '테스터 승인', sublabel: '디스코드 테스터 역할', value: approved, color: 'var(--funnel2)',
-      tip: `디스코드에서 테스터 역할(Role)을 부여받은 ${groupLabel} 유저 수`,
+      tip: `${groupLabel} 유저 중 디스코드에서 테스터 역할(Role)을 부여받은 수`,
       stageKey: 'tester' },
-    { label: 'Meta 계정 매칭', sublabel: '플레이 경험', value: metaMatched, color: 'var(--funnel3)',
-      tip: '디스코드 유저 중 Meta 계정 소유자가 식별(매칭)된 수. PlayFab 데이터 기준.',
-      stageKey: 'matching' },
-    { label: '잔존', sublabel: '최근 1달 이내 플레이', value: matchedAndActive, color: 'var(--funnel4)',
-      tip: `계정 매칭 완료자 중 최근 1개월 이내 플레이한 유저 수. 현재 Unity Analytics / PlayFab 데이터 연결 전이므로 디스코드 활동 기준으로 대체 표시.`,
+    { label: 'Playfab 등록', sublabel: '테스터 중 계정 매칭', value: playfabRegistered, color: 'var(--funnel3)',
+      tip: '테스터 승인 유저 중 PlayFab 계정이 디스코드 유저와 매칭된 수',
+      stageKey: 'playfab' },
+    { label: '잔존', sublabel: '최근 1달 이내 플레이', value: retainActive, color: 'var(--funnel4)',
+      tip: 'Playfab 등록 유저 중 최근 1개월 이내 플레이한 유저 수. 현재 Unity Analytics / PlayFab 데이터 연결 전이므로 디스코드 활동 기준으로 대체 표시.',
       stageKey: 'retain' }
   ];
   const maxVal = Math.max(...stages.map(s => s.value), 1);
@@ -2204,17 +2261,16 @@ function renderFunnel(containerId) {
   document.getElementById(containerId).innerHTML = stages.map((s, i) => {
     const pct = Math.round(s.value / maxVal * 100);
     const prevVal = stages[i-1]?.value || 0;
-    const noData = false;
     const cvr = i > 0 && prevVal > 0 ? Math.round(s.value / prevVal * 100) : (i === 0 ? 100 : 0);
     const clickHandler = `onclick="openFunnelModal('${s.stageKey}', '${s.label}')"`;
     return `
-      ${i > 0 ? '<div class="funnel-arrow">↓ ' + (noData ? '-' : cvr + '%') + '</div>' : ''}
+      ${i > 0 ? '<div class="funnel-arrow">↓ ' + cvr + '%</div>' : ''}
       <div class="funnel-row" ${clickHandler} style="cursor:pointer;">
         <div class="funnel-label">${s.label}<br><small>${s.sublabel}</small><span class="tooltip">${s.tip}</span></div>
         <div class="funnel-bar-wrap">
-          <div class="funnel-bar" style="width:${noData ? 5 : Math.max(pct,5)}%;background:${s.color}${noData ? ';opacity:0.3' : ''}">${noData ? '데이터 준비 중' : fmt(s.value)}</div>
+          <div class="funnel-bar" style="width:${Math.max(pct,5)}%;background:${s.color}">${fmt(s.value)}</div>
         </div>
-        <div class="funnel-pct">${noData ? '-' : pct + '%'}</div>
+        <div class="funnel-pct">${pct}%</div>
       </div>
     `;
   }).join('');
@@ -2633,9 +2689,9 @@ function openUserPanel(discordId) {
   const statusKo = { active: '활동 중', left: '탈퇴', pre_registered: '사전등록' };
   const isLeft = u.status === 'left';
   const stages = [
-    { name:'디스코드 가입', done: true },
+    { name:'디스코드 멤버', done: true },
     { name:'테스터 승인', done: u.tester_approved==='O'||u.tester_approved==='TRUE' },
-    { name:'Meta 계정 매칭', done: u.playfab_matched==='O' },
+    { name:'Playfab 등록', done: u.playfab_matched==='O' },
     ...(isLeft
       ? [{ name:`탈퇴${u.leave_date ? ' (' + toKST(u.leave_date).substring(0,10) + ')' : ''}`, done: true, isLeave: true }]
       : [{ name:'잔존', done: u.status==='active' }]
@@ -2671,7 +2727,7 @@ function openUserPanel(discordId) {
           ${u.meta_id ? `<div class="detail-row"><span class="detail-label">Meta ID</span><span class="detail-value">${u.meta_id}</span></div>` : ''}
           ${u.playfab_id ? `<div class="detail-row"><span class="detail-label">PlayFab ID</span><span class="detail-value">${u.playfab_id}</span></div>` : ''}
           ${u.meta_username_prev ? `<div class="detail-row"><span class="detail-label">Meta 이전 유저명</span><span class="detail-value">${u.meta_username_prev}</span></div>` : ''}
-          <div class="detail-row"><span class="detail-label">Meta 계정 매칭</span><span class="detail-value">${u.playfab_matched==='O' ? '✅ 완료' : '❌ 미완료'}</span></div>
+          <div class="detail-row"><span class="detail-label">Playfab 등록</span><span class="detail-value">${u.playfab_matched==='O' ? '✅ 완료' : '❌ 미완료'}</span></div>
           <div class="detail-row"><span class="detail-label">첫 플레이</span><span class="detail-value">${u.first_play_date || '-'}</span></div>
           <div class="detail-row"><span class="detail-label">총 플레이테스트</span><span class="detail-value">${u.total_playtests || '-'}</span></div>
         </div>
@@ -2700,30 +2756,27 @@ function closeUserPanel() {
 
 // Task 2: Funnel drill-down modal functions
 function openFunnelModal(stageKey, stageName) {
-  let um = data.userMaster.filter(isRUNuts);
-  if (showLSDData) {
-    um = data.userMaster.filter(isRealUser);
-  }
+  let um = showLSDData ? data.userMaster.filter(isRealUser) : data.userMaster.filter(isRUNuts);
 
   let users = [];
   let title = '';
 
   switch (stageKey) {
     case 'discord':
-      title = '디스코드 가입';
-      users = um;
+      title = '현재 디스코드 멤버';
+      users = um.filter(u => u.status === 'active');
       break;
     case 'tester':
       title = '테스터 승인';
       users = um.filter(u => u.tester_approved === 'O' || u.tester_approved === 'TRUE');
       break;
-    case 'matching':
-      title = 'Meta 계정 매칭';
-      users = um.filter(u => u.playfab_matched === 'O');
+    case 'playfab':
+      title = 'Playfab 등록';
+      users = um.filter(u => (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O');
       break;
     case 'retain':
       title = '잔존';
-      users = um.filter(u => u.playfab_matched === 'O' && u.status === 'active');
+      users = um.filter(u => (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O' && u.status === 'active');
       break;
   }
 
@@ -2760,6 +2813,73 @@ function openFunnelModal(stageKey, stageName) {
 function closeFunnelModal(event) {
   if (event && event.target !== document.getElementById('funnelModalOverlay')) return;
   document.getElementById('funnelModalOverlay').classList.remove('active');
+}
+
+// 미매칭 KPI 카드 클릭 → 유저 목록 모달
+function openUnmatchedModal(type) {
+  let users = [];
+  let title = '';
+  const um = showLSDData ? data.userMaster.filter(isRealUser) : data.userMaster.filter(isRUNuts);
+
+  if (type === 'tester_unmatched') {
+    title = '테스터 미매칭 (Playfab 미등록)';
+    users = um.filter(u => (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched !== 'O');
+  } else if (type === 'playfab_unmatched') {
+    title = 'Playfab 미매칭 (디스코드 미연결)';
+    // Matching Fail Users 시트 데이터 사용
+    users = data.matchingFail;
+  }
+
+  const titleEl = document.getElementById('funnelModalTitle');
+  const countEl = document.getElementById('funnelModalCount');
+  const listEl = document.getElementById('funnelUserList');
+
+  titleEl.textContent = title;
+  countEl.innerHTML = `<div style="font-size:14px;color:var(--muted);margin-bottom:12px;">총 ${fmt(users.length)}명</div>`;
+
+  if (users.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;">해당하는 유저가 없습니다</div>';
+  } else if (type === 'tester_unmatched') {
+    // UM 기반 유저 목록
+    listEl.innerHTML = users.slice(0, 100).map(u => {
+      const grp = getUserGroup(u);
+      return `
+        <div class="funnel-user-item">
+          <div class="funnel-user-item-main">
+            <div class="funnel-user-item-name">${u.discord_username || u.discord_display_name || 'Unknown'}</div>
+            <div class="funnel-user-item-meta">가입: ${toKST(u.join_date)} | 그룹: ${grp}${u.estimated_meta_username ? ' | 추정 Meta: ' + u.estimated_meta_username : ''}</div>
+          </div>
+          <div class="funnel-user-item-badge" style="background:var(--warning-bg,#fef3cd);color:var(--warning-text,#856404)">미매칭</div>
+        </div>
+      `;
+    }).join('');
+    if (users.length > 100) {
+      listEl.innerHTML += `<div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">외 ${users.length - 100}명</div>`;
+    }
+  } else {
+    // Matching Fail Users 시트 기반 (다른 컬럼 구조)
+    const cols = users.length > 0 ? Object.keys(users[0]) : [];
+    const nameCol = cols.find(c => c.toLowerCase().includes('username') || c.toLowerCase().includes('meta')) || cols[0] || '';
+    const idCol = cols.find(c => c.toLowerCase().includes('playfabid') || c.toLowerCase().includes('playfab_id')) || '';
+    listEl.innerHTML = users.slice(0, 100).map(u => {
+      const displayName = u[nameCol] || u[cols[0]] || 'Unknown';
+      const pfId = idCol ? u[idCol] : '';
+      return `
+        <div class="funnel-user-item">
+          <div class="funnel-user-item-main">
+            <div class="funnel-user-item-name">${displayName}</div>
+            <div class="funnel-user-item-meta">${pfId ? 'PlayFab: ' + pfId : '디스코드 계정 미연결'}</div>
+          </div>
+          <div class="funnel-user-item-badge" style="background:var(--danger-bg,#f8d7da);color:var(--danger-text,#721c24)">미연결</div>
+        </div>
+      `;
+    }).join('');
+    if (users.length > 100) {
+      listEl.innerHTML += `<div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">외 ${users.length - 100}명</div>`;
+    }
+  }
+
+  document.getElementById('funnelModalOverlay').classList.add('active');
 }
 
 // 이탈 바 클릭 → 해당 날짜의 탈퇴 유저 목록 (funnel modal 재활용)
@@ -3270,7 +3390,8 @@ function renderInfo() {
   cards.push(`<div class="info-card">
     <h3><span class="icon">🔍</span> 데이터 필드 상태</h3>
     <ul>
-      <li>Meta 계정 매칭률 (RUNuts 기준): <span class="val">${runutsUsers.length > 0 ? Math.round(runutsUsers.filter(u => u.playfab_matched === 'O').length/runutsUsers.length*100) : 0}%</span> (${fmt(runutsUsers.filter(u => u.playfab_matched === 'O').length)}/${fmt(runutsUsers.length)}) ${tag('ok','정상')}</li>
+      <li>Playfab 등록률 (RUNuts 기준): <span class="val">${runutsUsers.length > 0 ? Math.round(runutsUsers.filter(u => u.playfab_matched === 'O').length/runutsUsers.length*100) : 0}%</span> (${fmt(runutsUsers.filter(u => u.playfab_matched === 'O').length)}/${fmt(runutsUsers.length)}) ${tag('ok','정상')}</li>
+      <li>Matching Fail Users (Playfab 미매칭): <span class="val">${fmt(data.matchingFail.length)}건</span> ${data.matchingFail.length > 0 ? tag('gap','PlayFab에 있지만 디스코드 미연결') : tag('ok','없음')}</li>
       <li>이탈일 기록: <span class="val">${fmt(hasLeaveDate)}건</span> ${hasLeaveDate < leftAll ? tag('gap','Bot 미구동 기간 누락') : tag('ok','정상')}</li>
       <li>첫 플레이 기록 (first_play_date): ${hasFirstPlay ? tag('ok','데이터 있음') : tag('empty','전체 비어있음')}</li>
       <li>플레이 횟수 (total_playtests): ${hasTotalPlay ? tag('ok','데이터 있음') : tag('empty','전체 비어있음')}</li>
@@ -3292,10 +3413,12 @@ function renderInfo() {
   cards.push(`<div class="info-card">
     <h3><span class="icon">🔄</span> 퍼널 단계 정의</h3>
     <ul>
-      <li><span class="val">디스코드 가입</span> — 서버에 입장한 RUNuts 유저 수 (LSD 제외, 탈퇴 포함 누적)</li>
+      <li><span class="val">현재 디스코드 멤버</span> — 현재 디스코드 서버에 있는 멤버 수. 전체 모드: Discord Server Insights 기준 / RUNuts 모드: UM 기준 active 유저</li>
       <li><span class="val">테스터 승인</span> — 디스코드에서 테스터 역할(Role)을 부여받은 유저. tester_approved = O</li>
-      <li><span class="val">Meta 계정 매칭</span> — 디스코드 유저 중 Meta 계정 소유자가 식별된 유저. playfab_matched = O. PlayFab에 미매칭 Meta 계정이 별도 존재할 수 있음.</li>
-      <li><span class="val">잔존</span> — 최근 1개월 이내 플레이한 유저 (Unity Analytics / PlayFab 데이터 연결 전이므로 현재 디스코드 활동 기준으로 대체)</li>
+      <li><span class="val">Playfab 등록</span> — 테스터 승인 유저 중 PlayFab 계정이 디스코드 유저와 매칭된 수. playfab_matched = O</li>
+      <li><span class="val">잔존</span> — Playfab 등록 유저 중 최근 1개월 이내 플레이한 유저 (Unity Analytics / PlayFab 데이터 연결 전이므로 현재 디스코드 활동 기준으로 대체)</li>
+      <li><span class="val">테스터 미매칭</span> — 테스터 승인을 받았지만 PlayFab 계정이 매칭되지 않은 유저 수</li>
+      <li><span class="val">Playfab 미매칭</span> — PlayFab에 계정이 존재하지만 디스코드 유저와 연결되지 않은 Meta 계정 수 (Matching Fail Users 시트 기준)</li>
     </ul>
   </div>`);
 
@@ -3438,7 +3561,8 @@ const SHEET_GID_MAP = {
   urlTesterPipeline: 1495282760,
   urlUGCArchive: 1398498854,
   urlFunnelTracker: 2053912229,
-  urlKpiDashboard: 853056757
+  urlKpiDashboard: 853056757,
+  urlMatchingFail: 1440181399
 };
 
 const DEFAULT_PUB_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR3QcezImsy5jV2Wm_XL29Y0r-tujiIUiBG6xsDaNfES2-CNnQZLp_40YWPOtnLR7vf3M_iN4OP6YLy/pub';
