@@ -1488,13 +1488,20 @@ startAutoRefresh();
       <div class="section-title">테스터 전환 파이프라인</div>
       <div class="funnel-bar-group" id="funnelBars"></div>
     </div>
-    <!-- 멤버 성장 추이 (개요용 — 심플 라인) -->
+    <!-- 멤버 성장 추이 (개요용) -->
     <div class="chart-container">
       <div class="section-title">멤버 성장 추이</div>
       <div class="chart-canvas-wrap">
         <canvas id="chartOverviewGrowth"></canvas>
       </div>
-      <div style="font-size:11px;color:#888;margin-top:4px;">ℹ️ 멤버 수 데이터: ~1/4 가입 기록 기반(이탈 미반영), 1/5~3/23 Server Insights 실제값, 3/24~ 봇 캐시</div>
+      <div style="font-size:11px;color:#888;margin-top:4px;">ℹ️ 점선 = 데이터 소스 전환 (Insights → 봇 API). 전환 시점에 opt-out 유저 ~37명 차이 발생.</div>
+    </div>
+    <!-- 일일 순증감 -->
+    <div class="chart-container">
+      <div class="section-title">일일 순증감 (가입 - 이탈)</div>
+      <div class="chart-canvas-wrap">
+        <canvas id="chartNetGrowth"></canvas>
+      </div>
     </div>
   </div>
 
@@ -2348,7 +2355,44 @@ function renderFunnel(containerId) {
   }).join('');
 }
 
-// ========== 개요 탭: 멤버 성장 추이 (심플 라인) ==========
+// ========== 개요 탭: 멤버 성장 추이 + 일일 순증감 ==========
+
+// 구간 전환 마커 플러그인 (3/24 세로 점선)
+const sourceTransitionPlugin = {
+  id: 'sourceTransition',
+  afterDraw(chart) {
+    const dd = chart._ddRef;
+    if (!dd) return;
+    const transitionIdx = dd.findIndex(r => r.date === '2026-03-24');
+    if (transitionIdx < 0) return;
+
+    const meta = chart.getDatasetMeta(0);
+    if (!meta.data[transitionIdx]) return;
+    const x = meta.data[transitionIdx].x;
+    const { top, bottom } = chart.chartArea;
+    const ctx = chart.ctx;
+
+    // 세로 점선
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(234,179,8,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, bottom);
+    ctx.stroke();
+
+    // 라벨
+    ctx.setLineDash([]);
+    ctx.font = '10px sans-serif';
+    ctx.fillStyle = 'rgba(234,179,8,0.8)';
+    ctx.textAlign = 'center';
+    ctx.fillText('소스 전환', x, top + 12);
+    ctx.fillText('Insights → 봇', x, top + 24);
+    ctx.restore();
+  }
+};
+
 function renderOverviewGrowthChart() {
   let dd = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
   if (!showLSDData) {
@@ -2367,7 +2411,7 @@ function renderOverviewGrowthChart() {
   const memberData = getCorrectedMembers(dd);
 
   if (charts.overviewGrowth) charts.overviewGrowth.destroy();
-  charts.overviewGrowth = new Chart(document.getElementById('chartOverviewGrowth'), {
+  const chartInstance = new Chart(document.getElementById('chartOverviewGrowth'), {
     type: 'line',
     data: {
       labels,
@@ -2408,6 +2452,7 @@ function renderOverviewGrowthChart() {
               const leaves = d.leaves || 0;
               let extra = `가입 +${joins}`;
               if (leaves > 0) extra += ` / 이탈 -${leaves}`;
+              if (d.date === '2026-03-24') extra += '\n⚠ 소스 전환 (Insights→봇, +37 opt-out 포함)';
               return extra;
             }
           }
@@ -2417,8 +2462,68 @@ function renderOverviewGrowthChart() {
         x: { ticks: { color: tickColor, maxTicksLimit: 12, maxRotation: 0, font: { size: 11 } }, grid: { color: gridColor } },
         y: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor } }
       }
-    }
+    },
+    plugins: [sourceTransitionPlugin]
   });
+  chartInstance._ddRef = dd;
+  charts.overviewGrowth = chartInstance;
+
+  // ===== 일일 순증감 바 차트 =====
+  const netData = dd.map(r => (Number(r.new_joins) || 0) - (Number(r.leaves) || 0));
+  const barColors = netData.map(v => v >= 0 ? 'rgba(99,102,241,0.7)' : 'rgba(239,68,68,0.7)');
+  const barBorders = netData.map(v => v >= 0 ? '#6366f1' : '#ef4444');
+
+  if (charts.netGrowth) charts.netGrowth.destroy();
+  const netChart = new Chart(document.getElementById('chartNetGrowth'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '일일 순증감',
+        data: netData,
+        backgroundColor: barColors,
+        borderColor: barBorders,
+        borderWidth: 1,
+        borderRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: tooltipBg,
+          titleColor: tooltipText,
+          bodyColor: tooltipText,
+          borderColor: tooltipBorder,
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: function(ctx) {
+              const v = ctx.parsed.y;
+              const d = dd[ctx.dataIndex];
+              const j = Number(d.new_joins) || 0;
+              const l = Number(d.leaves) || 0;
+              return ` 순증감: ${v >= 0 ? '+' : ''}${v}명 (가입 +${j} / 이탈 -${l})`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: tickColor, maxTicksLimit: 12, maxRotation: 0, font: { size: 11 } }, grid: { color: gridColor } },
+        y: {
+          ticks: { color: tickColor, font: { size: 11 } },
+          grid: { color: gridColor },
+          suggestedMin: -5
+        }
+      }
+    },
+    plugins: [sourceTransitionPlugin]
+  });
+  netChart._ddRef = dd;
+  charts.netGrowth = netChart;
 }
 
 function renderDiscordPage() {
