@@ -1610,7 +1610,7 @@ startAutoRefresh();
           <th>길이</th>
           <th class="sortable" onclick="sortYtTable('views')" id="ytSortViews">조회수 <span class="sort-arrow"></span></th>
           <th>좋아요</th><th>댓글</th>
-          <th>참여율</th>
+          <th>평균 시청</th><th>조회율</th>
           <th>구독자↑</th><th>분류</th>
         </tr></thead>
         <tbody id="ytTableBody"></tbody>
@@ -2094,7 +2094,7 @@ async function loadAllData() {
   const numericFields = new Set([
     'total_members','new_joins','leaves','net_growth','messages_count','voice_participants',
     'voice_minutes','active_members','tester_role_count','reactions_count',
-    'views','likes','comments','shares','saves','subscribers_gained','impressions','channel_subscribers','account_followers',
+    'views','likes','comments','shares','saves','subscribers_gained','impressions','channel_subscribers','account_followers','avg_view_pct',
     'acq_discord_joins','acq_youtube_views','acq_tiktok_views','act_tester_applied','act_tester_approved','act_game_linked',
     'eng_active_discord','eng_voice_participants','ret_member_retention','ref_invite_joins',
     'cvr_join_to_apply','cvr_apply_to_approve','cvr_approve_to_link',
@@ -2945,12 +2945,12 @@ function renderSNS() {
   const latestSubs = yt.length > 0 ? yt[yt.length - 1].channel_subscribers || yt[0].channel_subscribers : 0;
   const latestFollowers = tt.length > 0 ? tt[0].account_followers : 0;
 
-  const ytAvgEng = yt.length > 0 ? (yt.reduce((s,r) => s + (Number(r.engagement_rate)||0), 0) / yt.length).toFixed(1) : 0;
+  const ytAvgViewPct = yt.length > 0 ? (yt.reduce((s,r) => s + (Number(r.avg_view_pct)||0), 0) / yt.length).toFixed(1) : 0;
   document.getElementById('snsKpi').innerHTML = [
     { label:'YT 총 조회수', value: fmt(ytTotalViews) },
     { label:'YT 구독자', value: fmt(latestSubs) },
     { label:'YT 영상 수', value: fmt(yt.length) },
-    { label:'YT 평균 참여율', value: ytAvgEng + '%' },
+    { label:'YT 평균 조회율', value: ytAvgViewPct + '%' },
     { label:'TT 총 조회수', value: fmt(ttTotalViews) },
     { label:'TT 팔로워', value: fmt(latestFollowers) }
   ].map(k=>`<div class="kpi-card"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`).join('');
@@ -2982,7 +2982,8 @@ function renderSNS() {
       <td>${fmt(r.views)}</td>
       <td>${fmt(r.likes)}</td>
       <td>${r.comments || '-'}</td>
-      <td>${r.engagement_rate ? r.engagement_rate + '%' : '-'}</td>
+      <td style="white-space:nowrap">${r.avg_view_duration || '-'}</td>
+      <td>${r.avg_view_pct ? r.avg_view_pct + '%' : '-'}</td>
       <td>${r.subscribers_gained ? '+' + fmt(r.subscribers_gained) : '-'}</td>
       <td>${r.era || '-'}</td>
     </tr>
