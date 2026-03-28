@@ -1553,7 +1553,7 @@ startAutoRefresh();
       <table>
         <thead><tr>
           <th>날짜</th><th>총 멤버</th><th>가입</th><th>탈퇴</th><th>순증</th>
-          <th>메시지</th><th>보이스</th><th>활성</th>
+          <th>메시지</th><th>보이스</th><th>테스터</th>
         </tr></thead>
         <tbody id="discordTableBody"></tbody>
       </table>
@@ -1888,8 +1888,6 @@ function generateDemoData() {
       net_growth: joins - leaves,
       messages_count: Math.floor(Math.random()*80)+20,
       voice_participants: Math.floor(Math.random()*12)+3,
-      voice_minutes: Math.floor(Math.random()*200)+30,
-      active_members: Math.floor(Math.random()*40)+15,
       tester_role_count: Math.floor(Math.random()*5)+45,
       reactions_count: Math.floor(Math.random()*30)+5
     });
@@ -2527,7 +2525,7 @@ function renderDiscordPage() {
     { label:'7일 가입', value:'+'+fmt(weekJoins), color: 'var(--green)' },
     { label:'7일 이탈', value: weekLeaves > 0 ? '-'+fmt(weekLeaves) : '-', color: weekLeaves > 0 ? 'var(--red)' : '' },
     { label:'7일 순증', value: netPrefix+fmt(weekNet), color: netColor },
-    { label:'오늘 활성', value:fmt(latest.active_members) || '-' }
+    { label:'테스터', value:fmt(latest.tester_role_count) || '-' }
   ].map(k=>`<div class="kpi-card"><div class="label">${k.label}</div><div class="value"${k.color?' style="color:'+k.color+'"':''}>${k.value}</div></div>`).join('');
 
   // 활동 차트
@@ -2550,7 +2548,7 @@ function renderDiscordPage() {
     <tr>
       <td>${r.date}</td><td>${fmt(r.total_members)}</td><td>${r.new_joins||'-'}</td><td>${r.leaves||'-'}</td>
       <td style="color:${Number(r.net_growth)>=0?'var(--green)':'var(--red)'}">${r.net_growth!=null&&r.net_growth!==''?(Number(r.net_growth)>=0?'+':'')+r.net_growth:'-'}</td>
-      <td>${r.messages_count||'-'}</td><td>${r.voice_participants||'-'}</td><td>${r.active_members||'-'}</td>
+      <td>${r.messages_count||'-'}</td><td>${r.voice_participants||'-'}</td><td>${r.tester_role_count||'-'}</td>
     </tr>
   `).join('');
 }
