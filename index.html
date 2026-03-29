@@ -1750,19 +1750,19 @@ startAutoRefresh();
         function tr(c){return `<svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px;vertical-align:middle"><path d="M8 2L14 14H2L8 2Z" stroke="${c}" stroke-width="1.2" fill="${c}" fill-opacity="0.15"/></svg>`;}
         function ci(c){return `<svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px;vertical-align:middle"><circle cx="8" cy="8" r="6" stroke="${c}" stroke-width="1.2" fill="${c}" fill-opacity="0.1"/></svg>`;}
         function da(c){return `<svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px;vertical-align:middle"><circle cx="8" cy="8" r="6" stroke="${c}" stroke-width="1.2" stroke-dasharray="3 2" fill="none" opacity="0.4"/></svg>`;}
-        function it(icon,label,color){return `<span style="display:inline-flex;align-items:center;gap:3px">${icon}<span style="color:${color}">${label}</span></span>`;}
+        function it(icon,label,color,tip){return `<span data-tooltip="${tip}" style="display:inline-flex;align-items:center;gap:3px;cursor:default">${icon}<span style="color:${color}">${label}</span></span>`;}
         lg.innerHTML = [
           '<span style="font-weight:600;color:var(--text)">건강도:</span>',
-          it(sh('var(--green)',0),'Active','var(--green)'),
-          it(sh('var(--cyan)',7.2),'Casual','var(--cyan)'),
-          it(sh('var(--yellow)',12.6),'Fading','var(--yellow)'),
-          it(sh('var(--red)',17.1),'장기부재','var(--red)'),
-          it(st('var(--accent2)'),'신규','var(--accent2)'),
+          it(sh('var(--green)',0),'Active','var(--green)','최근 7일 내 활발히 활동'),
+          it(sh('var(--cyan)',7.2),'Casual','var(--cyan)','최근 7일 내 접속'),
+          it(sh('var(--yellow)',12.6),'Fading','var(--yellow)','8~30일 전 마지막 활동'),
+          it(sh('var(--red)',17.1),'장기부재','var(--red)','31일 이상 활동 없음'),
+          it(st('var(--accent2)'),'신규','var(--accent2)','가입 14일 이내, 아직 활동 없음'),
           '<span style="margin-left:6px;font-weight:600;color:var(--text)">등급:</span>',
-          it(dm('#f59e0b'),'Core','#f59e0b'),
-          it(tr('var(--accent2)'),'Regular','var(--accent2)'),
-          it(ci('#64748b'),'Visitor','#64748b'),
-          it(da('#475569'),'Silent','#475569'),
+          it(dm('#f59e0b'),'Core','#f59e0b','커뮤니티 핵심 멤버 (일평균 0.5개+, 50개 이상)'),
+          it(tr('var(--accent2)'),'Regular','var(--accent2)','정기 참여자 (일평균 0.02+, 10개 이상)'),
+          it(ci('#64748b'),'Visitor','#64748b','가끔 방문 (메시지 있지만 드문)'),
+          it(da('#475569'),'Silent','#475569','메시지 없음'),
         ].join('');
       })();
       </script>
@@ -1772,8 +1772,6 @@ startAutoRefresh();
           <th class="sortable" onclick="sortUsersTable('discord_username')">유저명 <span class="sort-indicator" id="sort-discord_username"></span></th>
           <th class="sortable" onclick="sortUsersTable('join_date')">가입일 <small style="color:var(--muted);font-weight:400">(UTC)</small> <span class="sort-indicator" id="sort-join_date"></span></th>
           <th class="sortable" onclick="sortUsersTable('group')">그룹 <span class="sort-indicator" id="sort-group"></span></th>
-          <th class="sortable" onclick="sortUsersTable('health')">건강도 <span class="sort-indicator" id="sort-health"></span></th>
-          <th class="sortable" onclick="sortUsersTable('tier')">등급 <span class="sort-indicator" id="sort-tier"></span></th>
           <th>유입 경로</th><th>테스터</th><th>Meta 매칭</th>
         </tr></thead>
         <tbody id="usersTableBody"></tbody>
@@ -3323,11 +3321,9 @@ function filterUsersTable() {
     return `
     <tr onclick="openUserPanel('${u.discord_id}')" style="cursor:pointer${rowStyle}">
       <td>${u.discord_id}</td>
-      <td>${u.discord_display_name || u.discord_username}${u.discord_display_name && u.discord_display_name !== u.discord_username ? '<br><small style=\"color:var(--muted);\">@' + u.discord_username + '</small>' : ''}${dev ? ' <span class=\"badge dev\">DEV</span>' : ''}</td>
+      <td>${u.discord_display_name || u.discord_username}${u.discord_display_name && u.discord_display_name !== u.discord_username ? '<br><small style=\"color:var(--muted);\">@' + u.discord_username + '</small>' : ''}${dev ? ' <span class=\"badge dev\">DEV</span>' : ''} <span style="margin-left:4px;white-space:nowrap"><span data-tooltip="${healthTip}">${healthIcon(health)}</span><span data-tooltip="${tierTip}" style="margin-left:2px">${tierIcon(tier)}</span></span></td>
       <td>${toKST(u.join_date)}</td>
       <td><span class="badge ${grpClass}">${grp}</span></td>
-      <td style="text-align:center"><span data-tooltip="${healthTip}">${healthIcon(health)}</span></td>
-      <td style="text-align:center"><span data-tooltip="${tierTip}">${tierIcon(tier)}</span></td>
       <td>${u.estimated_source || 'unknown'}</td>
       <td>${(u.tester_applied==='O'||u.tester_applied==='TRUE') ? ((u.tester_approved==='O'||u.tester_approved==='TRUE') ? '<span class="badge approved">승인</span>' : '<span class="badge applied">신청</span>') : '-'}</td>
       <td>${u.playfab_matched==='O' ? '<span class="badge linked">매칭</span>' : '-'}</td>
