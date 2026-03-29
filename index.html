@@ -418,7 +418,7 @@ startAutoRefresh();
     font-weight: 400;
     white-space: pre-line;
     width: max-content;
-    max-width: 420px;
+    max-width: min(420px, 90vw);
     z-index: 9000;
     pointer-events: none;
     opacity: 0;
@@ -426,12 +426,9 @@ startAutoRefresh();
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     line-height: 1.6;
   }
-  [data-tooltip]:hover::after {
-    opacity: 1;
-  }
-  /* 테이블 오른쪽 열은 왼쪽으로 뜨게 */
-  td:nth-child(n+7) [data-tooltip]::after {
-    left: auto; right: 0;
+  /* 데스크탑만 호버 툴팁 표시 (마우스 있는 기기) */
+  @media (hover: hover) and (pointer: fine) {
+    [data-tooltip]:hover::after { opacity: 1; }
   }
 
   /* Funnel */
@@ -1413,8 +1410,7 @@ startAutoRefresh();
     .user-detail-panel-header h3 { font-size: 14px; }
     .user-detail-panel-close { font-size: 28px; padding: 8px; min-width: 44px; min-height: 44px; }
 
-    /* 툴팁: 모바일에서 숨김 (터치로 호버 안 됨) */
-    [data-tooltip]::after { display: none; }
+    /* 툴팁: @media (hover:hover)로 데스크탑만 표시되므로 추가 처리 불필요 */
 
     /* 정보/설정 */
     .info-grid { grid-template-columns: 1fr; }
