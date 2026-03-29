@@ -1827,15 +1827,15 @@ function getUserHealth(u) {
 
 function getHealthTooltip(u) {
   const h = getUserHealth(u);
-  let tip = `건강도: ${h.label}\n`;
-  tip += `기준: 🟢 7일 내 / 🟡 30일 내 / 🔴 30일+ / ⚫ 탈퇴\n`;
+  let parts = [h.label];
   if (u.last_active_date) {
-    tip += `마지막 활동: ${u.last_active_date}`;
-    if (h.days !== undefined) tip += ` (${h.days}일 전)`;
+    parts.push(`활동: ${u.last_active_date}`);
+    if (h.days !== undefined) parts.push(`${h.days}일 전`);
   } else {
-    tip += `마지막 활동: 기록 없음`;
+    parts.push('활동 기록 없음');
   }
-  return tip;
+  parts.push('기준: 🟢7일 🟡30일 🔴30일+ ⚫탈퇴');
+  return parts.join(' · ');
 }
 const DATA_CUTOFF = '2025-10-01';
 
@@ -3106,7 +3106,7 @@ function filterUsersTable() {
     const dev = isDev(u);
     const rowStyle = dev ? ';opacity:0.45;font-style:italic' : (grp === 'LSD' ? ';opacity:0.65' : '');
     const health = getUserHealth(u);
-    const healthTip = getHealthTooltip(u).replace(/\n/g, '&#10;');
+    const healthTip = getHealthTooltip(u);
     return `
     <tr onclick="openUserPanel('${u.discord_id}')" style="cursor:pointer${rowStyle}">
       <td>${u.discord_id}</td>
@@ -3115,7 +3115,7 @@ function filterUsersTable() {
       <td><span class="badge ${grpClass}">${grp}</span></td>
       <td><span class="badge ${u.status}">${statusKo[u.status] || u.status}</span></td>
       <td>${u.leave_date ? toKST(u.leave_date) : '-'}</td>
-      <td title="${healthTip}" style="cursor:help;color:${health.color}">${health.label}</td>
+      <td style="color:${health.color}"><span data-tooltip="${healthTip}">${health.label}</span></td>
       <td>${u.estimated_source || 'unknown'}</td>
       <td>${(u.tester_applied==='O'||u.tester_applied==='TRUE') ? ((u.tester_approved==='O'||u.tester_approved==='TRUE') ? '<span class="badge approved">승인</span>' : '<span class="badge applied">신청</span>') : '-'}</td>
       <td>${u.playfab_matched==='O' ? '<span class="badge linked">매칭</span>' : '-'}</td>
@@ -3207,8 +3207,8 @@ function openUserPanel(discordId) {
 
   // 유저 건강도 판정
   const health = getUserHealth(u);
-  const healthTip = getHealthTooltip(u).replace(/\n/g, '&#10;');
-  const healthBadge = `<span title="${healthTip}" style="font-size:12px;vertical-align:middle;margin-left:4px;color:${health.color};cursor:help">${health.label}</span>`;
+  const healthTip = getHealthTooltip(u);
+  const healthBadge = `<span data-tooltip="${healthTip}" style="font-size:12px;vertical-align:middle;margin-left:4px;color:${health.color}">${health.label}</span>`;
 
   document.getElementById('userDetailName').innerHTML = `${u.discord_display_name || u.discord_username} <span class="badge ${grp==='LSD'?'lsd':'runuts_grp'}" style="font-size:12px;vertical-align:middle">${grp}</span>${devBadge}${healthBadge}`;
   document.getElementById('userDetailContent').innerHTML = `
