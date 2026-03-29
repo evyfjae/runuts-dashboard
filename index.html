@@ -1697,7 +1697,7 @@ startAutoRefresh();
           <th class="sortable" onclick="sortUsersTable('group')">그룹 <span class="sort-indicator" id="sort-group"></span></th>
           <th>상태</th>
           <th class="sortable" onclick="sortUsersTable('leave_date')">탈퇴일 <span class="sort-indicator" id="sort-leave_date"></span></th>
-          <th>건강도</th><th>유입 경로</th><th>테스터</th><th>Meta 매칭</th>
+          <th>유입 경로</th><th>테스터</th><th>Meta 매칭</th>
         </tr></thead>
         <tbody id="usersTableBody"></tbody>
       </table>
@@ -3115,7 +3115,6 @@ function filterUsersTable() {
       <td><span class="badge ${grpClass}">${grp}</span></td>
       <td><span class="badge ${u.status}">${statusKo[u.status] || u.status}</span></td>
       <td>${u.leave_date ? toKST(u.leave_date) : '-'}</td>
-      <td style="color:${health.color}"><span data-tooltip="${healthTip}">${health.label}</span></td>
       <td>${u.estimated_source || 'unknown'}</td>
       <td>${(u.tester_applied==='O'||u.tester_applied==='TRUE') ? ((u.tester_approved==='O'||u.tester_approved==='TRUE') ? '<span class="badge approved">승인</span>' : '<span class="badge applied">신청</span>') : '-'}</td>
       <td>${u.playfab_matched==='O' ? '<span class="badge linked">매칭</span>' : '-'}</td>
@@ -3223,7 +3222,6 @@ function openUserPanel(discordId) {
           ${u.leave_date ? `<div class="detail-row"><span class="detail-label">탈퇴일</span><span class="detail-value">${toKST(u.leave_date)}</span></div>` : ''}
           <div class="detail-row"><span class="detail-label">유입 경로</span><span class="detail-value">${u.estimated_source || 'unknown'}</span></div>
           <div class="detail-row"><span class="detail-label">초대자</span><span class="detail-value">${u.invited_by || '-'}</span></div>
-          <div class="detail-row"><span class="detail-label">마지막 활동</span><span class="detail-value">${u.last_active_date || '-'}</span></div>
         </div>
       </div>
       <div class="user-detail-section">
@@ -3243,6 +3241,31 @@ function openUserPanel(discordId) {
         <div class="section-header">테스터 여정</div>
         <div class="pipeline-visualization">
           ${stages.map((s, i) => `<div class="pipeline-step ${s.done ? 'completed' : ''} ${i === currentIdx ? 'current' : ''} ${s.isLeave ? 'leave' : ''}"><span class="step-circle"></span><span class="step-label">${s.name}</span></div>`).join('')}
+        </div>
+      </div>
+      <div class="user-detail-section">
+        <div class="section-header">커뮤니티 건강도</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <span style="font-size:24px">${health.label.split(' ')[0]}</span>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:${health.color}">${health.label.split(' ')[1] || health.label}</div>
+            <div style="font-size:12px;color:var(--muted)">${u.last_active_date ? '마지막 활동: ' + u.last_active_date + (health.days !== undefined ? ' (' + health.days + '일 전)' : '') : '활동 기록 없음'}</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.8;border-top:1px solid var(--border);padding-top:8px">
+          <div style="margin-bottom:4px;font-weight:600;color:var(--text)">판정 근거</div>
+          <div>• 디스코드 메시지 활동 기준 (봇이 매일 자동 집계)</div>
+          <div>• 마지막 메시지 작성일로부터 경과 일수로 판정</div>
+          ${u.status === 'left' ? '<div>• 이 유저는 서버를 탈퇴한 상태입니다</div>' : ''}
+          <div style="margin-top:8px;font-weight:600;color:var(--text)">건강도 기준</div>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 8px;margin-top:4px">
+            <span style="color:var(--green)">🟢 활발</span><span>최근 7일 내 메시지 활동</span>
+            <span style="color:var(--yellow)">🟡 관심</span><span>최근 30일 내 메시지 활동</span>
+            <span style="color:var(--red)">🔴 비활성</span><span>30일 이상 활동 없음</span>
+            <span>⚫ 이탈</span><span>서버 탈퇴</span>
+            <span>⬜ 미확인</span><span>활동 기록 없음</span>
+          </div>
+          <div style="margin-top:8px;color:var(--muted);font-size:11px">※ 향후 게임 플레이 데이터(PlayFab) 연결 시 복합 지표로 업그레이드 예정</div>
         </div>
       </div>
       ${isDev(u) ? '<div class="user-detail-section" style="background:rgba(234,88,12,0.1);border:1px solid rgba(234,88,12,0.2)"><div class="section-header">개발자 계정</div><div style="font-size:13px;color:var(--orange)">KPI·퍼널 집계에서 제외됨</div></div>' : ''}
