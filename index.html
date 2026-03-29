@@ -3310,6 +3310,8 @@ function renderFunnelTable() {
       joinToApply: Math.round(appliedByMonth / totalJoined * 100),
       applyToApprove: appliedByMonth > 0 ? Math.round(approvedByMonth / appliedByMonth * 100) : 0,
       approveToLink: approvedByMonth > 0 ? Math.round(linkedByMonth / approvedByMonth * 100) : 0,
+      // 실수 인원 (툴팁용)
+      joined: totalJoined, applied: appliedByMonth, approved: approvedByMonth, linked: linkedByMonth,
     };
   });
 
@@ -3354,7 +3356,16 @@ function renderFunnelTable() {
         tooltip: {
           backgroundColor: '#1a1d2e', titleColor: '#eaedf3', bodyColor: '#c4c9d8',
           borderColor: '#252838', borderWidth: 1, padding: 12,
-          callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y}%` }
+          callbacks: {
+            label: (tip) => {
+              const m = cvrMonths[tip.dataIndex];
+              const d = totalByMonth[m];
+              const di = tip.datasetIndex;
+              if (di === 0) return ` ${tip.dataset.label}: ${tip.parsed.y}% (${d.applied}/${d.joined}명)`;
+              if (di === 1) return ` ${tip.dataset.label}: ${tip.parsed.y}% (${d.approved}/${d.applied}명)`;
+              return ` ${tip.dataset.label}: ${tip.parsed.y}% (${d.linked}/${d.approved}명)`;
+            }
+          }
         }
       },
       scales: {
