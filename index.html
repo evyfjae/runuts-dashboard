@@ -1344,122 +1344,111 @@ startAutoRefresh();
   /* Mobile Responsive */
   /* ==================== 모바일 (768px 이하) ==================== */
   @media (max-width: 768px) {
-    /* 헤더: 컴팩트 1줄 */
-    .header { padding: 8px 12px; gap: 6px; }
+    /* 헤더: 컴팩트 */
+    .header { padding: 8px 12px; gap: 4px; }
     .header h1 { font-size: 14px; }
-    .header-right { flex-wrap: wrap; width: 100%; justify-content: space-between; gap: 4px; }
+    .header-right { flex-wrap: wrap; width: 100%; justify-content: flex-end; gap: 4px; }
     .header-status { font-size: 10px; gap: 6px; }
-    .lsd-toggle button { padding: 5px 8px; font-size: 10px; }
+    .header-status .status-label { display: none; }
+    .lsd-toggle button { padding: 4px 8px; font-size: 10px; }
 
-    /* 네비게이션: 하단 고정 탭바 */
+    /* 네비게이션: 상단 수평 스크롤 (콘텐츠 영역 최대화) */
     .nav {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--card); border-top: 1px solid var(--border); border-bottom: none;
-      padding: 0; margin: 0; z-index: 900;
-      display: flex; justify-content: space-around; gap: 0;
-      box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      flex-wrap: nowrap; padding: 0 8px; gap: 0;
+      scrollbar-width: none; /* Firefox */
     }
+    .nav::-webkit-scrollbar { display: none; } /* Chrome/Safari */
     .nav button {
-      flex: 1; padding: 10px 4px; font-size: 10px;
-      white-space: nowrap; border-bottom: none;
-      border-top: 2px solid transparent;
-      min-height: 44px;
+      padding: 10px 12px; font-size: 12px;
+      white-space: nowrap; flex-shrink: 0;
+      min-height: 40px;
     }
-    .nav button.active { border-bottom: none; border-top-color: var(--accent); }
     .nav-divider { display: none; }
-    .nav-right { margin-left: 0; }
-    /* 하단 탭바 공간 확보 */
-    body { padding-bottom: 56px; }
+    .nav-right { margin-left: 0; display: contents; } /* 정보/설정도 같은 줄에 */
 
-    /* 메인 컨텐츠 */
-    .main { padding: 10px; }
+    /* 메인 */
+    .main { padding: 12px 8px; }
 
-    /* KPI 카드 */
+    /* KPI */
     .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-    .kpi-card { padding: 10px; }
+    .kpi-card { padding: 10px; border-radius: 8px; }
     .kpi-card .label { font-size: 11px; }
-    .kpi-card .value { font-size: 18px; }
+    .kpi-card .value { font-size: 20px; }
     .kpi-card .change { font-size: 10px; }
     .kpi-card .sparkline { display: none; }
+    .kpi-card .sub { font-size: 10px; }
 
-    /* 차트 */
-    .chart-container { padding: 12px; }
-    .section-title { font-size: 14px; margin-bottom: 12px; }
+    /* 차트/섹션 */
+    .chart-container { padding: 10px; border-radius: 8px; margin-bottom: 12px; }
+    .table-container { padding: 8px; border-radius: 8px; margin-bottom: 12px; }
+    .section-title { font-size: 13px; margin-bottom: 8px; }
 
     /* 퍼널 */
-    .funnel-label { width: 70px; font-size: 10px; }
-    .funnel-bar-value { font-size: 11px; }
+    .funnel-label { width: 65px; font-size: 10px; }
+    .funnel-bar-value { font-size: 11px; padding: 4px 8px; }
     .funnel-pct { font-size: 10px; }
-
-    /* 성장 단계 카드 */
+    .funnel-cvr { font-size: 10px; }
     .growth-stats-row { grid-template-columns: repeat(2, 1fr); gap: 6px; }
 
     /* 테이블 */
-    .table-container { padding: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table th:first-child, table td:first-child { display: none; } /* Discord ID */
-    table th, table td { padding: 6px 5px; font-size: 11px; }
+    table th:first-child, table td:first-child { display: none; }
+    table th, table td { padding: 8px 6px; font-size: 12px; }
+    table th { font-size: 10px; }
 
     /* 범례 */
-    .table-legend { font-size: 10px !important; padding: 4px 8px !important; gap: 8px !important; }
+    .table-legend { font-size: 10px !important; padding: 5px 8px !important; gap: 10px !important; }
 
-    /* 필터바: 접기 가능하도록 */
-    .user-filter-bar { padding: 8px; gap: 3px; }
-    .filter-group { gap: 3px; }
-    .filter-group label { min-width: 38px; font-size: 9px; }
-    .filter-pill, .filter-pill-toggle { padding: 4px 8px; font-size: 10px; min-height: 28px; }
-    .search-bar input { font-size: 14px; padding: 10px 12px; } /* 모바일 입력 편의 */
+    /* 필터바 */
+    .user-filter-bar { padding: 8px; gap: 4px; }
+    .filter-group { gap: 4px; }
+    .filter-group label { min-width: 40px; font-size: 10px; }
+    .filter-pill, .filter-pill-toggle { padding: 5px 10px; font-size: 10px; min-height: 32px; }
+    .search-bar input { font-size: 16px; padding: 10px 12px; } /* 16px으로 iOS 줌 방지 */
 
     /* 유저 상세 패널: 전체화면 */
-    .user-detail-panel {
-      width: 100% !important; max-width: 100% !important;
-      right: -100% !important;
-    }
+    .user-detail-panel { width: 100% !important; max-width: 100% !important; right: -100% !important; }
     .user-detail-panel.active { right: 0 !important; }
-    .user-detail-panel-header { padding: 12px 16px; }
+    .user-detail-panel-header { padding: 14px 16px; }
     .user-detail-panel-header h3 { font-size: 14px; }
-    .user-detail-panel-close { font-size: 24px; padding: 8px; min-width: 44px; min-height: 44px; }
+    .user-detail-panel-close { font-size: 28px; padding: 8px; min-width: 44px; min-height: 44px; }
 
-    /* 툴팁: 모바일에서는 터치 불편하므로 숨김 */
+    /* 툴팁: 모바일에서 숨김 (터치로 호버 안 됨) */
     [data-tooltip]::after { display: none; }
 
-    /* 정보/설정 카드 */
+    /* 정보/설정 */
     .info-grid { grid-template-columns: 1fr; }
     .info-card { padding: 12px; }
 
-    /* 디스코드 탭 */
-    .period-filter button { font-size: 10px; padding: 4px 8px; min-height: 32px; }
-    .insights-period button { font-size: 10px; padding: 4px 8px; }
+    /* 디스코드 기간 필터 */
+    .period-filter button, .insights-period button { font-size: 10px; padding: 5px 10px; min-height: 32px; }
   }
 
   /* ==================== 소형 모바일 (480px 이하) ==================== */
   @media (max-width: 480px) {
     .header h1 { font-size: 13px; }
-    .header-status .status-label { display: none; }
-    .header-status { gap: 3px; }
-    .header-right .lsd-toggle { display: none; } /* 공간 절약 */
+    .header-right .lsd-toggle { display: none; }
 
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); } /* 2열 유지 */
-    .kpi-card .value { font-size: 16px; }
+    .kpi-card .value { font-size: 18px; }
     .kpi-card .change, .kpi-card .sub { font-size: 9px; }
 
     /* 테이블: Meta 매칭 숨기기 */
     table th:nth-child(6), table td:nth-child(6) { display: none; }
+    table th, table td { padding: 6px 4px; font-size: 11px; }
 
-    /* 필터바: 건강도/등급 행만 표시, 나머지 접기 */
+    /* 필터바 축소 */
     .filter-group label { font-size: 9px; min-width: 34px; }
-    .filter-pill, .filter-pill-toggle { padding: 3px 6px; font-size: 9px; }
+    .filter-pill, .filter-pill-toggle { padding: 4px 7px; font-size: 9px; min-height: 28px; }
 
-    /* 상세 패널 내부 */
+    /* 상세 패널 */
     .user-detail-panel .user-detail-sections { padding: 0 4px; }
     .user-detail-grid { grid-template-columns: 1fr !important; }
-    .detail-row .detail-label { font-size: 11px; }
-    .detail-row .detail-value { font-size: 11px; }
 
-    /* 네비 탭바 */
-    .nav button { font-size: 9px; padding: 8px 2px; }
+    /* 네비 */
+    .nav button { padding: 8px 10px; font-size: 11px; }
 
-    /* 퍼널 라벨 */
-    .funnel-label { width: 60px; font-size: 9px; }
+    /* 퍼널 */
+    .funnel-label { width: 55px; font-size: 9px; }
   }
 </style>
 </head>
