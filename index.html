@@ -1594,8 +1594,8 @@ startAutoRefresh();
       <div class="funnel-bar-group" id="funnelBarsFull"></div>
     </div>
     <div class="chart-container" style="margin-bottom:16px;">
-      <div class="section-title">테스터 전환율 추이 <span style="font-size:11px;color:var(--muted);font-weight:400">— 각 단계별 누적 전환율(%)</span></div>
-      <div style="height:260px;position:relative"><canvas id="cvrTrendChart"></canvas></div>
+      <div class="section-title">코호트별 테스터 전환율 <span style="font-size:11px;color:var(--muted);font-weight:400">— 가입 월별 현재 기준 전환 현황</span></div>
+      <div style="height:280px;position:relative"><canvas id="cvrTrendChart"></canvas></div>
     </div>
     <div class="table-container">
       <div class="section-title">월간 지표 추이</div>
@@ -3291,27 +3291,23 @@ function renderFunnelTable() {
     </tr>`;
   }).join('');
 
-  // 전환율 추이 차트 (2025-11 이후, RUNuts 가입 기준)
+  // 코호트별 전환율 차트 (2025-11 이후, 가입 월 기준 현재 전환 현황)
   const cvrMonths = months.filter(m => m >= '2025-11');
   if (cvrMonths.length < 2) return;
 
-  // 누적 기준으로 전환율 계산
-  const totalByMonth = {};
-  let cumJoins = 0, cumApplied = 0, cumApproved = 0, cumLinked = 0;
   const umRN = um.filter(u => !isLSD(u) && !isDev(u));
-  // 월별 누적
+  const cohortData = {};
   cvrMonths.forEach(m => {
-    const joinedThisMonth = umRN.filter(u => u.join_date && u.join_date.substring(0,7) <= m);
-    const appliedByMonth = umRN.filter(u => (u.tester_applied === 'O' || u.tester_applied === 'TRUE') && u.join_date && u.join_date.substring(0,7) <= m).length;
-    const approvedByMonth = umRN.filter(u => (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.join_date && u.join_date.substring(0,7) <= m).length;
-    const linkedByMonth = umRN.filter(u => u.playfab_matched === 'O' && u.join_date && u.join_date.substring(0,7) <= m).length;
-    const totalJoined = joinedThisMonth.length || 1;
-    totalByMonth[m] = {
-      joinToApply: Math.round(appliedByMonth / totalJoined * 100),
-      applyToApprove: appliedByMonth > 0 ? Math.round(approvedByMonth / appliedByMonth * 100) : 0,
-      approveToLink: approvedByMonth > 0 ? Math.round(linkedByMonth / approvedByMonth * 100) : 0,
-      // 실수 인원 (툴팁용)
-      joined: totalJoined, applied: appliedByMonth, approved: approvedByMonth, linked: linkedByMonth,
+    const cohort = umRN.filter(u => u.join_date && u.join_date.substring(0,7) === m);
+    const total = cohort.length || 1;
+    const applied = cohort.filter(u => u.tester_applied === 'O' || u.tester_applied === 'TRUE').length;
+    const approved = cohort.filter(u => u.tester_approved === 'O' || u.tester_approved === 'TRUE').length;
+    const linked = cohort.filter(u => u.playfab_matched === 'O').length;
+    cohortData[m] = {
+      total, applied, approved, linked,
+      applyRate: Math.round(applied / total * 100),
+      approveRate: Math.round(approved / total * 100),
+      linkRate: Math.round(linked / total * 100),
     };
   });
 
@@ -3319,51 +3315,52 @@ function renderFunnelTable() {
   if (!ctx) return;
   if (ctx._chart) ctx._chart.destroy();
   const chart = new Chart(ctx, {
-    type: 'line',
+    type: 'bar',
     data: {
       labels: cvrMonths,
       datasets: [
         {
-          label: '가입 → 테스터 신청',
-          data: cvrMonths.map(m => totalByMonth[m].joinToApply),
+          label: '테스터 신청률',
+          data: cvrMonths.map(m => cohortData[m].applyRate),
+          backgroundColor: 'rgba(99,102,241,0.7)',
           borderColor: '#6366f1',
-          backgroundColor: 'rgba(99,102,241,0.15)',
-          tension: 0.3, fill: true, pointRadius: 5, pointBackgroundColor: '#6366f1',
-          borderWidth: 2,
+          borderWidth: 1, borderRadius: 3,
         },
         {
-          label: '신청 → 승인',
-          data: cvrMonths.map(m => totalByMonth[m].applyToApprove),
+          label: '테스터 승인률',
+          data: cvrMonths.map(m => cohortData[m].approveRate),
+          backgroundColor: 'rgba(6,182,212,0.7)',
           borderColor: '#06b6d4',
-          backgroundColor: 'rgba(6,182,212,0.15)',
-          tension: 0.3, fill: true, pointRadius: 5, pointBackgroundColor: '#06b6d4',
-          borderWidth: 2,
+          borderWidth: 1, borderRadius: 3,
         },
         {
-          label: '승인 → Playfab 등록',
-          data: cvrMonths.map(m => totalByMonth[m].approveToLink),
+          label: 'Playfab 등록률',
+          data: cvrMonths.map(m => cohortData[m].linkRate),
+          backgroundColor: 'rgba(34,197,94,0.7)',
           borderColor: '#22c55e',
-          backgroundColor: 'rgba(34,197,94,0.15)',
-          tension: 0.3, fill: true, pointRadius: 5, pointBackgroundColor: '#22c55e',
-          borderWidth: 2,
+          borderWidth: 1, borderRadius: 3,
         },
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'top', labels: { color: '#c4c9d8', font: { size: 12, weight: '600' }, usePointStyle: true, pointStyle: 'circle', padding: 20 } },
+        legend: { position: 'top', labels: { color: '#c4c9d8', font: { size: 12, weight: '600' }, usePointStyle: true, pointStyle: 'rectRounded', padding: 20 } },
         tooltip: {
           backgroundColor: '#1a1d2e', titleColor: '#eaedf3', bodyColor: '#c4c9d8',
           borderColor: '#252838', borderWidth: 1, padding: 12,
           callbacks: {
+            title: (items) => {
+              const m = cvrMonths[items[0].dataIndex];
+              return `${m} 코호트 (${cohortData[m].total}명 가입)`;
+            },
             label: (tip) => {
               const m = cvrMonths[tip.dataIndex];
-              const d = totalByMonth[m];
+              const d = cohortData[m];
               const di = tip.datasetIndex;
-              if (di === 0) return ` ${tip.dataset.label}: ${tip.parsed.y}% (${d.applied}/${d.joined}명)`;
-              if (di === 1) return ` ${tip.dataset.label}: ${tip.parsed.y}% (${d.approved}/${d.applied}명)`;
-              return ` ${tip.dataset.label}: ${tip.parsed.y}% (${d.linked}/${d.approved}명)`;
+              if (di === 0) return ` 신청: ${d.applied}명 / ${d.total}명 (${d.applyRate}%)`;
+              if (di === 1) return ` 승인: ${d.approved}명 / ${d.total}명 (${d.approveRate}%)`;
+              return ` Playfab: ${d.linked}명 / ${d.total}명 (${d.linkRate}%)`;
             }
           }
         }
