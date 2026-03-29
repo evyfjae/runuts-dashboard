@@ -2608,10 +2608,16 @@ function renderKPI() {
   const scopeLabel = showLSDData ? '전체' : 'RUNuts';
 
   // ========== 전주 대비 변화 계산 ==========
+  // 3/23→24 데이터 소스 전환 때문에 비교 시작점을 3/24로 고정
+  const COMPARE_SAFE_DATE = '2026-03-24';
+  const ddSafe = ddAll.filter(r => r.date >= COMPARE_SAFE_DATE);
   const thisWeekJoins = ddForWeekly.slice(-7).reduce((s,r) => s + (r.new_joins||0), 0);
-  const lastWeekJoins = ddForWeekly.slice(-14, -7).reduce((s,r) => s + (r.new_joins||0), 0);
-  const memberPrev = ddAll.length >= 8 ? parseInt(ddAll[ddAll.length - 8]?.total_members || 0) : 0;
-  const memberDiff = (showLSDData ? discordTotal : runutsActive) - memberPrev;
+  const lastWeekJoins = ddSafe.length >= 14
+    ? ddForWeekly.slice(-14, -7).reduce((s,r) => s + (r.new_joins||0), 0)
+    : 0; // 안전 기간 데이터 부족 시 비교 안 함
+  // 멤버 비교: 안전 기간 내 7일 전 값
+  const memberPrevRow = ddSafe.length >= 8 ? ddSafe[ddSafe.length - 8] : null;
+  const memberPrev = memberPrevRow ? parseInt(memberPrevRow.total_members || 0) : 0;
 
   // 변화 방향 헬퍼
   function weekDelta(cur, prev) {
@@ -2652,15 +2658,17 @@ function renderWeeklySummary() {
   const card = document.getElementById('weeklySummaryCard');
   if (!card) return;
 
-  const dd = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
+  // 3/23→24 데이터 소스 전환 이후만 안전한 비교 가능
+  const SAFE_DATE = '2026-03-24';
+  const dd = data.discordDaily.filter(r => r.date >= SAFE_DATE);
   const um = showLSDData ? data.userMaster.filter(isRealUser) : data.userMaster.filter(isRUNuts);
-  if (dd.length < 7) { card.style.display = 'none'; return; }
+  if (dd.length < 3) { card.style.display = 'none'; return; }
 
   const today = new Date();
   const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate() - 7);
   const twoWeeksAgo = new Date(today); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-  const weekStr = weekAgo.toISOString().split('T')[0];
-  const twoWeekStr = twoWeeksAgo.toISOString().split('T')[0];
+  const weekStr = weekAgo.toISOString().split('T')[0] < SAFE_DATE ? SAFE_DATE : weekAgo.toISOString().split('T')[0];
+  const twoWeekStr = twoWeeksAgo.toISOString().split('T')[0] < SAFE_DATE ? SAFE_DATE : twoWeeksAgo.toISOString().split('T')[0];
   const todayStr = today.toISOString().split('T')[0];
 
   // 이번 주 / 지난 주 Discord Daily
