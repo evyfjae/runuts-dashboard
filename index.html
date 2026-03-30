@@ -1571,7 +1571,7 @@ startAutoRefresh();
         <canvas id="chartOverviewGrowth"></canvas>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
-        <div style="font-size:11px;color:#888;">ℹ️ 점선 = 데이터 소스 전환 (Insights → 봇 API). 전환 시점에 opt-out 유저 ~37명 차이 발생.</div>
+        <div style="font-size:11px;color:#888;">ℹ️ 점선 = 데이터 소스 전환. Ctrl+휠로 줌, 줌 후 드래그로 이동.</div>
         <div style="display:flex;gap:4px">
           <button id="ytMarkerToggle" onclick="toggleYtMarker()" style="font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:#ef4444;cursor:pointer;white-space:nowrap">▲ YT 업로드</button>
           <button onclick="resetChartZoom()" style="font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;white-space:nowrap">↺ 리셋</button>
@@ -2918,21 +2918,20 @@ function renderOverviewGrowthChart() {
               return extra;
             }
           }
+        },
+        zoom: {
+          pan: { enabled: true, mode: 'x' },
+          zoom: {
+            wheel: { enabled: true, modifierKey: 'ctrl' },
+            pinch: { enabled: true },
+            mode: 'x'
+          },
+          limits: { x: { minRange: 7 } }
         }
       },
       scales: {
         x: { ticks: { color: tickColor, maxTicksLimit: 12, maxRotation: 0, font: { size: 11 } }, grid: { color: gridColor } },
         y: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor } }
-      },
-      zoom: {
-        pan: { enabled: true, mode: 'x' },
-        zoom: {
-          wheel: { enabled: true },
-          pinch: { enabled: true },
-          drag: { enabled: false },
-          mode: 'x'
-        },
-        limits: { x: { minRange: 7 } }
       }
     },
     plugins: [sourceTransitionPlugin]
@@ -2981,6 +2980,15 @@ function renderOverviewGrowthChart() {
               return ` 순증감: ${v >= 0 ? '+' : ''}${v}명 (가입 +${j} / 이탈 -${l})`;
             }
           }
+        },
+        zoom: {
+          pan: { enabled: true, mode: 'x' },
+          zoom: {
+            wheel: { enabled: true, modifierKey: 'ctrl' },
+            pinch: { enabled: true },
+            mode: 'x'
+          },
+          limits: { x: { minRange: 7 } }
         }
       },
       scales: {
@@ -2990,16 +2998,6 @@ function renderOverviewGrowthChart() {
           grid: { color: gridColor },
           suggestedMin: -5
         }
-      },
-      zoom: {
-        pan: { enabled: true, mode: 'x' },
-        zoom: {
-          wheel: { enabled: true },
-          pinch: { enabled: true },
-          drag: { enabled: false },
-          mode: 'x'
-        },
-        limits: { x: { minRange: 7 } }
       }
     },
     plugins: [sourceTransitionPlugin]
