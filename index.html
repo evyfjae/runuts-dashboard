@@ -1570,7 +1570,10 @@ startAutoRefresh();
       <div class="chart-canvas-wrap">
         <canvas id="chartOverviewGrowth"></canvas>
       </div>
-      <div style="font-size:11px;color:#888;margin-top:4px;">ℹ️ 점선 = 데이터 소스 전환 (Insights → 봇 API). 전환 시점에 opt-out 유저 ~37명 차이 발생. <span style="color:#ef4444">▲</span> = YouTube 영상 업로드일.</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+        <div style="font-size:11px;color:#888;">ℹ️ 점선 = 데이터 소스 전환 (Insights → 봇 API). 전환 시점에 opt-out 유저 ~37명 차이 발생.</div>
+        <button id="ytMarkerToggle" onclick="toggleYtMarker()" style="font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:#ef4444;cursor:pointer;white-space:nowrap">▲ YT 업로드</button>
+      </div>
     </div>
     <!-- 일일 순증감 -->
     <div class="chart-container">
@@ -1939,6 +1942,7 @@ let ytSortDir = 'desc'; // 'asc' or 'desc'
 let ttSortKey = 'date'; // 'date' or 'views'
 let ttSortDir = 'desc'; // 'asc' or 'desc'
 let showLeftUsers = false; // Task 1: Toggle for left users view
+let showYtMarkers = true; // YouTube 업로드 마커 표시 여부
 let userFilters = {
   group: '',
   status: '',
@@ -2806,6 +2810,16 @@ function renderFunnel(containerId) {
 const sourceTransitionPlugin = { id: 'sourceTransition' };
 // (실제 점선 처리는 datasets segment로 구현, 플러그인은 빈 껍데기로 유지)
 
+function toggleYtMarker() {
+  showYtMarkers = !showYtMarkers;
+  const btn = document.getElementById('ytMarkerToggle');
+  if (btn) {
+    btn.style.color = showYtMarkers ? '#ef4444' : 'var(--muted)';
+    btn.style.borderColor = showYtMarkers ? '#ef4444' : 'var(--border)';
+  }
+  renderOverviewGrowthChart();
+}
+
 function renderOverviewGrowthChart() {
   let dd = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
   if (!showLSDData) {
@@ -2826,11 +2840,11 @@ function renderOverviewGrowthChart() {
   // 3/23→3/24 전환 인덱스 찾기
   const transIdx = dd.findIndex(r => r.date === '2026-03-24');
 
-  // YouTube 업로드 날짜 마커 — dd 날짜와 매칭되는 YouTube 영상 게시일 찾기
+  // YouTube 업로드 날짜 마커 — 토글 상태에 따라 표시/숨김
   const ytDates = new Set((data.youtube || []).map(v => v.published_date).filter(Boolean));
-  const ytPointRadius = dd.map(r => ytDates.has(r.date) ? 6 : 0);
-  const ytPointBg = dd.map(r => ytDates.has(r.date) ? '#ef4444' : '#6366f1');
-  const ytPointStyle = dd.map(r => ytDates.has(r.date) ? 'triangle' : 'circle');
+  const ytPointRadius = dd.map(r => (showYtMarkers && ytDates.has(r.date)) ? 6 : 0);
+  const ytPointBg = dd.map(r => (showYtMarkers && ytDates.has(r.date)) ? '#ef4444' : '#6366f1');
+  const ytPointStyle = dd.map(r => (showYtMarkers && ytDates.has(r.date)) ? 'triangle' : 'circle');
 
   if (charts.overviewGrowth) charts.overviewGrowth.destroy();
   const chartInstance = new Chart(document.getElementById('chartOverviewGrowth'), {
