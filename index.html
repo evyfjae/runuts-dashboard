@@ -1566,7 +1566,13 @@ startAutoRefresh();
     </div>
     <!-- 멤버 성장 추이 (개요용) -->
     <div class="chart-container">
-      <div class="section-title">멤버 성장 추이</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="section-title" style="margin-bottom:0">멤버 성장 추이</div>
+        <div class="period-filter" id="growthPeriodFilter">
+          <button class="active" onclick="setGrowthPeriod('daily',this)">일간</button>
+          <button onclick="setGrowthPeriod('weekly',this)">주간</button>
+        </div>
+      </div>
       <div class="chart-canvas-wrap">
         <canvas id="chartOverviewGrowth"></canvas>
       </div>
@@ -1948,6 +1954,7 @@ let ttSortKey = 'date'; // 'date' or 'views'
 let ttSortDir = 'desc'; // 'asc' or 'desc'
 let showLeftUsers = false; // Task 1: Toggle for left users view
 let showYtMarkers = true; // YouTube 업로드 마커 표시 여부
+let growthPeriod = 'daily'; // 'daily' | 'weekly'
 let userFilters = {
   group: '',
   status: '',
@@ -2815,6 +2822,13 @@ function renderFunnel(containerId) {
 const sourceTransitionPlugin = { id: 'sourceTransition' };
 // (실제 점선 처리는 datasets segment로 구현, 플러그인은 빈 껍데기로 유지)
 
+function setGrowthPeriod(period, btn) {
+  growthPeriod = period;
+  document.querySelectorAll('#growthPeriodFilter button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderOverviewGrowthChart();
+}
+
 function resetChartZoom() {
   if (charts.overviewGrowth) charts.overviewGrowth.resetZoom();
   if (charts.netGrowth) charts.netGrowth.resetZoom();
@@ -2844,17 +2858,41 @@ function renderOverviewGrowthChart() {
   const tooltipText = isLight ? '#1e2130' : '#e4e4e7';
   const tooltipBorder = isLight ? '#e0e3ea' : '#3a3d4a';
 
-  const labels = dd.map(r => r.date.slice(5));
-  const memberData = getCorrectedMembers(dd);
+  // 주간 모드: 주 단위로 집계
+  let chartDD = dd;
+  if (growthPeriod === 'weekly') {
+    const weeks = [];
+    for (let i = 0; i < dd.length; i += 7) {
+      const chunk = dd.slice(i, i + 7);
+      const last = chunk[chunk.length - 1];
+      const joins = chunk.reduce((s, r) => s + (Number(r.new_joins) || 0), 0);
+      const leaves = chunk.reduce((s, r) => s + (Number(r.leaves) || 0), 0);
+      weeks.push({
+        date: last.date,
+        total_members: last.total_members,
+        new_joins: joins,
+        leaves: leaves,
+        _dates: chunk.map(r => r.date)
+      });
+    }
+    chartDD = weeks;
+  }
+
+  const labels = chartDD.map(r => r.date.slice(5));
+  const memberData = chartDD.map(r => Number(r.total_members) || 0);
 
   // 3/23→3/24 전환 인덱스 찾기
-  const transIdx = dd.findIndex(r => r.date === '2026-03-24');
+  const transIdx = chartDD.findIndex(r => r.date >= '2026-03-24' && chartDD[chartDD.indexOf(r) - 1]?.date < '2026-03-24');
 
   // YouTube 업로드 날짜 마커 — 토글 상태에 따라 표시/숨김
   const ytDates = new Set((data.youtube || []).map(v => v.published_date).filter(Boolean));
-  const ytPointRadius = dd.map(r => (showYtMarkers && ytDates.has(r.date)) ? 6 : 0);
-  const ytPointBg = dd.map(r => (showYtMarkers && ytDates.has(r.date)) ? '#ef4444' : '#6366f1');
-  const ytPointStyle = dd.map(r => (showYtMarkers && ytDates.has(r.date)) ? 'triangle' : 'circle');
+  const hasYt = (r) => {
+    if (r._dates) return r._dates.some(d => ytDates.has(d));
+    return ytDates.has(r.date);
+  };
+  const ytPointRadius = chartDD.map(r => (showYtMarkers && hasYt(r)) ? 6 : 0);
+  const ytPointBg = chartDD.map(r => (showYtMarkers && hasYt(r)) ? '#ef4444' : '#6366f1');
+  const ytPointStyle = chartDD.map(r => (showYtMarkers && hasYt(r)) ? 'triangle' : 'circle');
 
   if (charts.overviewGrowth) charts.overviewGrowth.destroy();
   const chartInstance = new Chart(document.getElementById('chartOverviewGrowth'), {
@@ -2900,14 +2938,15 @@ function renderOverviewGrowthChart() {
             },
             afterLabel: function(ctx) {
               const idx = ctx.dataIndex;
-              const d = dd[idx];
+              const d = chartDD[idx];
+              if (!d) return '';
               const joins = d.new_joins || 0;
               const leaves = d.leaves || 0;
               let extra = `가입 +${joins}`;
               if (leaves > 0) extra += ` / 이탈 -${leaves}`;
-              if (d.date === '2026-03-24') extra += '\n⚠ 소스 전환 (Insights→봇, +37 opt-out 포함)';
               // YouTube 업로드 마커
-              const ytVideos = (data.youtube || []).filter(v => v.published_date === d.date);
+              const dates = d._dates || [d.date];
+              const ytVideos = (data.youtube || []).filter(v => dates.includes(v.published_date));
               if (ytVideos.length > 0) {
                 extra += '\n🎬 YouTube 업로드:';
                 ytVideos.forEach(v => {
@@ -2936,11 +2975,11 @@ function renderOverviewGrowthChart() {
     },
     plugins: [sourceTransitionPlugin]
   });
-  chartInstance._ddRef = dd;
+  chartInstance._ddRef = chartDD;
   charts.overviewGrowth = chartInstance;
 
-  // ===== 일일 순증감 바 차트 =====
-  const netData = dd.map(r => (Number(r.new_joins) || 0) - (Number(r.leaves) || 0));
+  // ===== 순증감 바 차트 =====
+  const netData = chartDD.map(r => (Number(r.new_joins) || 0) - (Number(r.leaves) || 0));
   const barColors = netData.map(v => v >= 0 ? 'rgba(99,102,241,0.7)' : 'rgba(239,68,68,0.7)');
   const barBorders = netData.map(v => v >= 0 ? '#6366f1' : '#ef4444');
 
@@ -2974,9 +3013,9 @@ function renderOverviewGrowthChart() {
           callbacks: {
             label: function(ctx) {
               const v = ctx.parsed.y;
-              const d = dd[ctx.dataIndex];
-              const j = Number(d.new_joins) || 0;
-              const l = Number(d.leaves) || 0;
+              const d = chartDD[ctx.dataIndex];
+              const j = d ? (Number(d.new_joins) || 0) : 0;
+              const l = d ? (Number(d.leaves) || 0) : 0;
               return ` 순증감: ${v >= 0 ? '+' : ''}${v}명 (가입 +${j} / 이탈 -${l})`;
             }
           }
