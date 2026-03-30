@@ -1898,6 +1898,8 @@ startAutoRefresh();
       <input type="text" id="urlDiscordInsights" placeholder="https://docs.google.com/spreadsheets/d/e/...">
       <label>Health Snapshot CSV URL</label>
       <input type="text" id="urlHealthSnapshot" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+      <label>User Activity Log CSV URL</label>
+      <input type="text" id="urlActivityLog" placeholder="https://docs.google.com/spreadsheets/d/e/...">
       <button class="btn-save" onclick="saveSettings()">저장 후 데이터 갱신</button>
       <p class="help-text" style="margin-top:12px">설정은 브라우저 localStorage에 저장됩니다.</p>
     </div>
@@ -1914,7 +1916,7 @@ let chartMembersInstance, chartGrowthInstance;
 // ========== CONFIG ==========
 const SHEET_KEYS = [
   'urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok',
-  'urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail','urlSubAccounts','urlDiscordInsights','urlHealthSnapshot'
+  'urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail','urlSubAccounts','urlDiscordInsights','urlHealthSnapshot','urlActivityLog'
 ];
 let config = {};
 let data = {
@@ -1923,7 +1925,8 @@ let data = {
   matchingFail: [],
   subAccounts: [],
   discordInsights: [],
-  healthSnapshot: []
+  healthSnapshot: [],
+  activityLog: []
 };
 let charts = {};
 let isLive = false;
@@ -2326,7 +2329,8 @@ const SHEET_LABELS = {
   urlMatchingFail: 'Matching Fail Users',
   urlSubAccounts: 'Sub Accounts',
   urlDiscordInsights: 'Discord Insights',
-  urlHealthSnapshot: 'Health Snapshot'
+  urlHealthSnapshot: 'Health Snapshot',
+  urlActivityLog: 'User Activity Log'
 };
 
 function showLoading(show) {
@@ -2382,12 +2386,12 @@ async function loadAllData() {
   showLoading(true);
   showFetchError([]);
 
-  const sheetKeys = ['urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok','urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail','urlSubAccounts','urlDiscordInsights','urlHealthSnapshot'];
+  const sheetKeys = ['urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok','urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail','urlSubAccounts','urlDiscordInsights','urlHealthSnapshot','urlActivityLog'];
   const fetched = await Promise.all(
     sheetKeys.map(k => fetchSheetData(config[k]))
   );
 
-  const dataKeys = ['userMaster','discordDaily','youtube','tiktok','testerPipeline','funnelTracker','kpiDashboard','ugcArchive','matchingFail','subAccounts','discordInsights','healthSnapshot'];
+  const dataKeys = ['userMaster','discordDaily','youtube','tiktok','testerPipeline','funnelTracker','kpiDashboard','ugcArchive','matchingFail','subAccounts','discordInsights','healthSnapshot','activityLog'];
   let anyLive = false;
   const failedSheets = [];
   const numericFields = new Set([
@@ -3647,6 +3651,58 @@ function toggleLeftUsers() {
 }
 
 // 서브 계정 섹션 빌드
+function buildActivityChartSection(discordId) {
+  const logs = (data.activityLog || []).filter(r => r.discord_id === discordId);
+  if (!logs.length) return '';
+
+  // 날짜순 정렬, 최근 30일
+  logs.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const recent = logs.slice(-30);
+  const chartId = 'activityChart_' + discordId.slice(-6);
+
+  return `<div class="user-detail-section">
+    <div class="section-header">일일 활동 이력 <span style="font-size:11px;color:var(--muted);font-weight:400">최근 ${recent.length}일</span></div>
+    <div style="height:120px"><canvas id="${chartId}"></canvas></div>
+  </div>`;
+}
+
+function renderActivityChart(discordId) {
+  const logs = (data.activityLog || []).filter(r => r.discord_id === discordId);
+  if (!logs.length) return;
+
+  logs.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const recent = logs.slice(-30);
+  const chartId = 'activityChart_' + discordId.slice(-6);
+  const canvas = document.getElementById(chartId);
+  if (!canvas) return;
+
+  const labels = recent.map(r => r.date ? r.date.substring(5) : '');
+  const msgs = recent.map(r => parseInt(r.messages) || 0);
+  const voice = recent.map(r => parseInt(r.voice) || 0);
+
+  new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: '메시지', data: msgs, backgroundColor: '#6366f1', borderRadius: 2 },
+        { label: '보이스', data: voice, backgroundColor: '#22c55e', borderRadius: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, labels: { color: '#8b92a5', boxWidth: 10, font: { size: 10 } } },
+        tooltip: { backgroundColor: 'rgba(22,24,34,0.95)', titleColor: '#eaedf3', bodyColor: '#c0c5d4' }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#8b92a5', font: { size: 9 }, maxRotation: 45 } },
+        y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#8b92a5', font: { size: 10 } }, beginAtZero: true }
+      }
+    }
+  });
+}
+
 function buildHealthHistorySection(discordId) {
   const changes = (data.healthSnapshot || []).filter(r => r.type === 'change' && r.col_c === discordId);
   if (!changes.length) return '';
@@ -3861,6 +3917,7 @@ function openUserPanel(discordId) {
         </div>
       </div>
       ${isDev(u) ? '<div class="user-detail-section" style="background:rgba(234,88,12,0.1);border:1px solid rgba(234,88,12,0.2)"><div class="section-header">개발자 계정</div><div style="font-size:13px;color:var(--orange)">KPI·퍼널 집계에서 제외됨</div></div>' : ''}
+      ${buildActivityChartSection(u.discord_id)}
       ${buildHealthHistorySection(u.discord_id)}
       ${buildPreviousAccountSection(u)}
       ${buildSubAccountsSection(u.discord_id)}
@@ -3871,6 +3928,9 @@ function openUserPanel(discordId) {
   document.getElementById('userDetailOverlay').classList.add('active');
   document.getElementById('userDetailPanel').classList.add('active');
   document.body.style.overflow = 'hidden';
+
+  // 활동 이력 차트 렌더링 (DOM이 준비된 후)
+  requestAnimationFrame(() => renderActivityChart(u.discord_id));
 }
 
 function closeUserPanel() {
@@ -4829,7 +4889,8 @@ const SHEET_GID_MAP = {
   urlMatchingFail: 1440181399,
   urlSubAccounts: 1351563527,
   urlDiscordInsights: 1530041356,
-  urlHealthSnapshot: 1954960031
+  urlHealthSnapshot: 1954960031,
+  urlActivityLog: 447440475
 };
 
 const DEFAULT_PUB_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR3QcezImsy5jV2Wm_XL29Y0r-tujiIUiBG6xsDaNfES2-CNnQZLp_40YWPOtnLR7vf3M_iN4OP6YLy/pub';
