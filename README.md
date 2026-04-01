@@ -1,6 +1,6 @@
 # RUNuts Marketing Dashboard
 
-> **라이브**: https://evyfjae.github.io/runuts-dashboard
+> **라이브**: https://kapehorn-dev.github.io/runuts-dashboard
 
 RUNuts 마케팅 메트릭스 대시보드. GitHub Pages로 호스팅되는 단일 HTML 파일입니다.
 
@@ -34,7 +34,7 @@ push 후 GitHub Pages가 자동으로 배포합니다.
 
 | 레포 | 용도 |
 |---|---|
-| [runuts-metrics](https://github.com/evyfjae/runuts-metrics) | 자동화 스크립트 + Bot + 대시보드 소스 코드 |
+| [runuts-metrics](https://github.com/kapehorn-dev/runuts-metrics) | 자동화 스크립트 + Bot + 대시보드 소스 코드 |
 
 ## 문의
 
