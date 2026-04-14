@@ -44,6 +44,9 @@ startAutoRefresh();
     --funnel3: #06b6d4;
     --funnel4: #22c55e;
     --funnel5: #eab308;
+    --funnel-retain: #22c55e;
+    --funnel-dormant: #eab308;
+    --funnel-churn: #ef4444;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -1236,6 +1239,28 @@ startAutoRefresh();
     color: var(--red);
     font-weight: 600;
   }
+  .pipeline-step.dormant .step-circle {
+    background: var(--yellow);
+    border-color: var(--yellow);
+  }
+  .pipeline-step.dormant.current .step-circle {
+    box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.25);
+  }
+  .pipeline-step.dormant .step-label {
+    color: var(--yellow);
+    font-weight: 600;
+  }
+  .pipeline-step.retain .step-circle {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .pipeline-step.retain.current .step-circle {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+  }
+  .pipeline-step.retain .step-label {
+    color: var(--green);
+    font-weight: 600;
+  }
 
   /* Task 2: Funnel drill-down modal */
   .funnel-modal-overlay {
@@ -1912,6 +1937,18 @@ startAutoRefresh();
       <input type="text" id="urlHealthSnapshot" placeholder="https://docs.google.com/spreadsheets/d/e/...">
       <label>User Activity Log CSV URL</label>
       <input type="text" id="urlActivityLog" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+
+      <div class="section-title" style="margin-top:24px">Game User Summary (별도 스프레드시트)</div>
+      <p class="help-text" style="margin-bottom:12px">
+        BigQuery 인게임 데이터가 저장된 별도 시트입니다.<br>
+        <strong>사전 조건:</strong> Game User Summary 스프레드시트에서도 "파일 > 공유 > 웹에 게시" 필요.
+      </p>
+      <label>Game User Summary 웹에 게시 URL</label>
+      <input type="text" id="gameUserSummaryPubBase" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub">
+      <button class="btn-save" onclick="autoFillGameSummaryUrl()" style="margin-bottom:12px">Game Summary URL 자동 입력</button>
+      <label>Game User Summary CSV URL (매칭 유저)</label>
+      <input type="text" id="urlGameUserSummary" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+
       <button class="btn-save" onclick="saveSettings()">저장 후 데이터 갱신</button>
       <p class="help-text" style="margin-top:12px">설정은 브라우저 localStorage에 저장됩니다.</p>
     </div>
@@ -1930,7 +1967,8 @@ let chartMembersInstance, chartGrowthInstance;
 // ========== CONFIG ==========
 const SHEET_KEYS = [
   'urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok',
-  'urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail','urlSubAccounts','urlDiscordInsights','urlHealthSnapshot','urlActivityLog'
+  'urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail','urlSubAccounts','urlDiscordInsights','urlHealthSnapshot','urlActivityLog',
+  'urlGameUserSummary'
 ];
 let config = {};
 let data = {
@@ -1940,7 +1978,8 @@ let data = {
   subAccounts: [],
   discordInsights: [],
   healthSnapshot: [],
-  activityLog: []
+  activityLog: [],
+  gameUserSummary: []
 };
 let charts = {};
 let isLive = false;
@@ -2402,12 +2441,12 @@ async function loadAllData() {
   showLoading(true);
   showFetchError([]);
 
-  const sheetKeys = ['urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok','urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail','urlSubAccounts','urlDiscordInsights','urlHealthSnapshot','urlActivityLog'];
+  const sheetKeys = ['urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok','urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail','urlSubAccounts','urlDiscordInsights','urlHealthSnapshot','urlActivityLog','urlGameUserSummary'];
   const fetched = await Promise.all(
     sheetKeys.map(k => fetchSheetData(config[k]))
   );
 
-  const dataKeys = ['userMaster','discordDaily','youtube','tiktok','testerPipeline','funnelTracker','kpiDashboard','ugcArchive','matchingFail','subAccounts','discordInsights','healthSnapshot','activityLog'];
+  const dataKeys = ['userMaster','discordDaily','youtube','tiktok','testerPipeline','funnelTracker','kpiDashboard','ugcArchive','matchingFail','subAccounts','discordInsights','healthSnapshot','activityLog','gameUserSummary'];
   let anyLive = false;
   const failedSheets = [];
   const numericFields = new Set([
@@ -2420,7 +2459,8 @@ async function loadAllData() {
     'current_value','target_value','achievement_rate',
     'estimated_joins','days_to_approve','days_to_play',
     'visitors','pct_communicated','messages','messages_per_communicator','speaking_minutes',
-    'leavers_new','leavers_old','total_leavers','muters_new','muters_existing'
+    'leavers_new','leavers_old','total_leavers','muters_new','muters_existing',
+    'total_playtests','total_sessions','total_events'
   ]);
   dataKeys.forEach((k, i) => {
     if (fetched[i] && fetched[i].length > 0) {
@@ -2437,7 +2477,7 @@ async function loadAllData() {
       anyLive = true;
     } else if (config[sheetKeys[i]]) {
       // URL이 설정되어 있는데 fetch 실패 — 선택적 시트는 에러 표시 안 함
-      const optionalSheets = new Set(['urlHealthSnapshot', 'urlActivityLog']);
+      const optionalSheets = new Set(['urlHealthSnapshot', 'urlActivityLog', 'urlGameUserSummary']);
       if (!optionalSheets.has(sheetKeys[i])) {
         failedSheets.push(sheetKeys[i]);
       }
@@ -2758,30 +2798,149 @@ function renderWeeklySummary() {
   `;
 }
 
+// ── 플레이테스트 매핑 (retention 계산용) ──
+const PLAYTEST_MAP = {
+  'Leaks Day': ['0.1.0'],
+  '2-1 UT': ['0.2.0','0.2.1'],
+  '2-2 UT': ['0.3.0','0.3.1','0.3.2'],
+  'Happy New Year': ['0.4.0','0.4.1','0.4.2'],
+  '3차 UT (1/10)': ['0.5.0','0.5.1'],
+  '3차 UT (1/17)': ['0.6.0','0.6.1'],
+  '4차 Playtest': ['0.7.0','0.7.1'],
+  '5차 Playtest': ['0.8.0'],
+  '6차 Playtest': ['0.9.0'],
+  '7차 Playtest': ['0.10.0'],
+  '8차 Playtest': ['0.11.0','0.11.1'],
+  'April Fools': ['0.12.0'],
+  '9차 Playtest': ['0.13.0'],
+};
+const PLAYTEST_NAMES = Object.keys(PLAYTEST_MAP);
+const RECENT_4_PLAYTESTS = PLAYTEST_NAMES.slice(-4);
+
+function calcRetentionStatus(gameRow, discordStatus) {
+  /**
+   * 리텐션 분류 (대시보드에서 실시간 계산):
+   * - 이탈: Discord 탈퇴 (left / left_no_data)
+   * - 잔존: 최근 4개 플테 1회 이상 참여 + Discord active
+   * - 휴면: 그 외 (미참여 or 비활성)
+   */
+  if (discordStatus === 'left' || discordStatus === 'left_no_data') return '이탈';
+
+  // 참여 플테 목록에서 최근 4개에 해당하는지 확인
+  const playedStr = String(gameRow.played_playtests || '');
+  const inRecent = RECENT_4_PLAYTESTS.some(pt => playedStr.includes(pt));
+
+  if (inRecent && discordStatus === 'active') return '잔존';
+  if (inRecent) return '잔존'; // Discord에 없는 유저이지만 최근 플레이 함
+  return '휴면';
+}
+
+function buildGameUserMap() {
+  // Game User Summary 데이터를 user_id 기준 맵으로 변환 + retention_status 계산
+  const map = {};
+  if (!data.gameUserSummary || data.gameUserSummary.length === 0) return map;
+
+  // User Master에서 meta_id → discord status 매핑
+  const metaToStatus = {};
+  data.userMaster.forEach(u => {
+    const mid = String(u.meta_id || '').trim();
+    if (mid) metaToStatus[mid] = (u.status || '').trim().toLowerCase();
+  });
+  // Sub Accounts에서 sub_meta_id → 부모 discord status
+  if (data.subAccounts && data.subAccounts.length > 0) {
+    const didToStatus = {};
+    data.userMaster.forEach(u => {
+      if (u.discord_id && u.status) didToStatus[u.discord_id] = u.status.trim().toLowerCase();
+    });
+    data.subAccounts.forEach(sa => {
+      const subMeta = String(sa.sub_meta_id || '').trim();
+      const parentDid = String(sa.discord_id || '').trim();
+      if (subMeta && !metaToStatus[subMeta]) {
+        metaToStatus[subMeta] = didToStatus[parentDid] || 'active';
+      }
+    });
+  }
+
+  data.gameUserSummary.forEach(row => {
+    const uid = String(row.user_id || '').trim();
+    if (!uid) return;
+    const discordStatus = metaToStatus[uid] || '';
+    row._retention_status = calcRetentionStatus(row, discordStatus);
+    row._discord_status = discordStatus;
+    map[uid] = row;
+  });
+  return map;
+}
+
 function renderFunnel(containerId) {
-  // A2/A3: LSD 토글에 따라 범위 통일 (KPI와 동일)
+  // LSD 토글에 따라 범위 통일
   let um = showLSDData ? data.userMaster.filter(isRealUser) : data.userMaster.filter(isRUNuts);
 
-  // A4: 현재 디스코드 멤버 = Discord Daily total_members (현재 서버 멤버)
+  // Game User Summary 맵 (meta_id → 게임 데이터)
+  const gameMap = buildGameUserMap();
+  const hasGameData = Object.keys(gameMap).length > 0;
+
+  // 1단계: 현재 디스코드 멤버
   const ddAll = data.discordDaily.filter(r => r.date >= DATA_CUTOFF);
   const latestDD = ddAll[ddAll.length - 1] || {};
   const discordMembers = showLSDData
     ? (latestDD.total_members ? parseInt(latestDD.total_members) : um.filter(u => u.status === 'active').length)
-    : um.filter(u => u.status === 'active').length; // RUNuts만 모드: UM 기준 active
+    : um.filter(u => u.status === 'active').length;
 
+  // 2단계: 테스터 승인
   const approved = um.filter(u => u.tester_approved === 'O' || u.tester_approved === 'TRUE').length;
-  // A1: Playfab 등록 = 테스터 승인 유저 중 playfab_matched=O
-  const playfabRegistered = um.filter(u =>
-    (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O'
-  ).length;
-  // 잔존: Playfab 등록 유저 중 최근 1달 이내 플레이 (현재 플레이 데이터 없으므로 active 상태로 대체)
-  const retainActive = um.filter(u =>
-    (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O' && u.status === 'active'
-  ).length;
+
+  // 3단계: 게임 플레이 (Game User Summary에 있는 유저)
+  let gamePlayCount = 0;
+  let retainCount = 0;
+  let dormantCount = 0;
+  let churnCount = 0;
+
+  if (hasGameData) {
+    // User Master에서 meta_id가 있고 Game User Summary에도 있는 유저
+    um.forEach(u => {
+      const metaId = String(u.meta_id || '').trim();
+      if (!metaId) return;
+      const gameRow = gameMap[metaId];
+      if (!gameRow) return;
+      gamePlayCount++;
+      const rs = (gameRow._retention_status || '').trim();
+      if (rs === '잔존') retainCount++;
+      else if (rs === '휴면') dormantCount++;
+      else if (rs === '이탈') churnCount++;
+    });
+
+    // Game User Summary에서 UM에 매칭되지 않은 유저도 포함 (미매칭 BQ 유저)
+    // → 이들은 UM에 meta_id가 없으므로 위 루프에서 빠짐
+    // → 전체 Game User Summary 기준으로 카운트
+    const totalGameUsers = data.gameUserSummary.length;
+    if (totalGameUsers > gamePlayCount) {
+      // UM에 매칭 안 된 게임 유저가 있음 → 전체 기준 사용
+      gamePlayCount = totalGameUsers;
+      retainCount = 0; dormantCount = 0; churnCount = 0;
+      data.gameUserSummary.forEach(row => {
+        const rs = (row._retention_status || '').trim();
+        if (rs === '잔존') retainCount++;
+        else if (rs === '휴면') dormantCount++;
+        else if (rs === '이탈') churnCount++;
+      });
+    }
+  } else {
+    // Game User Summary 미연동 시 기존 방식으로 fallback (디스코드 상태 기반)
+    const playfabUsers = um.filter(u =>
+      (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O'
+    );
+    gamePlayCount = playfabUsers.length;
+    retainCount = playfabUsers.filter(u => u.status === 'active').length;
+    churnCount = playfabUsers.filter(u => u.status === 'left' || u.status === 'left_no_data').length;
+    dormantCount = gamePlayCount - retainCount - churnCount;
+  }
 
   const groupLabel = showLSDData ? '전체' : 'RUNuts';
-  const stages = [
-    { label: '현재 디스코드 멤버', sublabel: `${groupLabel} 서버 멤버`, value: discordMembers, color: 'var(--funnel1)',
+
+  // 메인 퍼널 단계 (3단계)
+  const mainStages = [
+    { label: '디스코드 가입', sublabel: `${groupLabel} 서버 멤버`, value: discordMembers, color: 'var(--funnel1)',
       tip: showLSDData
         ? '디스코드 서버의 현재 총 멤버 수 (Discord Server Insights 기준)'
         : 'RUNuts 유저 중 현재 디스코드에 활동 중인 멤버 수',
@@ -2789,18 +2948,33 @@ function renderFunnel(containerId) {
     { label: '테스터 승인', sublabel: '디스코드 테스터 역할', value: approved, color: 'var(--funnel2)',
       tip: `${groupLabel} 유저 중 디스코드에서 테스터 역할(Role)을 부여받은 수`,
       stageKey: 'tester' },
-    { label: 'Playfab 등록', sublabel: '테스터 중 계정 매칭', value: playfabRegistered, color: 'var(--funnel3)',
-      tip: '테스터 승인 유저 중 PlayFab 계정이 디스코드 유저와 매칭된 수',
-      stageKey: 'playfab' },
-    { label: '잔존', sublabel: '최근 1달 이내 플레이', value: retainActive, color: 'var(--funnel4)',
-      tip: 'Playfab 등록 유저 중 최근 1개월 이내 플레이한 유저 수. 현재 Unity Analytics / PlayFab 데이터 연결 전이므로 디스코드 활동 기준으로 대체 표시.',
-      stageKey: 'retain' }
+    { label: '게임 플레이', sublabel: hasGameData ? 'BigQuery 기반 실제 접속' : 'PlayFab 등록 기준 (게임 데이터 미연동)',
+      value: gamePlayCount, color: 'var(--funnel3)',
+      tip: hasGameData
+        ? 'BigQuery 인게임 데이터에서 확인된 실제 게임 플레이 유저 수'
+        : '테스터 승인 유저 중 PlayFab 계정이 매칭된 수 (Game User Summary 연동 시 실제 데이터로 전환)',
+      stageKey: 'gameplay' }
   ];
-  const maxVal = Math.max(...stages.map(s => s.value), 1);
 
-  document.getElementById(containerId).innerHTML = stages.map((s, i) => {
+  // 리텐션 분류 (3분류)
+  const retentionStages = [
+    { label: '잔존', sublabel: '최근 4회 플테 참여 + 활동 중', value: retainCount, color: 'var(--funnel-retain)',
+      tip: hasGameData ? '최근 4회 플레이테스트에 참여하고 디스코드에서도 활동 중인 유저' : '디스코드 활동 중인 유저 (게임 데이터 미연동)',
+      stageKey: 'retain' },
+    { label: '휴면', sublabel: '최근 플레이 없음 / 디스코드 잔류', value: dormantCount, color: 'var(--funnel-dormant)',
+      tip: hasGameData ? '최근 플레이테스트에 참여하지 않았지만 디스코드에는 남아있는 유저' : '게임 데이터 미연동',
+      stageKey: 'dormant' },
+    { label: '이탈', sublabel: '디스코드 탈퇴', value: churnCount, color: 'var(--funnel-churn)',
+      tip: hasGameData ? '디스코드 서버를 탈퇴한 유저' : '게임 데이터 미연동',
+      stageKey: 'churn' }
+  ];
+
+  const maxVal = Math.max(...mainStages.map(s => s.value), 1);
+
+  // 메인 퍼널 렌더링
+  let html = mainStages.map((s, i) => {
     const pct = Math.round(s.value / maxVal * 100);
-    const prevVal = stages[i-1]?.value || 0;
+    const prevVal = mainStages[i-1]?.value || 0;
     const cvr = i > 0 && prevVal > 0 ? Math.round(s.value / prevVal * 100) : (i === 0 ? 100 : 0);
     const clickHandler = `onclick="openFunnelModal('${s.stageKey}', '${s.label}')"`;
     return `
@@ -2814,6 +2988,33 @@ function renderFunnel(containerId) {
       </div>
     `;
   }).join('');
+
+  // 리텐션 분류 렌더링 (게임 플레이 하위 breakdown)
+  if (gamePlayCount > 0) {
+    const retMaxVal = Math.max(gamePlayCount, 1);
+    html += `
+      <div style="margin:16px 0 8px 0;padding:12px 16px;background:var(--accent-soft);border-radius:8px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">
+          리텐션 분류 <small style="color:var(--muted);font-weight:400">(게임 플레이 ${fmt(gamePlayCount)}명 기준)</small>
+        </div>
+    `;
+    retentionStages.forEach(s => {
+      const pct = Math.round(s.value / retMaxVal * 100);
+      const clickHandler = `onclick="openFunnelModal('${s.stageKey}', '${s.label}')"`;
+      html += `
+        <div class="funnel-row" ${clickHandler} style="cursor:pointer;margin-bottom:6px;">
+          <div class="funnel-label" style="min-width:100px">${s.label}<br><small>${s.sublabel}</small><span class="tooltip">${s.tip}</span></div>
+          <div class="funnel-bar-wrap">
+            <div class="funnel-bar" style="width:${Math.max(pct,5)}%;background:${s.color}">${fmt(s.value)}</div>
+          </div>
+          <div class="funnel-pct">${pct}%</div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById(containerId).innerHTML = html;
 }
 
 // ========== 개요 탭: 멤버 성장 추이 + 일일 순증감 ==========
@@ -3918,14 +4119,25 @@ function openUserPanel(discordId) {
   if (!u) return;
 
   const statusKo = { active: '활동 중', left: '탈퇴', pre_registered: '사전등록' };
-  const isLeft = u.status === 'left';
+  const isLeft = u.status === 'left' || u.status === 'left_no_data';
+
+  // Game User Summary에서 이 유저의 인게임 데이터 찾기
+  const gameMap = buildGameUserMap();
+  const metaId = String(u.meta_id || '').trim();
+  const gameRow = metaId ? gameMap[metaId] : null;
+  const hasPlayed = !!gameRow;
+  const retStatus = gameRow ? (gameRow._retention_status || '').trim() : '';
+
+  // 파이프라인 단계 (5단계)
   const stages = [
-    { name:'디스코드 멤버', done: true },
+    { name:'디스코드 가입', done: true },
     { name:'테스터 승인', done: u.tester_approved==='O'||u.tester_approved==='TRUE' },
-    { name:'Playfab 등록', done: u.playfab_matched==='O' },
+    { name:'게임 플레이', done: hasPlayed },
     ...(isLeft
       ? [{ name:`탈퇴${u.leave_date ? ' (' + toKST(u.leave_date).substring(0,10) + ')' : ''}`, done: true, isLeave: true }]
-      : [{ name:'잔존', done: u.status==='active' }]
+      : retStatus === '잔존' ? [{ name:'잔존', done: true, isRetain: true }]
+      : retStatus === '휴면' ? [{ name:'휴면', done: true, isDormant: true }]
+      : [{ name:'잔존', done: false }]
     )
   ];
   let currentIdx = isLeft
@@ -3974,14 +4186,29 @@ function openUserPanel(discordId) {
           ${u.playfab_id ? `<div class="detail-row"><span class="detail-label">PlayFab ID</span><span class="detail-value">${u.playfab_id}</span></div>` : ''}
           ${u.meta_username_prev ? `<div class="detail-row"><span class="detail-label">Meta 이전 유저명</span><span class="detail-value">${u.meta_username_prev}</span></div>` : ''}
           <div class="detail-row"><span class="detail-label">Playfab 등록</span><span class="detail-value">${u.playfab_matched==='O' ? '✅ 완료' : '❌ 미완료'}</span></div>
-          <div class="detail-row"><span class="detail-label">첫 플레이</span><span class="detail-value">${u.first_play_date || '-'}</span></div>
-          <div class="detail-row"><span class="detail-label">총 플레이테스트</span><span class="detail-value">${u.total_playtests || '-'}</span></div>
+          ${gameRow ? `
+            <div class="detail-row"><span class="detail-label">리텐션 상태</span><span class="detail-value"><span style="padding:2px 8px;border-radius:4px;font-size:12px;${
+              retStatus === '잔존' ? 'background:rgba(34,197,94,0.15);color:var(--green)' :
+              retStatus === '휴면' ? 'background:rgba(234,179,8,0.15);color:var(--yellow)' :
+              'background:rgba(239,68,68,0.15);color:var(--red)'
+            }">${retStatus}</span></span></div>
+            <div class="detail-row"><span class="detail-label">첫 플레이</span><span class="detail-value">${gameRow.first_play_date || '-'}</span></div>
+            <div class="detail-row"><span class="detail-label">최근 플레이</span><span class="detail-value">${gameRow.last_play_date || '-'}</span></div>
+            <div class="detail-row"><span class="detail-label">총 플레이테스트</span><span class="detail-value">${gameRow.total_playtests || 0}회</span></div>
+            <div class="detail-row"><span class="detail-label">참여 플레이테스트</span><span class="detail-value" style="font-size:11px">${gameRow.played_playtests || '-'}</span></div>
+            <div class="detail-row"><span class="detail-label">총 세션</span><span class="detail-value">${gameRow.total_sessions || 0}회</span></div>
+            <div class="detail-row"><span class="detail-label">총 이벤트</span><span class="detail-value">${fmt(gameRow.total_events || 0)}</span></div>
+            <div class="detail-row"><span class="detail-label">국가</span><span class="detail-value">${gameRow.country || '-'}</span></div>
+          ` : `
+            <div class="detail-row"><span class="detail-label">첫 플레이</span><span class="detail-value">${u.first_play_date || '-'}</span></div>
+            <div class="detail-row"><span class="detail-label">총 플레이테스트</span><span class="detail-value">${u.total_playtests || '-'}</span></div>
+          `}
         </div>
       </div>
       <div class="user-detail-section">
         <div class="section-header">테스터 여정</div>
         <div class="pipeline-visualization">
-          ${stages.map((s, i) => `<div class="pipeline-step ${s.done ? 'completed' : ''} ${i === currentIdx ? 'current' : ''} ${s.isLeave ? 'leave' : ''}"><span class="step-circle"></span><span class="step-label">${s.name}</span></div>`).join('')}
+          ${stages.map((s, i) => `<div class="pipeline-step ${s.done ? 'completed' : ''} ${i === currentIdx ? 'current' : ''} ${s.isLeave ? 'leave' : ''} ${s.isDormant ? 'dormant' : ''} ${s.isRetain ? 'retain' : ''}"><span class="step-circle"></span><span class="step-label">${s.name}</span></div>`).join('')}
         </div>
       </div>
       <div class="user-detail-section">
@@ -4052,26 +4279,53 @@ function closeUserPanel() {
 // Task 2: Funnel drill-down modal functions
 function openFunnelModal(stageKey, stageName) {
   let um = showLSDData ? data.userMaster.filter(isRealUser) : data.userMaster.filter(isRUNuts);
+  const gameMap = buildGameUserMap();
+  const hasGameData = Object.keys(gameMap).length > 0;
 
   let users = [];
   let title = '';
+  let isGameList = false; // Game User Summary 기반 목록 여부
 
   switch (stageKey) {
     case 'discord':
-      title = '현재 디스코드 멤버';
+      title = '디스코드 가입';
       users = um.filter(u => u.status === 'active');
       break;
     case 'tester':
       title = '테스터 승인';
       users = um.filter(u => u.tester_approved === 'O' || u.tester_approved === 'TRUE');
       break;
-    case 'playfab':
-      title = 'Playfab 등록';
-      users = um.filter(u => (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O');
+    case 'gameplay':
+      title = '게임 플레이';
+      if (hasGameData) {
+        isGameList = true;
+        users = data.gameUserSummary;
+      } else {
+        users = um.filter(u => (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O');
+      }
       break;
     case 'retain':
       title = '잔존';
-      users = um.filter(u => (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O' && u.status === 'active');
+      if (hasGameData) {
+        isGameList = true;
+        users = data.gameUserSummary.filter(r => (r._retention_status || '').trim() === '잔존');
+      } else {
+        users = um.filter(u => (u.tester_approved === 'O' || u.tester_approved === 'TRUE') && u.playfab_matched === 'O' && u.status === 'active');
+      }
+      break;
+    case 'dormant':
+      title = '휴면';
+      if (hasGameData) {
+        isGameList = true;
+        users = data.gameUserSummary.filter(r => (r._retention_status || '').trim() === '휴면');
+      }
+      break;
+    case 'churn':
+      title = '이탈';
+      if (hasGameData) {
+        isGameList = true;
+        users = data.gameUserSummary.filter(r => (r._retention_status || '').trim() === '이탈');
+      }
       break;
   }
 
@@ -4079,16 +4333,59 @@ function openFunnelModal(stageKey, stageName) {
   const countEl = document.getElementById('funnelModalCount');
   const listEl = document.getElementById('funnelUserList');
 
+  // 리텐션 분류 색상
+  const stageColors = { retain: 'var(--funnel-retain)', dormant: 'var(--funnel-dormant)', churn: 'var(--funnel-churn)' };
+  const stageColor = stageColors[stageKey] || 'var(--accent)';
+
   titleEl.textContent = title;
   countEl.innerHTML = `<div style="font-size:14px;color:var(--muted);margin-bottom:12px;">총 ${fmt(users.length)}명</div>`;
 
   if (users.length === 0) {
     listEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;">해당하는 유저가 없습니다</div>';
+  } else if (isGameList) {
+    // Game User Summary 기반 목록 — meta_id로 UM 유저 찾아서 디스코드 이름 표시
+    const umByMetaId = {};
+    data.userMaster.forEach(u => {
+      const mid = String(u.meta_id || '').trim();
+      if (mid) umByMetaId[mid] = u;
+    });
+
+    listEl.innerHTML = users.slice(0, 100).map(row => {
+      const uid = String(row.user_id || '').trim();
+      const umUser = umByMetaId[uid];
+      const displayName = umUser
+        ? (umUser.discord_username || umUser.discord_display_name || 'Unknown')
+        : (row.meta_name || row.meta_username || `ID:${uid}`);
+      const subInfo = umUser
+        ? `그룹: ${getUserGroup(umUser)}`
+        : '디스코드 미매칭';
+      const gameInfo = `플테: ${row.total_playtests || 0}회 | 세션: ${row.total_sessions || 0}`;
+      const retBadge = row._retention_status
+        ? `<span style="font-size:11px;padding:2px 6px;border-radius:4px;background:${
+            row._retention_status === '잔존' ? 'rgba(34,197,94,0.15);color:var(--green)' :
+            row._retention_status === '휴면' ? 'rgba(234,179,8,0.15);color:var(--yellow)' :
+            'rgba(239,68,68,0.15);color:var(--red)'
+          }">${row._retention_status}</span>`
+        : '';
+
+      return `
+        <div class="funnel-user-item" ${umUser ? `onclick="openUserPanel('${umUser.discord_id}')" style="cursor:pointer"` : ''}>
+          <div class="funnel-user-item-main">
+            <div class="funnel-user-item-name">${displayName} ${retBadge}</div>
+            <div class="funnel-user-item-meta">${gameInfo} | ${subInfo}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    if (users.length > 100) {
+      listEl.innerHTML += `<div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">외 ${users.length - 100}명</div>`;
+    }
   } else {
+    // 기존 User Master 기반 목록
     listEl.innerHTML = users.slice(0, 100).map(u => {
       const grp = getUserGroup(u);
       return `
-        <div class="funnel-user-item">
+        <div class="funnel-user-item" onclick="openUserPanel('${u.discord_id}')" style="cursor:pointer">
           <div class="funnel-user-item-main">
             <div class="funnel-user-item-name">${u.discord_username || u.discord_display_name || 'Unknown'}</div>
             <div class="funnel-user-item-meta">가입: ${toKST(u.join_date)} | 그룹: ${grp}</div>
@@ -4865,7 +5162,7 @@ ssh -i "key/ssh-key-2026-03-27.key" opc@134.185.103.73 "sudo systemctl restart r
     <div class="info-section-grid" style="margin-top:12px;grid-template-columns:1fr">
       <div class="info-card">
         <ul>
-          <li>잔존 기준 미전환 → 현재 디스코드 활동 기준, 향후 최근 1개월 플레이 기준으로 전환 예정</li>
+          <li>잔존/휴면/이탈 분류 → Game User Summary 연동 시 BigQuery 실제 플레이 데이터 기반, 미연동 시 디스코드 활동 기준으로 fallback</li>
           <li>TikTok API 자동 수집 미구현 → 수동 입력 필요</li>
           <li>leave_date 소급 불가 → Bot 이전 시점에 이탈한 유저의 이탈일 기록 없음</li>
           <li>unknown 그룹 ${fmt(unknownUsers.length)}명 → 가입일 없어 LSD/RUNuts 분류 불가 (대부분 사전등록)</li>
@@ -5009,6 +5306,27 @@ const SHEET_GID_MAP = {
 
 const DEFAULT_PUB_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR3QcezImsy5jV2Wm_XL29Y0r-tujiIUiBG6xsDaNfES2-CNnQZLp_40YWPOtnLR7vf3M_iN4OP6YLy/pub';
 
+// Game User Summary 시트 (별도 스프레드시트)
+const DEFAULT_GAME_SUMMARY_PUB_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRhutw3oY3Ak_d0AF8xI9XQoLYSlp5ECuqKfpoFHljyBYBHuPuQWgRKDRRKT-6lCSyo0xlxD-PjdrQs/pub';
+const GAME_SUMMARY_GID_MAP = {
+  urlGameUserSummary: 151122489  // Game Users 탭 (전체 405명, 순수 BigQuery 데이터)
+};
+
+function autoFillGameSummaryUrl() {
+  const pubBase = (document.getElementById('gameUserSummaryPubBase')?.value?.trim()) || '';
+  if (!pubBase || !pubBase.includes('/pub')) {
+    alert('Game User Summary의 웹에 게시 URL을 입력해주세요.');
+    return;
+  }
+  for (const [key, gid] of Object.entries(GAME_SUMMARY_GID_MAP)) {
+    const url = `${pubBase}?gid=${gid}&single=true&output=csv`;
+    const el = document.getElementById(key);
+    if (el) el.value = url;
+  }
+  config.gameUserSummaryPubBase = pubBase;
+  saveSettings();
+}
+
 function autoFillUrls() {
   const pubBase = (document.getElementById('sheetsId').value.trim()) || DEFAULT_PUB_BASE;
   let baseUrl = pubBase;
@@ -5039,6 +5357,8 @@ function loadSettings() {
   });
   const siEl = document.getElementById('sheetsId');
   if (siEl && config.sheetsId) siEl.value = config.sheetsId;
+  const gsEl = document.getElementById('gameUserSummaryPubBase');
+  if (gsEl && config.gameUserSummaryPubBase) gsEl.value = config.gameUserSummaryPubBase;
 }
 
 function saveSettings() {
@@ -5061,6 +5381,16 @@ loadSettings();
   for (const [key, gid] of Object.entries(SHEET_GID_MAP)) {
     if (!config[key]) {
       config[key] = `${base}?gid=${gid}&single=true&output=csv`;
+      const el = document.getElementById(key);
+      if (el) el.value = config[key];
+      changed = true;
+    }
+  }
+  // Game User Summary 시트 자동 보충 (별도 스프레드시트)
+  const gsBase = config.gameUserSummaryPubBase || DEFAULT_GAME_SUMMARY_PUB_BASE;
+  for (const [key, gid] of Object.entries(GAME_SUMMARY_GID_MAP)) {
+    if (!config[key]) {
+      config[key] = `${gsBase}?gid=${gid}&single=true&output=csv`;
       const el = document.getElementById(key);
       if (el) el.value = config[key];
       changed = true;
