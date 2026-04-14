@@ -1807,6 +1807,14 @@ startAutoRefresh();
         <button class="filter-pill" data-filter="tier" data-value="silent" style="color:#475569">Silent</button>
       </div>
       <div class="filter-group">
+        <label>리텐션:</label>
+        <button class="filter-pill active" data-filter="retention" data-value="">전체</button>
+        <button class="filter-pill" data-filter="retention" data-value="잔존" style="color:var(--green)">잔존</button>
+        <button class="filter-pill" data-filter="retention" data-value="휴면" style="color:var(--yellow)">휴면</button>
+        <button class="filter-pill" data-filter="retention" data-value="이탈" style="color:var(--red)">이탈</button>
+        <button class="filter-pill" data-filter="retention" data-value="미연동" style="color:#64748b">미연동</button>
+      </div>
+      <div class="filter-group">
         <button class="filter-pill-toggle" id="leftUsersToggle" onclick="toggleLeftUsers()">탈퇴 유저 보기</button>
       </div>
       <div class="filter-group">
@@ -2000,7 +2008,8 @@ let userFilters = {
   tester: '',
   matching: '',
   health: '',
-  tier: ''
+  tier: '',
+  retention: ''
 };
 
 // ========== 건강도 (방패 아이콘 — 체력 게이지 컨셉) ==========
@@ -2257,6 +2266,26 @@ function getFilteredUsers() {
   // Apply tier filter
   if (userFilters.tier) {
     filtered = filtered.filter(u => getUserTier(u).level === userFilters.tier);
+  }
+
+  // Apply retention filter (Game User Summary 기반)
+  if (userFilters.retention) {
+    const gameMap = buildGameUserMap();
+    if (userFilters.retention === '미연동') {
+      // 게임 데이터 없는 유저
+      filtered = filtered.filter(u => {
+        const mid = String(u.meta_id || '').trim();
+        return !mid || !gameMap[mid];
+      });
+    } else {
+      // 잔존/휴면/이탈
+      filtered = filtered.filter(u => {
+        const mid = String(u.meta_id || '').trim();
+        const gameRow = mid ? gameMap[mid] : null;
+        if (!gameRow) return false;
+        return (gameRow._retention_status || '').trim() === userFilters.retention;
+      });
+    }
   }
 
   return filtered;
@@ -4195,7 +4224,17 @@ function openUserPanel(discordId) {
             <div class="detail-row"><span class="detail-label">첫 플레이</span><span class="detail-value">${gameRow.first_play_date || '-'}</span></div>
             <div class="detail-row"><span class="detail-label">최근 플레이</span><span class="detail-value">${gameRow.last_play_date || '-'}</span></div>
             <div class="detail-row"><span class="detail-label">총 플레이테스트</span><span class="detail-value">${gameRow.total_playtests || 0}회</span></div>
-            <div class="detail-row"><span class="detail-label">참여 플레이테스트</span><span class="detail-value" style="font-size:11px">${gameRow.played_playtests || '-'}</span></div>
+            <div class="detail-row" style="align-items:flex-start"><span class="detail-label">참여 플레이테스트</span><span class="detail-value">${(() => {
+              const pts = (gameRow.played_playtests || '').split(',').map(s => s.trim()).filter(Boolean);
+              if (!pts.length) return '-';
+              return '<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end">' + pts.map(pt => {
+                const isRecent = RECENT_4_PLAYTESTS.includes(pt);
+                const bg = isRecent ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)';
+                const color = isRecent ? '#a5b4fc' : 'var(--muted)';
+                const border = isRecent ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(255,255,255,0.08)';
+                return '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;background:' + bg + ';color:' + color + ';border:' + border + ';line-height:1.4">' + pt + '</span>';
+              }).join('') + '</div>';
+            })()}</span></div>
             <div class="detail-row"><span class="detail-label">총 세션</span><span class="detail-value">${gameRow.total_sessions || 0}회</span></div>
             <div class="detail-row"><span class="detail-label">총 이벤트</span><span class="detail-value">${fmt(gameRow.total_events || 0)}</span></div>
             <div class="detail-row"><span class="detail-label">국가</span><span class="detail-value">${gameRow.country || '-'}</span></div>
