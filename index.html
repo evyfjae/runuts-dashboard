@@ -1654,6 +1654,10 @@ startAutoRefresh();
       <div class="section-title">플레이테스트별 참여자 수</div>
       <div style="height:320px;position:relative"><canvas id="playtestChart"></canvas></div>
     </div>
+    <div class="chart-container">
+      <div class="section-title">플레이테스트별 일별 활성 유저 (DAU)</div>
+      <div style="height:320px;position:relative"><canvas id="playtestDauChart"></canvas></div>
+    </div>
     <div class="table-container">
       <div class="section-title">플레이테스트 요약</div>
       <table>
@@ -1662,6 +1666,8 @@ startAutoRefresh();
           <th style="text-align:center">참여자</th>
           <th style="text-align:center">신규</th>
           <th style="text-align:center">재참여</th>
+          <th style="text-align:center">세션</th>
+          <th style="text-align:center">이벤트</th>
           <th style="text-align:center">잔존</th>
           <th style="text-align:center">휴면</th>
           <th style="text-align:center">이탈</th>
@@ -2003,7 +2009,7 @@ let chartMembersInstance, chartGrowthInstance;
 const SHEET_KEYS = [
   'urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok',
   'urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail','urlSubAccounts','urlDiscordInsights','urlHealthSnapshot','urlActivityLog',
-  'urlGameUserSummary'
+  'urlGameUserSummary','urlPlaytestSummary','urlPlaytestDaily'
 ];
 let config = {};
 let data = {
@@ -2014,7 +2020,9 @@ let data = {
   discordInsights: [],
   healthSnapshot: [],
   activityLog: [],
-  gameUserSummary: []
+  gameUserSummary: [],
+  playtestSummary: [],
+  playtestDaily: []
 };
 let charts = {};
 let isLive = false;
@@ -2497,12 +2505,12 @@ async function loadAllData() {
   showLoading(true);
   showFetchError([]);
 
-  const sheetKeys = ['urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok','urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail','urlSubAccounts','urlDiscordInsights','urlHealthSnapshot','urlActivityLog','urlGameUserSummary'];
+  const sheetKeys = ['urlUserMaster','urlDiscordDaily','urlYouTube','urlTikTok','urlTesterPipeline','urlFunnelTracker','urlKpiDashboard','urlUGCArchive','urlMatchingFail','urlSubAccounts','urlDiscordInsights','urlHealthSnapshot','urlActivityLog','urlGameUserSummary','urlPlaytestSummary','urlPlaytestDaily'];
   const fetched = await Promise.all(
     sheetKeys.map(k => fetchSheetData(config[k]))
   );
 
-  const dataKeys = ['userMaster','discordDaily','youtube','tiktok','testerPipeline','funnelTracker','kpiDashboard','ugcArchive','matchingFail','subAccounts','discordInsights','healthSnapshot','activityLog','gameUserSummary'];
+  const dataKeys = ['userMaster','discordDaily','youtube','tiktok','testerPipeline','funnelTracker','kpiDashboard','ugcArchive','matchingFail','subAccounts','discordInsights','healthSnapshot','activityLog','gameUserSummary','playtestSummary','playtestDaily'];
   let anyLive = false;
   const failedSheets = [];
   const numericFields = new Set([
@@ -2516,7 +2524,8 @@ async function loadAllData() {
     'estimated_joins','days_to_approve','days_to_play',
     'visitors','pct_communicated','messages','messages_per_communicator','speaking_minutes',
     'leavers_new','leavers_old','total_leavers','muters_new','muters_existing',
-    'total_playtests','total_sessions','total_events'
+    'total_playtests','total_sessions','total_events',
+    'unique_users','active_days','daily_users','daily_sessions','daily_events'
   ]);
   dataKeys.forEach((k, i) => {
     if (fetched[i] && fetched[i].length > 0) {
@@ -2533,7 +2542,7 @@ async function loadAllData() {
       anyLive = true;
     } else if (config[sheetKeys[i]]) {
       // URL이 설정되어 있는데 fetch 실패 — 선택적 시트는 에러 표시 안 함
-      const optionalSheets = new Set(['urlHealthSnapshot', 'urlActivityLog', 'urlGameUserSummary']);
+      const optionalSheets = new Set(['urlHealthSnapshot', 'urlActivityLog', 'urlGameUserSummary', 'urlPlaytestSummary', 'urlPlaytestDaily']);
       if (!optionalSheets.has(sheetKeys[i])) {
         failedSheets.push(sheetKeys[i]);
       }
@@ -3812,33 +3821,36 @@ function renderFunnelTable() {
 
 // ========== 플레이테스트 분석 ==========
 let _playtestChart = null;
+let _playtestDauChart = null;
 function renderPlaytestAnalysis() {
   const gameMap = buildGameUserMap();
   const gameRows = data.gameUserSummary || [];
   if (!gameRows.length) {
-    document.getElementById('playtestTableBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted)">Game User Summary 데이터가 없습니다. 설정에서 URL을 연결해주세요.</td></tr>';
+    document.getElementById('playtestTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted)">Game User Summary 데이터가 없습니다. 설정에서 URL을 연결해주세요.</td></tr>';
     return;
   }
 
-  // 플테별 집계
+  // BigQuery Playtest Summary 데이터 (있으면 사용)
+  const ptSummaryMap = {};
+  (data.playtestSummary || []).forEach(row => {
+    ptSummaryMap[row.playtest_name] = row;
+  });
+
+  // 플테별 집계 (Game User Summary 기반)
   const stats = {};
   PLAYTEST_NAMES.forEach(pt => {
     stats[pt] = { participants: 0, newUsers: 0, returning: 0, retain: 0, dormant: 0, churn: 0 };
   });
 
-  // 유저별 첫 플테 판별을 위해 PLAYTEST_NAMES 순서 사용
   gameRows.forEach(row => {
     const played = (row.played_playtests || '').split(',').map(s => s.trim()).filter(Boolean);
     if (!played.length) return;
     const retStatus = (row._retention_status || '').trim();
-
-    // 이 유저의 첫 플테 (PLAYTEST_NAMES 순서 기준 가장 빠른 것)
     let firstPtIdx = 999;
     played.forEach(pt => {
       const idx = PLAYTEST_NAMES.indexOf(pt);
       if (idx >= 0 && idx < firstPtIdx) firstPtIdx = idx;
     });
-
     played.forEach(pt => {
       if (!stats[pt]) return;
       stats[pt].participants++;
@@ -3851,11 +3863,9 @@ function renderPlaytestAnalysis() {
     });
   });
 
-  // 차트 렌더링
+  // 참여자 차트
   const ctx = document.getElementById('playtestChart');
   if (_playtestChart) _playtestChart.destroy();
-
-  // 라벨 축약
   const shortLabels = PLAYTEST_NAMES.map(n => n.replace('Playtest', 'PT').replace('UT ', 'UT'));
 
   _playtestChart = new Chart(ctx, {
@@ -3863,35 +3873,21 @@ function renderPlaytestAnalysis() {
     data: {
       labels: shortLabels,
       datasets: [
-        {
-          label: '신규',
-          data: PLAYTEST_NAMES.map(pt => stats[pt].newUsers),
-          backgroundColor: 'rgba(99,102,241,0.7)',
-          borderRadius: 2,
-        },
-        {
-          label: '재참여',
-          data: PLAYTEST_NAMES.map(pt => stats[pt].returning),
-          backgroundColor: 'rgba(99,102,241,0.3)',
-          borderRadius: 2,
-        }
+        { label: '신규', data: PLAYTEST_NAMES.map(pt => stats[pt].newUsers), backgroundColor: 'rgba(99,102,241,0.7)', borderRadius: 2 },
+        { label: '재참여', data: PLAYTEST_NAMES.map(pt => stats[pt].returning), backgroundColor: 'rgba(99,102,241,0.3)', borderRadius: 2 }
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: true, position: 'top', labels: { color: '#8b92a5', font: { size: 11 }, boxWidth: 12, padding: 12 } },
-        tooltip: {
-          callbacks: {
-            afterBody: function(ctx) {
-              const idx = ctx[0].dataIndex;
-              const pt = PLAYTEST_NAMES[idx];
-              const s = stats[pt];
-              return `총 참여자: ${s.participants}\n잔존: ${s.retain} / 휴면: ${s.dormant} / 이탈: ${s.churn}`;
-            }
-          }
-        }
+        tooltip: { callbacks: { afterBody: function(ctx) {
+          const pt = PLAYTEST_NAMES[ctx[0].dataIndex]; const s = stats[pt];
+          const bq = ptSummaryMap[pt];
+          let lines = [`총 참여자: ${s.participants}`, `잔존: ${s.retain} / 휴면: ${s.dormant} / 이탈: ${s.churn}`];
+          if (bq) lines.push(`세션: ${fmt(bq.total_sessions)} / 이벤트: ${fmt(bq.total_events)}`);
+          return lines.join('\n');
+        }}}
       },
       scales: {
         x: { stacked: true, grid: { display: false }, ticks: { color: '#8b92a5', font: { size: 10 }, maxRotation: 45, minRotation: 25 } },
@@ -3900,16 +3896,64 @@ function renderPlaytestAnalysis() {
     }
   });
 
+  // DAU 차트 (Playtest Daily 데이터가 있을 때)
+  const dailyRows = data.playtestDaily || [];
+  if (dailyRows.length > 0) {
+    const dauCtx = document.getElementById('playtestDauChart');
+    if (dauCtx) {
+      if (_playtestDauChart) _playtestDauChart.destroy();
+      // 플테별 그룹화
+      const ptDaily = {};
+      dailyRows.forEach(r => {
+        if (!ptDaily[r.playtest_name]) ptDaily[r.playtest_name] = [];
+        ptDaily[r.playtest_name].push({ date: r.event_date, users: r.daily_users, sessions: r.daily_sessions });
+      });
+      // 색상 팔레트
+      const colors = ['#6366f1','#22c55e','#eab308','#ef4444','#06b6d4','#f97316','#8b5cf6','#ec4899','#14b8a6','#64748b','#a855f6','#f43f5e','#84cc16'];
+      const datasets = PLAYTEST_NAMES.map((pt, i) => {
+        const days = ptDaily[pt] || [];
+        return {
+          label: pt.replace('Playtest','PT').replace('UT ','UT'),
+          data: days.map(d => ({ x: d.date, y: d.users })),
+          borderColor: colors[i % colors.length],
+          backgroundColor: colors[i % colors.length] + '20',
+          borderWidth: 2, pointRadius: 3, fill: false, tension: 0.2,
+        };
+      }).filter(ds => ds.data.length > 0);
+
+      _playtestDauChart = new Chart(dauCtx, {
+        type: 'line',
+        data: { datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'top', labels: { color: '#8b92a5', font: { size: 10 }, boxWidth: 10, padding: 8, usePointStyle: true } },
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.y}명` } }
+          },
+          scales: {
+            x: { type: 'category', grid: { display: false }, ticks: { color: '#8b92a5', font: { size: 10 }, maxRotation: 45 } },
+            y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#8b92a5', font: { size: 11 } }, beginAtZero: true }
+          }
+        }
+      });
+    }
+  }
+
   // 테이블 렌더링
   document.getElementById('playtestTableBody').innerHTML = PLAYTEST_NAMES.map(pt => {
     const s = stats[pt];
+    const bq = ptSummaryMap[pt];
     const retRate = s.participants > 0 ? Math.round(s.retain / s.participants * 100) : 0;
     const retColor = retRate >= 60 ? 'var(--green)' : retRate >= 30 ? 'var(--yellow)' : 'var(--red)';
+    const sessions = bq ? fmt(bq.total_sessions) : '-';
+    const events = bq ? fmt(bq.total_events) : '-';
     return `<tr>
       <td>${pt}</td>
       <td style="text-align:center;font-weight:600">${s.participants}</td>
       <td style="text-align:center;color:rgba(99,102,241,0.9)">${s.newUsers}</td>
       <td style="text-align:center;color:var(--muted)">${s.returning}</td>
+      <td style="text-align:center">${sessions}</td>
+      <td style="text-align:center">${events}</td>
       <td style="text-align:center;color:var(--green)">${s.retain}</td>
       <td style="text-align:center;color:var(--yellow)">${s.dormant}</td>
       <td style="text-align:center;color:var(--red)">${s.churn}</td>
@@ -5490,7 +5534,9 @@ const DEFAULT_PUB_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR3Qce
 // Game User Summary 시트 (별도 스프레드시트)
 const DEFAULT_GAME_SUMMARY_PUB_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRhutw3oY3Ak_d0AF8xI9XQoLYSlp5ECuqKfpoFHljyBYBHuPuQWgRKDRRKT-6lCSyo0xlxD-PjdrQs/pub';
 const GAME_SUMMARY_GID_MAP = {
-  urlGameUserSummary: 151122489  // Game Users 탭 (전체 405명, 순수 BigQuery 데이터)
+  urlGameUserSummary: 151122489,       // Game Users 탭 (전체 405명)
+  urlPlaytestSummary: 729239948,       // Playtest Summary 탭 (13개 플테)
+  urlPlaytestDaily: 1110379708,        // Playtest Daily 탭 (일별 DAU)
 };
 
 function autoFillGameSummaryUrl() {
