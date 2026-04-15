@@ -93,23 +93,45 @@ startAutoRefresh();
     letter-spacing: 0.03em;
     line-height: 1.2;
   }
-  /* ===== 글로벌 바 (상단 고정) ===== */
+  /* ===== 글로벌 바 (상단 고정) =====
+     UI/UX 원칙:
+     - 3-column grid: left | center | right (justify-content:space-between은 진짜 중앙 보장 안함)
+     - 모든 인터랙티브 요소 height: 32px 통일 (Material Design dense control 토큰)
+     - 디스플레이 폰트 로고는 inline-flex + line-height:1로 글리프 박스 강제 통제
+  */
   .global-bar {
     position: fixed;
     top: 0; left: 0; right: 0;
     height: var(--global-bar-height);
     background: var(--bg);
     border-bottom: 1px solid var(--border);
-    display: flex;
+    /* 3-column grid: left = 1fr, center = auto, right = 1fr */
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     padding: 0 16px;
+    gap: 16px;
     z-index: 1000;
   }
   .global-bar-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    justify-self: start;
+    min-width: 0;  /* grid item이 자식 콘텐츠로 인해 늘어나지 않게 */
+  }
+  .global-bar-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-self: center;  /* 진짜 정중앙 정렬 */
+  }
+  .global-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-self: end;
+    min-width: 0;
   }
   .sidebar-toggle {
     background: none;
@@ -117,51 +139,69 @@ startAutoRefresh();
     color: var(--text);
     font-size: 20px;
     cursor: pointer;
-    padding: 4px 8px;
+    /* 32px 통일 */
+    height: 32px;
+    width: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 6px;
+    padding: 0;
     transition: background 0.2s;
   }
   .sidebar-toggle:hover { background: rgba(255,255,255,0.06); }
   .global-bar-logo {
-    display: flex;
+    /* 컨테이너 height 32px 강제 + 자식 vertical center */
+    display: inline-flex;
     align-items: center;
+    height: 32px;
     gap: 0;
     cursor: pointer;
     text-decoration: none;
     user-select: none;
+    padding: 0 4px;
   }
   .global-bar-logo:hover { opacity: 0.85; }
   .global-bar-logo img {
-    height: 24px;
+    height: 22px;
     width: auto;
     margin-right: 8px;
+    display: block;
   }
   .global-bar-logo .logo-text {
+    /* 디스플레이 폰트 baseline 보정: inline-flex로 글리프 박스 통제 */
     font-family: 'Bowlby One', 'Black Han Sans', sans-serif;
-    font-size: 17px;
+    font-size: 18px;
     letter-spacing: 0.02em;
     line-height: 1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0;
+    /* 폰트 ascender 보정으로 시각적 가운데에 위치 */
+    transform: translateY(1px);
+  }
+  /* RU와 Nuts span을 inline-block으로 변환 → baseline alignment 강제 + 동일 글리프 박스 */
+  .global-bar-logo .logo-text .ru,
+  .global-bar-logo .logo-text .nuts {
+    display: inline-block;
+    line-height: 1;
+    vertical-align: baseline;
   }
   .global-bar-logo .logo-text .ru { color: var(--brand-primary); }
   .global-bar-logo .logo-text .nuts { color: var(--text); }
-  .global-bar-center {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .global-bar-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
   .header-status {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 13px;
+    gap: 8px;
+    font-size: 12px;
+    height: 32px;  /* 32px 통일 */
+    padding: 0 4px;
   }
+  /* 모든 토글 컴포넌트 height 32px 통일 */
   .lsd-toggle {
-    display: flex;
+    display: inline-flex;
+    align-items: stretch;  /* 자식 버튼이 컨테이너 height 채움 */
+    height: 32px;
     background: rgba(255,255,255,0.04);
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -172,10 +212,15 @@ startAutoRefresh();
     background: none;
     border: none;
     color: var(--muted);
-    padding: 6px 12px;
+    padding: 0 12px;
     font-size: 12px;
     cursor: pointer;
     transition: all 0.2s;
+    /* 32px 컨테이너 안에서 내부 가운데 정렬 */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
   }
   .lsd-toggle button.active {
     background: var(--accent);
@@ -185,13 +230,18 @@ startAutoRefresh();
     color: var(--text);
   }
   .theme-toggle {
-    display: flex;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    width: 32px;  /* 정사각형 */
     background: rgba(255,255,255,0.04);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 4px 8px;
+    padding: 0;
     cursor: pointer;
     font-size: 16px;
+    line-height: 1;
     transition: all 0.2s;
   }
   .theme-toggle:hover {
@@ -539,7 +589,18 @@ startAutoRefresh();
       padding-block: 16px;
       padding-inline: 16px;
     }
+    /* 모바일: center 영역 숨김 + grid 2-column으로 재정의
+       (3-column 그대로 두면 right가 화면 우측 끝에 안 붙음) */
+    .global-bar {
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+    }
     .global-bar-center { display: none; }
+    .global-bar-right {
+      gap: 6px;
+    }
+    /* 모바일에서 status의 마지막 데이터 날짜 텍스트 숨김 (공간 절약) */
+    .global-bar-right .header-status #lastDataDate { display: none; }
   }
 
   .section-title {
