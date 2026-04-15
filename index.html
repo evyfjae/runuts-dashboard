@@ -73,6 +73,10 @@ startAutoRefresh();
     --sidebar-width: 240px;
     --sidebar-collapsed: 60px;
     --global-bar-height: 48px;
+    /* 현재 사이드바 폭 (반응형 + 접기에 따라 동적 변경) */
+    --current-sidebar-width: var(--sidebar-width);
+    /* 콘텐츠 최대 폭 (와이드 모니터에서 가운데 정렬용) */
+    --content-max-width: 1400px;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
@@ -491,27 +495,36 @@ startAutoRefresh();
     margin-top: var(--global-bar-height);
   }
   .main {
-    margin-left: var(--sidebar-width);
+    /* 사이드바 우측 영역 안에서 콘텐츠를 가운데 정렬:
+       - margin-left: 사이드바 폭만큼 비움 (사이드바와 안 겹침)
+       - padding-inline: 사이드바 제외 영역에서 (가용폭 - 콘텐츠 max폭)/2 만큼 양옆 여백
+         → 와이드 모니터에서는 콘텐츠가 가운데 정렬, 좁은 화면에서는 최소 24px만 사용
+       - max-width 제거: padding-inline이 최대 폭 역할 대신 수행 */
+    margin-left: var(--current-sidebar-width);
     margin-top: var(--global-bar-height);
-    padding: 24px;
-    max-width: 1400px;
-    width: 100%;
-    transition: margin-left 0.2s ease-in-out;
+    padding-block: 24px;
+    padding-inline: max(24px, calc((100vw - var(--current-sidebar-width) - var(--content-max-width)) / 2));
+    transition: margin-left 0.2s ease-in-out, padding-inline 0.2s ease-in-out;
   }
-  .sidebar.collapsed ~ .main,
-  body.sidebar-collapsed .main {
-    margin-left: var(--sidebar-collapsed);
+  /* 사이드바 접기 상태 — 변수만 갱신하면 .main이 자동 재계산 */
+  body.sidebar-collapsed {
+    --current-sidebar-width: var(--sidebar-collapsed);
   }
 
   /* 반응형 */
   @media (max-width: 1199px) {
+    :root {
+      --current-sidebar-width: var(--sidebar-collapsed);
+    }
     .sidebar { width: var(--sidebar-collapsed); }
     .sidebar .sidebar-label { display: none; }
     .sidebar .sidebar-item { justify-content: center; padding: 10px 0; }
     .sidebar .sidebar-item.active { padding-left: 0; }
-    .main { margin-left: var(--sidebar-collapsed); }
   }
   @media (max-width: 767px) {
+    :root {
+      --current-sidebar-width: 0px;
+    }
     .sidebar {
       width: var(--sidebar-width);
       transform: translateX(-100%);
@@ -521,7 +534,11 @@ startAutoRefresh();
     }
     .sidebar .sidebar-label { display: inline; }
     .sidebar .sidebar-item { justify-content: flex-start; padding: 10px 12px; }
-    .main { margin-left: 0; padding: 16px; }
+    .main {
+      margin-left: 0;
+      padding-block: 16px;
+      padding-inline: 16px;
+    }
     .global-bar-center { display: none; }
   }
 
