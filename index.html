@@ -1172,6 +1172,13 @@ startAutoRefresh();
   .badge.approved { background: rgba(99,102,241,0.15); color: var(--accent2); }
   .badge.linked { background: rgba(234,179,8,0.15); color: var(--yellow); }
   .badge.dev { background: rgba(249,115,22,0.15); color: var(--orange); font-size: 10px; }
+  /* 부계정 연결 배지 — 본 계정에 "이 사람은 서브 계정이 있다" 표시 */
+  .badge.sub-linked {
+    background: rgba(255,153,0,0.1);
+    color: var(--accent2);
+    font-size: 10px;
+    border: 1px solid rgba(255,153,0,0.2);
+  }
 
   /* Info page */
   .info-grid {
@@ -5146,6 +5153,16 @@ function filterUsersTable() {
   const subIds = new Set((data.subAccounts || []).map(s => s.sub_discord_id).filter(Boolean));
   filtered = filtered.filter(u => !subIds.has(u.discord_id));
 
+  // parent discord_id → 연결된 sub 계정 수 (테이블 배지용)
+  const subCountByParent = {};
+  (data.subAccounts || []).forEach(s => {
+    const parent = s.discord_id;
+    if (!parent) return;
+    const kind = s.account_type === 'meta' ? 'meta' : 'discord';
+    if (!subCountByParent[parent]) subCountByParent[parent] = { discord: 0, meta: 0 };
+    subCountByParent[parent][kind]++;
+  });
+
   // Apply search filter
   if (searchQuery) {
     filtered = filtered.filter(u =>
@@ -5172,10 +5189,21 @@ function filterUsersTable() {
     const healthTip = getHealthTooltip(u);
     const tier = getUserTier(u);
     const tierTip = getTierTooltip(u);
+    // 부계정 연결 배지 (본 계정에 서브 계정 N개가 연결되어 있으면 표시)
+    const subInfo = subCountByParent[u.discord_id];
+    let subBadge = '';
+    if (subInfo) {
+      const parts = [];
+      if (subInfo.discord > 0) parts.push(`서브 Discord ${subInfo.discord}개`);
+      if (subInfo.meta > 0) parts.push(`서브 Meta ${subInfo.meta}개`);
+      const tip = '부계정 연결됨: ' + parts.join(', ');
+      const total = subInfo.discord + subInfo.meta;
+      subBadge = ` <span class="badge sub-linked" data-tooltip="${tip}">🔗 +${total}</span>`;
+    }
     return `
     <tr onclick="openUserPanel('${u.discord_id}')" style="cursor:pointer${rowStyle}">
       <td>${u.discord_id}</td>
-      <td>${u.discord_display_name || u.discord_username}${u.discord_display_name && u.discord_display_name !== u.discord_username ? '<br><small style=\"color:var(--muted);\">@' + u.discord_username + '</small>' : ''}${dev ? ' <span class=\"badge dev\">DEV</span>' : ''} <span style="margin-left:4px;white-space:nowrap"><span data-tooltip="${healthTip}">${healthIcon(health)}</span><span data-tooltip="${tierTip}" style="margin-left:2px">${tierIcon(tier)}</span></span></td>
+      <td>${u.discord_display_name || u.discord_username}${u.discord_display_name && u.discord_display_name !== u.discord_username ? '<br><small style=\"color:var(--muted);\">@' + u.discord_username + '</small>' : ''}${dev ? ' <span class=\"badge dev\">DEV</span>' : ''}${subBadge} <span style="margin-left:4px;white-space:nowrap"><span data-tooltip="${healthTip}">${healthIcon(health)}</span><span data-tooltip="${tierTip}" style="margin-left:2px">${tierIcon(tier)}</span></span></td>
       <td>${toKST(u.join_date)}</td>
       <td><span class="badge ${grpClass}">${grp}</span></td>
       <td>${(u.tester_applied==='O'||u.tester_applied==='TRUE') ? ((u.tester_approved==='O'||u.tester_approved==='TRUE') ? '<span class="badge approved">승인</span>' : '<span class="badge applied">신청</span>') : '-'}</td>
