@@ -5327,43 +5327,207 @@ function buildPreviousAccountSection(u) {
   }).join('');
 }
 
-function buildSubAccountsSection(discordId) {
+function buildSubAccountsSection(discordId, gameMap) {
+  // Meta 서브 계정만 표시 (Discord 서브는 buildPreviousAccountSection이 처리)
   const subs = (data.subAccounts || []).filter(s => s.discord_id === discordId);
   if (subs.length === 0) return '';
-
-  const discordSubs = subs.filter(s => s.account_type === 'discord' && s.sub_discord_id);
   const metaSubs = subs.filter(s => s.account_type === 'meta' && (s.sub_meta_username || s.sub_meta_id));
+  if (metaSubs.length === 0) return '';
 
-  let html = '';
-
-  if (discordSubs.length > 0) {
-    html += `<div class="user-detail-section">
-      <div class="section-header">🔗 서브 Discord 계정</div>
-      <div class="user-detail-grid">
-        ${discordSubs.map(s => `
-          <div class="detail-row"><span class="detail-label">유저명</span><span class="detail-value">@${s.sub_discord_username || '-'}</span></div>
-          <div class="detail-row"><span class="detail-label">디스플레이 네임</span><span class="detail-value">${s.sub_discord_display_name || '-'}</span></div>
-          ${s.notes ? `<div class="detail-row"><span class="detail-label">메모</span><span class="detail-value">${s.notes}</span></div>` : ''}
-        `).join('<hr style="border:none;border-top:1px solid var(--border);margin:8px 0;grid-column:1/-1">')}
-      </div>
-    </div>`;
-  }
-
-  if (metaSubs.length > 0) {
-    html += `<div class="user-detail-section">
-      <div class="section-header">🎮 서브 Meta 계정</div>
-      <div class="user-detail-grid">
-        ${metaSubs.map(s => `
+  // 각 서브 Meta 계정의 게임 데이터 조회
+  return `<div class="user-detail-section" style="background:rgba(255,153,0,0.06);border:1px solid rgba(255,153,0,0.15)">
+    <div class="section-header" style="color:var(--accent2)">🎮 서브 Meta 계정 (${metaSubs.length}개)</div>
+    ${metaSubs.map(s => {
+      const gr = gameMap && s.sub_meta_id ? gameMap[s.sub_meta_id] : null;
+      return `<div style="margin-bottom:8px;padding:8px;background:rgba(255,255,255,0.02);border-radius:6px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">${s.notes || ''}</div>
+        <div class="user-detail-grid">
           <div class="detail-row"><span class="detail-label">Meta 유저명</span><span class="detail-value">${s.sub_meta_username || '-'}</span></div>
+          ${s.sub_meta_name ? `<div class="detail-row"><span class="detail-label">Meta 이름</span><span class="detail-value">${s.sub_meta_name}</span></div>` : ''}
+          ${s.sub_meta_id ? `<div class="detail-row"><span class="detail-label">Meta ID</span><span class="detail-value">${s.sub_meta_id}</span></div>` : ''}
           ${s.sub_playfab_id ? `<div class="detail-row"><span class="detail-label">PlayFab ID</span><span class="detail-value">${s.sub_playfab_id}</span></div>` : ''}
-          ${s.last_login ? `<div class="detail-row"><span class="detail-label">마지막 로그인</span><span class="detail-value">${s.last_login}</span></div>` : ''}
-          ${s.notes ? `<div class="detail-row"><span class="detail-label">메모</span><span class="detail-value">${s.notes}</span></div>` : ''}
-        `).join('<hr style="border:none;border-top:1px solid var(--border);margin:8px 0;grid-column:1/-1">')}
-      </div>
-    </div>`;
+          ${gr ? `
+            <div class="detail-row"><span class="detail-label">플테 참여</span><span class="detail-value">${gr.total_playtests || 0}회</span></div>
+            <div class="detail-row"><span class="detail-label">세션</span><span class="detail-value">${gr.total_sessions || 0}회</span></div>
+            <div class="detail-row"><span class="detail-label">이벤트</span><span class="detail-value">${fmt(gr.total_events || 0)}</span></div>
+            <div class="detail-row"><span class="detail-label">첫 플레이</span><span class="detail-value">${displayDateTime(gr.first_play_timestamp)}</span></div>
+            <div class="detail-row"><span class="detail-label">최근 플레이</span><span class="detail-value">${displayDateTime(gr.last_play_timestamp)}</span></div>
+          ` : (s.last_login ? `<div class="detail-row"><span class="detail-label">마지막 로그인</span><span class="detail-value">${s.last_login}</span></div>` : '')}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// ────────────────────────────────────────────────────────────────
+// 유저 합산 헬퍼 함수들 (Phase R-5: Sub Accounts 통합)
+// 원칙: 한 사람의 여러 계정(Discord/Meta)을 하나로 합쳐서 활동량을 계산
+// ────────────────────────────────────────────────────────────────
+
+/**
+ * 이 유저와 관련된 모든 계정을 반환 (본 + 서브 Discord + 서브 Meta)
+ * @param {object} mainUser - User Master의 한 행
+ * @returns {{main, subDiscords, subMetas, allMetaIds}}
+ */
+function getRelatedAccounts(mainUser) {
+  if (!mainUser?.discord_id) return { main: mainUser, subDiscords: [], subMetas: [], allMetaIds: [] };
+  const subs = (data.subAccounts || []).filter(s => s.discord_id === mainUser.discord_id);
+
+  // 서브 Discord 계정 (User Master에서 해당 행 찾기)
+  const subDiscords = subs
+    .filter(s => s.account_type === 'discord' && s.sub_discord_id)
+    .map(s => {
+      const u = data.userMaster.find(um => um.discord_id === s.sub_discord_id);
+      return u ? Object.assign({}, u, { _sub_notes: s.notes || '' }) : null;
+    })
+    .filter(Boolean);
+
+  // 서브 Meta 계정 (Sub Accounts 시트의 정보만)
+  const subMetas = subs
+    .filter(s => s.account_type === 'meta' && (s.sub_meta_id || s.sub_meta_username))
+    .map(s => ({
+      sub_meta_id: String(s.sub_meta_id || '').trim(),
+      sub_playfab_id: s.sub_playfab_id || '',
+      sub_meta_username: s.sub_meta_username || '',
+      sub_meta_name: s.sub_meta_name || '',
+      first_login: s.first_login || '',
+      last_login: s.last_login || '',
+      notes: s.notes || '',
+    }));
+
+  // 합산에 사용할 모든 meta_id 수집 (본 + 서브 Discord의 meta_id + 서브 Meta)
+  const allMetaIds = new Set();
+  const mainMid = String(mainUser.meta_id || '').trim();
+  if (mainMid) allMetaIds.add(mainMid);
+  subDiscords.forEach(sd => {
+    const sid = String(sd.meta_id || '').trim();
+    if (sid) allMetaIds.add(sid);
+  });
+  subMetas.forEach(sm => {
+    if (sm.sub_meta_id) allMetaIds.add(sm.sub_meta_id);
+  });
+
+  return {
+    main: mainUser,
+    subDiscords,
+    subMetas,
+    allMetaIds: Array.from(allMetaIds),
+  };
+}
+
+/**
+ * 이 유저가 다른 사람의 서브 Discord 계정인지 판정 (= 본 계정이 아님)
+ */
+function isSubDiscordAccount(user) {
+  if (!user?.discord_id) return false;
+  return (data.subAccounts || []).some(
+    s => s.sub_discord_id === user.discord_id && s.account_type === 'discord'
+  );
+}
+
+/**
+ * 모든 Discord 계정의 활동을 합산
+ * - join_date: 가장 오래된 가입일 (실질 시작일)
+ * - last_active_date: 가장 최근 활동일
+ * - total_messages: 합계
+ */
+function aggregateDiscordActivity(related) {
+  const allAccounts = [related.main, ...related.subDiscords];
+  let minJoin = null;
+  let maxActive = null;
+  let totalMsgs = 0;
+  const breakdown = [];
+
+  allAccounts.forEach(u => {
+    const jd = u.join_date ? String(u.join_date).trim() : '';
+    const la = u.last_active_date ? String(u.last_active_date).trim() : '';
+    const tm = parseInt(u.total_messages || 0) || 0;
+
+    if (jd && (!minJoin || jd < minJoin)) minJoin = jd;
+    if (la && (!maxActive || la > maxActive)) maxActive = la;
+    totalMsgs += tm;
+
+    breakdown.push({
+      discord_id: u.discord_id,
+      username: u.discord_username,
+      display_name: u.discord_display_name,
+      join_date: jd,
+      last_active_date: la,
+      total_messages: tm,
+      leave_date: u.leave_date || '',
+      status: u.status || '',
+      is_main: u.discord_id === related.main.discord_id,
+    });
+  });
+
+  return {
+    join_date: minJoin,
+    last_active_date: maxActive,
+    total_messages: totalMsgs,
+    breakdown,
+    account_count: allAccounts.length,
+  };
+}
+
+/**
+ * 모든 meta_id의 Game User Summary 합산
+ * - total_playtests: 중복 제거된 플테 개수
+ * - total_sessions, total_events: 합계
+ * - first/last_play: min/max
+ * - played_playtests: 모든 플테의 union
+ */
+function aggregateGameData(related, gameMap) {
+  const rows = related.allMetaIds.map(mid => gameMap[mid]).filter(Boolean);
+  if (rows.length === 0) return null;
+
+  if (rows.length === 1) {
+    return Object.assign({}, rows[0], { _account_count: 1, _rows: rows });
   }
 
-  return html;
+  // 여러 Meta 계정 합산
+  const playtests = new Set();
+  let totalSessions = 0;
+  let totalEvents = 0;
+  let minFirst = null;
+  let maxLast = null;
+  let country = rows[0].country || '';
+
+  rows.forEach(r => {
+    totalSessions += parseInt(r.total_sessions || 0) || 0;
+    totalEvents += parseInt(r.total_events || 0) || 0;
+    const pts = String(r.played_playtests || '').split(',').map(s => s.trim()).filter(Boolean);
+    pts.forEach(p => playtests.add(p));
+    const fp = String(r.first_play_timestamp || '').trim();
+    const lp = String(r.last_play_timestamp || '').trim();
+    if (fp && (!minFirst || fp < minFirst)) minFirst = fp;
+    if (lp && (!maxLast || lp > maxLast)) maxLast = lp;
+  });
+
+  // 정렬: PLAYTEST_NAMES 순서
+  const ptOrder = (typeof PLAYTEST_NAMES !== 'undefined') ? PLAYTEST_NAMES : [];
+  const sortedPts = Array.from(playtests).sort((a, b) => {
+    const aIdx = ptOrder.indexOf(a);
+    const bIdx = ptOrder.indexOf(b);
+    return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+  });
+
+  // 리텐션 재계산: 합산된 플테 기준
+  const recent4 = (typeof RECENT_4_PLAYTESTS !== 'undefined') ? RECENT_4_PLAYTESTS : [];
+  const inRecent = sortedPts.some(pt => recent4.includes(pt));
+  const _retention_status = inRecent ? '잔존' : '휴면';
+
+  return {
+    total_playtests: sortedPts.length,
+    total_sessions: totalSessions,
+    total_events: totalEvents,
+    played_playtests: sortedPts.join(', '),
+    first_play_timestamp: minFirst,
+    last_play_timestamp: maxLast,
+    country: country,
+    _account_count: rows.length,
+    _rows: rows,
+    _retention_status: _retention_status,
+  };
 }
 
 function openUserPanel(discordId) {
@@ -5373,12 +5537,23 @@ function openUserPanel(discordId) {
   const statusKo = { active: '활동 중', left: '탈퇴', pre_registered: '사전등록' };
   const isLeft = u.status === 'left' || u.status === 'left_no_data';
 
-  // Game User Summary에서 이 유저의 인게임 데이터 찾기
+  // ─── 합산 데이터 준비 (Phase R-5) ───
+  const related = getRelatedAccounts(u);
+  const discordAgg = aggregateDiscordActivity(related);
+  const hasMultipleAccounts = (related.subDiscords.length + related.subMetas.length) > 0;
+
+  // Game User Summary에서 합산 데이터 조회 (본 + 모든 서브 Meta)
   const gameMap = buildGameUserMap();
-  const metaId = String(u.meta_id || '').trim();
-  const gameRow = metaId ? gameMap[metaId] : null;
+  const gameRow = aggregateGameData(related, gameMap);
   const hasPlayed = !!gameRow;
   const retStatus = gameRow ? (gameRow._retention_status || '').trim() : '';
+
+  // 건강도/등급 계산은 합산된 Discord 활동 기준
+  const effectiveUser = Object.assign({}, u, {
+    join_date: discordAgg.join_date || u.join_date,
+    last_active_date: discordAgg.last_active_date || u.last_active_date,
+    total_messages: discordAgg.total_messages,
+  });
 
   // 파이프라인 단계 (5단계)
   const stages = [
@@ -5399,22 +5574,38 @@ function openUserPanel(discordId) {
   const grp = getUserGroup(u);
   const devBadge = isDev(u) ? ' <span class="badge dev" style="font-size:12px;vertical-align:middle">DEV</span>' : '';
 
-  // 유저 건강도 + 등급 판정
-  const health = getUserHealth(u);
-  const tier = getUserTier(u);
-  const hBadge = `<span data-tooltip="${getHealthTooltip(u)}" style="vertical-align:middle;margin-left:4px">${healthBadge(u)}</span>`;
-  const tBadge = `<span data-tooltip="${getTierTooltip(u)}" style="vertical-align:middle;margin-left:2px">${tierBadge(u)}</span>`;
+  // 유저 건강도 + 등급 판정 (합산된 Discord 활동 기준)
+  const health = getUserHealth(effectiveUser);
+  const tier = getUserTier(effectiveUser);
+  const hBadge = `<span data-tooltip="${getHealthTooltip(effectiveUser)}" style="vertical-align:middle;margin-left:4px">${healthBadge(effectiveUser)}</span>`;
+  const tBadge = `<span data-tooltip="${getTierTooltip(effectiveUser)}" style="vertical-align:middle;margin-left:2px">${tierBadge(effectiveUser)}</span>`;
+
+  // 합산 분해 표시용 헬퍼 (여러 계정일 때만)
+  function formatJoinWithBreakdown() {
+    if (!hasMultipleAccounts || related.subDiscords.length === 0) return toKST(u.join_date);
+    const parts = discordAgg.breakdown.map(b => `${b.is_main ? '본' : '서브'} ${String(b.join_date || '-').substring(0,10)}`).join(' + ');
+    return `${toKST(discordAgg.join_date)} <span style="font-size:11px;color:var(--muted)">(${parts})</span>`;
+  }
+  function formatMessagesWithBreakdown() {
+    if (!hasMultipleAccounts || related.subDiscords.length === 0) return `${(discordAgg.total_messages || 0).toLocaleString()}개`;
+    const parts = discordAgg.breakdown.map(b => `${b.is_main ? '본' : '서브'} ${b.total_messages}`).join(' + ');
+    return `${(discordAgg.total_messages || 0).toLocaleString()}개 <span style="font-size:11px;color:var(--muted)">(${parts})</span>`;
+  }
+  function formatLastActiveWithBreakdown() {
+    if (!hasMultipleAccounts || related.subDiscords.length === 0) return effectiveUser.last_active_date || '-';
+    return effectiveUser.last_active_date || '-';
+  }
 
   document.getElementById('userDetailName').innerHTML = `${u.discord_display_name || u.discord_username} <span class="badge ${grp==='LSD'?'lsd':'runuts_grp'}" style="font-size:12px;vertical-align:middle">${grp}</span>${devBadge}${hBadge}${tBadge}`;
   document.getElementById('userDetailContent').innerHTML = `
     <div class="user-detail-sections">
       <div class="user-detail-section">
-        <div class="section-header">Discord 계정</div>
+        <div class="section-header">Discord 계정${hasMultipleAccounts && related.subDiscords.length > 0 ? ` <span style="font-size:11px;color:var(--accent2);font-weight:500">· 본+서브 ${discordAgg.account_count}개 합산</span>` : ''}</div>
         <div class="user-detail-grid">
           <div class="detail-row"><span class="detail-label">Discord ID</span><span class="detail-value">${u.discord_id}</span></div>
           <div class="detail-row"><span class="detail-label">유저명</span><span class="detail-value">@${u.discord_username}</span></div>
           <div class="detail-row"><span class="detail-label">디스플레이 네임</span><span class="detail-value">${u.discord_display_name || u.discord_username}</span></div>
-          <div class="detail-row"><span class="detail-label">가입일</span><span class="detail-value">${toKST(u.join_date)}</span></div>
+          <div class="detail-row"><span class="detail-label">${related.subDiscords.length > 0 ? '최초 가입일' : '가입일'}</span><span class="detail-value">${formatJoinWithBreakdown()}</span></div>
           ${u.leave_date ? `<div class="detail-row"><span class="detail-label">탈퇴일</span><span class="detail-value">${toKST(u.leave_date)}</span></div>` : ''}
           <div class="detail-row"><span class="detail-label">유입 경로</span><span class="detail-value">${u.estimated_source || 'unknown'}</span></div>
           <div class="detail-row"><span class="detail-label">초대자</span><span class="detail-value">${u.invited_by || '-'}</span></div>
@@ -5430,7 +5621,7 @@ function openUserPanel(discordId) {
         </div>
       </div>
       <div class="user-detail-section">
-        <div class="section-header">Meta / 게임</div>
+        <div class="section-header">Meta / 게임${gameRow && gameRow._account_count > 1 ? ` <span style="font-size:11px;color:var(--accent2);font-weight:500">· Meta ${gameRow._account_count}개 합산</span>` : ''}</div>
         <div class="user-detail-grid">
           <div class="detail-row"><span class="detail-label">Meta 유저명</span><span class="detail-value">${u.meta_username || '-'}</span></div>
           ${u.meta_name ? `<div class="detail-row"><span class="detail-label">Meta 이름</span><span class="detail-value">${u.meta_name}</span></div>` : ''}
@@ -5458,8 +5649,7 @@ function openUserPanel(discordId) {
             <div class="detail-row"><span class="detail-label">총 이벤트</span><span class="detail-value">${fmt(gameRow.total_events || 0)}</span></div>
             <div class="detail-row"><span class="detail-label">국가</span><span class="detail-value">${gameRow.country || '-'}</span></div>
           ` : `
-            <div class="detail-row"><span class="detail-label">첫 플레이</span><span class="detail-value">${displayDateTime(u.first_play_timestamp || u.first_play_date)}</span></div>
-            <div class="detail-row"><span class="detail-label">총 플레이테스트</span><span class="detail-value">${u.total_playtests || '-'}</span></div>
+            <div class="detail-row"><span class="detail-label">게임 기록</span><span class="detail-value" style="color:var(--muted)">플레이 기록 없음</span></div>
           `}
         </div>
       </div>
@@ -5478,7 +5668,7 @@ function openUserPanel(discordId) {
               <span style="width:28px;height:28px;display:flex;align-items:center;justify-content:center">${healthIcon(health)}</span>
               <div>
                 <div style="font-size:15px;font-weight:700;color:${health.color}">${health.name}</div>
-                <div style="font-size:11px;color:var(--muted)">${u.last_active_date ? u.last_active_date + (health.days !== undefined ? ' (' + health.days + '일 전)' : '') : '활동 기록 없음'}</div>
+                <div style="font-size:11px;color:var(--muted)">${effectiveUser.last_active_date ? effectiveUser.last_active_date + (health.days !== undefined ? ' (' + health.days + '일 전)' : '') : '활동 기록 없음'}</div>
               </div>
             </div>
           </div>
@@ -5488,7 +5678,7 @@ function openUserPanel(discordId) {
               <span style="width:28px;height:28px;display:flex;align-items:center;justify-content:center">${tierIcon(tier)}</span>
               <div>
                 <div style="font-size:15px;font-weight:700;color:${tier.color}">${tier.name}</div>
-                <div style="font-size:11px;color:var(--muted)">총 ${(parseInt(u.total_messages)||0).toLocaleString()}개 메시지</div>
+                <div style="font-size:11px;color:var(--muted)">총 ${formatMessagesWithBreakdown()}</div>
               </div>
             </div>
           </div>
@@ -5516,6 +5706,7 @@ function openUserPanel(discordId) {
       ${buildActivityChartSection(u.discord_id)}
       ${buildHealthHistorySection(u.discord_id)}
       ${buildPreviousAccountSection(u)}
+      ${buildSubAccountsSection(u.discord_id, gameMap)}
     </div>
   `;
 
@@ -6339,8 +6530,9 @@ function renderInfo() {
   const ddWithActivity = dd.filter(r => r.messages_count || r.voice_participants).length;
 
   // 데이터 필드 상태 체크
-  const hasFirstPlay = um.some(u => (u.first_play_timestamp && u.first_play_timestamp !== '') || (u.first_play_date && u.first_play_date !== ''));
-  const hasTotalPlay = um.some(u => u.total_playtests && u.total_playtests !== '' && u.total_playtests !== '0');
+  // Game User Summary에 데이터가 있으면 플레이 기록 있음으로 판단
+  const hasFirstPlay = (data.gameUserSummary || []).length > 0;
+  const hasTotalPlay = (data.gameUserSummary || []).some(g => parseInt(g.total_playtests || 0) > 0);
   const hasLeaveDate = um.filter(u => u.leave_date && u.leave_date !== '').length;
   const metaMatched = um.filter(u => u.playfab_matched === 'O').length;
   const metaTotal = um.length;
