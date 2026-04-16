@@ -6,43 +6,43 @@
 <title>PT09 — 9차 Playtest 분석 보고서</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Black+Han+Sans&display=swap');
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'IBM Plex Sans KR',-apple-system,sans-serif;background:#fff;color:#1a1a2e;line-height:1.7;font-size:14px;max-width:960px;margin:0 auto;padding:40px 32px}
+  body{font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;background:#fff;color:#1a1a2e;line-height:1.8;font-size:15px;max-width:960px;margin:0 auto;padding:40px 32px}
   .report-header{border-bottom:3px solid #FF9900;padding-bottom:24px;margin-bottom:32px}
-  .report-header h1{font-family:'Black Han Sans',sans-serif;font-size:28px;color:#1a1a2e;margin-bottom:4px}
-  .report-header .subtitle{font-size:14px;color:#666;margin-bottom:12px}
-  .report-meta{display:flex;flex-wrap:wrap;gap:16px 24px;font-size:12px;color:#888}
-  .disclaimer{background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:12px;color:#666;line-height:1.6}
+  .report-header h1{font-weight:900;font-size:28px;color:#1a1a2e;margin-bottom:4px}
+  .report-header .subtitle{font-size:15px;color:#666;margin-bottom:12px}
+  .report-meta{display:flex;flex-wrap:wrap;gap:16px 24px;font-size:14px;color:#888}
+  .disclaimer{background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:14px;color:#666;line-height:1.7}
   .section{margin-bottom:36px}
-  .section-heading{font-family:'Black Han Sans',sans-serif;font-size:18px;color:#1a1a2e;border-left:4px solid #FF9900;padding-left:12px;margin-bottom:16px}
-  .section-desc{font-size:13px;color:#555;margin-bottom:12px;line-height:1.6}
+  .section-heading{font-weight:900;font-size:20px;color:#1a1a2e;border-left:4px solid #FF9900;padding-left:12px;margin-bottom:16px}
+  .section-desc{font-size:14px;color:#555;margin-bottom:12px;line-height:1.7}
   .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
   .kpi-box{background:#f8f9fa;border-radius:8px;padding:16px;text-align:center;border:1px solid #e9ecef}
-  .kpi-box .label{font-size:11px;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+  .kpi-box .label{font-size:14px;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
   .kpi-box .value{font-size:24px;font-weight:700;color:#1a1a2e}
-  .kpi-box .sub{font-size:11px;color:#999;margin-top:2px}
-  .obs{border-left:4px solid #94a3b8;background:#f8fafc;padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:13px;line-height:1.7}
-  .obs .tag{font-weight:600;font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-  .review{border-left:4px solid #f59e0b;background:#fffbeb;padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:13px;line-height:1.7}
-  .review .tag{font-weight:600;font-size:11px;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-  .hold{border-left:4px solid #d1d5db;background:#f9fafb;padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:13px;line-height:1.7;color:#6b7280}
-  .hold .tag{font-weight:600;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .kpi-box .sub{font-size:14px;color:#999;margin-top:2px}
+  .obs{border-left:4px solid #94a3b8;background:#f8fafc;padding:14px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px;line-height:1.8}
+  .obs .tag{font-weight:700;font-size:14px;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .review{border-left:4px solid #f59e0b;background:#fffbeb;padding:14px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px;line-height:1.8}
+  .review .tag{font-weight:700;font-size:14px;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .hold{border-left:4px solid #d1d5db;background:#f9fafb;padding:14px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px;line-height:1.8;color:#6b7280}
+  .hold .tag{font-weight:700;font-size:14px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
   .chart-wrap{background:#f8f9fa;border-radius:8px;padding:16px;margin:16px 0;border:1px solid #e9ecef}
   .chart-wrap canvas{max-height:300px}
   .chart-title{font-size:13px;font-weight:600;margin-bottom:8px;color:#555}
-  table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
-  th{background:#f1f3f5;padding:8px 12px;text-align:left;font-weight:600;font-size:12px;color:#555;border-bottom:2px solid #dee2e6}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
+  th{background:#f1f3f5;padding:8px 12px;text-align:left;font-weight:600;font-size:14px;color:#555;border-bottom:2px solid #dee2e6}
   td{padding:8px 12px;border-bottom:1px solid #e9ecef}
   tr:hover td{background:#f8f9fa}
   .r{text-align:right;font-variant-numeric:tabular-nums}
   .bold{font-weight:600}
-  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:600}
   .badge-green{background:#dcfce7;color:#166534}.badge-yellow{background:#fef9c3;color:#854d0e}.badge-red{background:#fee2e2;color:#991b1b}.badge-blue{background:#dbeafe;color:#1e40af}.badge-gray{background:#f3f4f6;color:#374151}
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
-  .placeholder{background:#f3f4f6;border:2px dashed #d1d5db;border-radius:8px;padding:24px;text-align:center;color:#9ca3af;font-size:13px;margin:16px 0}
-  details{margin:12px 0}summary{cursor:pointer;font-weight:600;font-size:13px;color:#555;padding:8px 0}summary:hover{color:#FF9900}
-  .report-footer{margin-top:48px;padding-top:16px;border-top:1px solid #e9ecef;font-size:11px;color:#aaa;text-align:center}
+  .placeholder{background:#f3f4f6;border:2px dashed #d1d5db;border-radius:8px;padding:24px;text-align:center;color:#9ca3af;font-size:14px;margin:16px 0}
+  details{margin:12px 0}summary{cursor:pointer;font-weight:600;font-size:15px;color:#555;padding:8px 0}summary:hover{color:#FF9900}
+  .report-footer{margin-top:48px;padding-top:16px;border-top:1px solid #e9ecef;font-size:14px;color:#aaa;text-align:center}
   .highlight-row{background:#fffbeb}
   @media(max-width:640px){body{padding:20px 16px}.report-header h1{font-size:22px}.kpi-row{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}}
   @media print{body{padding:20px;font-size:12px}.chart-wrap,.section{break-inside:avoid}}
@@ -90,7 +90,7 @@
       <tr><td>도전과제 9종 도입 (Fly/Chase/Run 3트랙)</td><td>도전과제 달성</td><td class="r">286건, GN 1,559 지급</td></tr>
       <tr><td>ObbyClear 제거 → Flight 모드 추가</td><td>Obby 진입 / 태그 이용</td><td class="r">Obby +24% / 태그 -52%</td></tr>
       <tr><td>난이도 조정</td><td>Obby 클리어율</td><td class="r">8.5% → 14.2% (+5.7%p)</td></tr>
-      <tr><td>로코모션 개선</td><td>ObbyR 중앙 체류</td><td class="r">165초 → 480초</td></tr>
+      <tr><td>로코모션 개선</td><td>Sky Tower 인당 체류</td><td class="r">6.7분 → 20.8분</td></tr>
     </tbody>
   </table>
   <div class="review">
@@ -135,15 +135,15 @@
 <!-- ===== 4. 모드별 점유율 + 몰입도 ===== -->
 <div class="section">
   <div class="section-heading">4. 모드별 점유율 + 몰입도</div>
-  <div class="section-desc">진입률(참여자 대비 해당 모드 경험 비율)과 몰입도(중앙값 체류시간)를 쌍으로 표시합니다.</div>
+  <div class="section-desc">진입률(참여자 대비 해당 모드 경험 비율)과 인당 중앙값 체류시간(플레이어별 총 체류 합산 기준)을 표시합니다.</div>
   <table>
-    <thead><tr><th>모드</th><th class="r">세션</th><th class="r">유저</th><th class="r">진입률</th><th class="r">총 시간</th><th class="r">중앙 체류</th><th class="r">8차 중앙</th></tr></thead>
+    <thead><tr><th>모드</th><th class="r">플레이어</th><th class="r">진입률</th><th class="r">인당 중앙값</th><th class="r">8차 인당 중앙값</th><th class="r">총 시간</th></tr></thead>
     <tbody>
-      <tr><td>Casual (로비/상점/튜토리얼)</td><td class="r">590</td><td class="r">55</td><td class="r">81%</td><td class="r">32.1h</td><td class="r">28초</td><td class="r">15초</td></tr>
-      <tr><td>Infection (태그)</td><td class="r">174</td><td class="r">33</td><td class="r">49%</td><td class="r">14.6h</td><td class="r">29초</td><td class="r">11초</td></tr>
-      <tr class="highlight-row"><td class="bold">ObbyR (Circuit)</td><td class="r">27</td><td class="r">11</td><td class="r">16%</td><td class="r">4.5h</td><td class="r bold">8.0분</td><td class="r">2.8분</td></tr>
-      <tr><td>Horror</td><td class="r">17</td><td class="r">11</td><td class="r">16%</td><td class="r">2.1h</td><td class="r">7.0분</td><td class="r">1.2분</td></tr>
-      <tr><td>Obby (클래식)</td><td class="r">14</td><td class="r">10</td><td class="r">15%</td><td class="r">2.1h</td><td class="r">4.2분</td><td class="r">1.8분</td></tr>
+      <tr><td>Casual (로비/상점/튜토리얼)</td><td class="r">55</td><td class="r">81%</td><td class="r">18.3분</td><td class="r">15.0분</td><td class="r">32.1h</td></tr>
+      <tr><td>Infection (태그)</td><td class="r">33</td><td class="r">49%</td><td class="r">18.3분</td><td class="r">12.1분</td><td class="r">14.6h</td></tr>
+      <tr class="highlight-row"><td class="bold">Obby - Sky Tower</td><td class="r">11</td><td class="r">16%</td><td class="r bold">20.8분</td><td class="r">6.7분</td><td class="r">4.5h</td></tr>
+      <tr><td>Horror</td><td class="r">11</td><td class="r">16%</td><td class="r">14.3분</td><td class="r">9.0분</td><td class="r">2.1h</td></tr>
+      <tr><td>Obby - Circuit</td><td class="r">10</td><td class="r">15%</td><td class="r">5.6분</td><td class="r">7.0분</td><td class="r">2.1h</td></tr>
     </tbody>
   </table>
   <div class="chart-wrap">
@@ -152,7 +152,7 @@
   </div>
   <div class="obs">
     <div class="tag">관찰</div>
-    ObbyR의 중앙 체류가 2.8분 → 8.0분으로 대폭 증가했다. 로코모션 개선 또는 난이도 조정의 영향으로 보인다. Horror도 1.2분 → 7.0분으로 증가. Casual과 Infection의 중앙값이 짧은 것(28초, 29초)은 로비 경유/짧은 세션이 다수 포함되기 때문이다.
+    Sky Tower의 인당 체류가 6.7분 → 20.8분으로 대폭 증가했다. 로코모션 개선 또는 난이도 조정의 영향으로 보인다. Horror도 9.0분 → 14.3분으로 증가. Casual의 인당 중앙값 18.3분에는 로비 경유, 상점, 튜토리얼 체류가 모두 포함되어 있다.
   </div>
 </div>
 
@@ -429,7 +429,7 @@ new Chart(document.getElementById('chartPlaytime'),{
 // 모드별 체류시간
 new Chart(document.getElementById('chartModeTime'),{
   type:'bar',
-  data:{labels:['Casual','Infection','ObbyR','Horror','Obby'],datasets:[
+  data:{labels:['Casual','Infection','Sky Tower','Horror','Circuit'],datasets:[
     {label:'9차 (시간)',data:[32.1,14.6,4.5,2.1,2.1],backgroundColor:C.primary,borderRadius:3},
     {label:'8차 (시간)',data:[32.1,9.7,0.7,2.6,3.4],backgroundColor:C.gray,borderRadius:3}
   ]},
