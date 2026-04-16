@@ -175,7 +175,7 @@
     </tbody>
   </table>
   <div class="chart-wrap">
-    <div class="chart-title">모드별 총 체류시간 (PT09 vs PT08)</div>
+    <div class="chart-title" id="chartModeTitle">모드별 총 체류시간 (9차 vs 8차)</div>
     <canvas id="chartModeTime" height="200"></canvas>
   </div>
   <div class="obs">
@@ -482,16 +482,18 @@ new Chart(document.getElementById('chartPlaytime'),{
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'명',font:{size:11}},grid:{color:C.grid}},x:{grid:{display:false}}}}
 });
 
-// 모드별 체류시간
-new Chart(document.getElementById('chartModeTime'),{
+// 모드별 체류시간 (mode labels: Casual, Infection, Sky Tower(ObbyR), Horror, Circuit(Obby))
+// 주의: PT07 기간(v0.10.0)의 Obby는 Circuit 맵 (2-2 UT부터 Circuit)
+var chartModeInstance = new Chart(document.getElementById('chartModeTime'),{
   type:'bar',
   data:{labels:['Casual','Infection','Sky Tower','Horror','Circuit'],datasets:[
     {label:'9차',data:[32.1,14.6,4.5,2.1,2.1],backgroundColor:C.primary,borderRadius:3},
-    {label:'8차',data:[32.1,9.7,0.7,2.6,3.4],backgroundColor:C.gray,borderRadius:3},
-    {label:'7차',data:[0,0,0,0,0],backgroundColor:'#94a3b8',borderRadius:3,hidden:true}
+    {label:'8차',data:[32.1,9.7,0.7,2.6,3.4],backgroundColor:C.gray,borderRadius:3}
   ]},
-  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}},scales:{x:{beginAtZero:true,title:{display:true,text:'시간',font:{size:11}},grid:{color:C.grid}},y:{grid:{display:false}}}}
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'top',labels:{font:{size:14},boxWidth:12}}},scales:{x:{beginAtZero:true,title:{display:true,text:'시간',font:{size:14}},grid:{color:C.grid}},y:{grid:{display:false},ticks:{font:{size:14}}}}}
 });
+// PT07 데이터 (Sky Tower=ObbyR, Circuit=Obby)
+var pt7Dataset={label:'7차',data:[31.4,12.2,0.8,3.8,4.8],backgroundColor:'#94a3b8',borderRadius:3};
 
 // 크로스 플랫폼
 new Chart(document.getElementById('chartCross'),{
@@ -514,6 +516,18 @@ function setCompare(n,el){
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
   document.body.classList.toggle('show3',n===3);
+  // 모드별 차트 동기화
+  if(typeof chartModeInstance!=='undefined'){
+    var ds=chartModeInstance.data.datasets;
+    if(n===3){
+      if(ds.length<3) ds.push(pt7Dataset);
+      document.getElementById('chartModeTitle').textContent='모드별 총 체류시간 (7차 vs 8차 vs 9차)';
+    } else {
+      if(ds.length>2) ds.pop();
+      document.getElementById('chartModeTitle').textContent='모드별 총 체류시간 (9차 vs 8차)';
+    }
+    chartModeInstance.update();
+  }
 }
 </script>
 </body>
