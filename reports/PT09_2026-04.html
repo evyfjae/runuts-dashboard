@@ -3,456 +3,532 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>9차 Playtest 보고서 — RUNuts</title>
+<title>PT09 — 9차 Playtest 분석 보고서</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Black+Han+Sans&display=swap');
-
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    font-family: 'IBM Plex Sans KR', -apple-system, sans-serif;
-    background: #fff; color: #1a1a2e;
-    line-height: 1.7; font-size: 14px;
-    max-width: 960px; margin: 0 auto; padding: 40px 32px;
-  }
-
-  /* 헤더 */
-  .report-header {
-    border-bottom: 3px solid #FF9900;
-    padding-bottom: 24px; margin-bottom: 32px;
-  }
-  .report-header h1 {
-    font-family: 'Black Han Sans', sans-serif;
-    font-size: 28px; color: #1a1a2e; margin-bottom: 4px;
-  }
-  .report-header .subtitle {
-    font-size: 14px; color: #666; margin-bottom: 12px;
-  }
-  .report-meta {
-    display: flex; gap: 24px; font-size: 12px; color: #888;
-  }
-  .report-meta span { display: flex; align-items: center; gap: 4px; }
-
-  /* 섹션 */
-  .section { margin-bottom: 32px; }
-  .section-heading {
-    font-family: 'Black Han Sans', sans-serif;
-    font-size: 18px; color: #1a1a2e;
-    border-left: 4px solid #FF9900;
-    padding-left: 12px; margin-bottom: 16px;
-  }
-  /* Action Title (McKinsey 스타일) */
-  .action-title {
-    font-size: 15px; font-weight: 600; color: #333;
-    margin-bottom: 12px; line-height: 1.5;
-  }
-
-  /* KPI 카드 */
-  .kpi-row {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px; margin-bottom: 20px;
-  }
-  .kpi-box {
-    background: #f8f9fa; border-radius: 8px; padding: 16px;
-    text-align: center; border: 1px solid #e9ecef;
-  }
-  .kpi-box .label { font-size: 11px; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .kpi-box .value { font-size: 24px; font-weight: 700; color: #1a1a2e; }
-  .kpi-box .delta { font-size: 11px; margin-top: 2px; }
-  .delta-up { color: #16a34a; }
-  .delta-down { color: #dc2626; }
-  .delta-neutral { color: #888; }
-
-  /* 인사이트 박스 */
-  .insight-box {
-    border-left: 4px solid #06b6d4; background: #f0fdfa;
-    padding: 12px 16px; border-radius: 0 8px 8px 0;
-    margin: 16px 0; font-size: 13px; line-height: 1.6;
-  }
-  .insight-box.warning {
-    border-left-color: #eab308; background: #fefce8;
-  }
-  .insight-box.action {
-    border-left-color: #22c55e; background: #f0fdf4;
-  }
-  .insight-box .insight-label {
-    font-weight: 700; font-size: 11px; text-transform: uppercase;
-    letter-spacing: 0.5px; margin-bottom: 4px;
-  }
-  .insight-box.warning .insight-label { color: #a16207; }
-  .insight-box.action .insight-label { color: #15803d; }
-  .insight-box .insight-label { color: #0e7490; }
-
-  /* 차트 */
-  .chart-wrap {
-    background: #f8f9fa; border-radius: 8px; padding: 16px;
-    margin: 16px 0; border: 1px solid #e9ecef;
-  }
-  .chart-wrap canvas { max-height: 300px; }
-
-  /* 테이블 */
-  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
-  th { background: #f1f3f5; padding: 8px 12px; text-align: left; font-weight: 600; font-size: 12px; color: #555; border-bottom: 2px solid #dee2e6; }
-  td { padding: 8px 12px; border-bottom: 1px solid #e9ecef; }
-  tr:hover td { background: #f8f9fa; }
-  .num { text-align: right; font-variant-numeric: tabular-nums; }
-
-  /* 신호등 */
-  .signal { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
-  .signal-green { background: #22c55e; }
-  .signal-yellow { background: #eab308; }
-  .signal-red { background: #ef4444; }
-
-  /* 접기/펼치기 */
-  details { margin: 12px 0; }
-  summary { cursor: pointer; font-weight: 600; font-size: 13px; color: #555; padding: 8px 0; }
-  summary:hover { color: #FF9900; }
-
-  /* 푸터 */
-  .report-footer {
-    margin-top: 48px; padding-top: 16px; border-top: 1px solid #e9ecef;
-    font-size: 11px; color: #aaa; text-align: center;
-  }
-
-  /* 반응형 */
-  @media (max-width: 640px) {
-    body { padding: 20px 16px; }
-    .report-header h1 { font-size: 22px; }
-    .kpi-row { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  /* 인쇄 */
-  @media print {
-    body { padding: 20px; font-size: 12px; }
-    .chart-wrap { break-inside: avoid; }
-    .section { break-inside: avoid; }
-  }
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;background:#fff;color:#1a1a2e;line-height:1.8;font-size:15px;max-width:960px;margin:0 auto;padding:40px 32px}
+  .report-header{border-bottom:3px solid #FF9900;padding-bottom:24px;margin-bottom:32px}
+  .report-header h1{font-weight:900;font-size:28px;color:#1a1a2e;margin-bottom:4px}
+  .report-header .subtitle{font-size:15px;color:#666;margin-bottom:12px}
+  .report-meta{display:flex;flex-wrap:wrap;gap:16px 24px;font-size:14px;color:#888}
+  .disclaimer{background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:14px;color:#666;line-height:1.7}
+  .section{margin-bottom:36px}
+  .section-heading{font-weight:900;font-size:20px;color:#1a1a2e;border-left:4px solid #FF9900;padding-left:12px;margin-bottom:16px}
+  .section-desc{font-size:14px;color:#555;margin-bottom:12px;line-height:1.7}
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+  .kpi-box{background:#f8f9fa;border-radius:8px;padding:16px;text-align:center;border:1px solid #e9ecef}
+  .kpi-box .label{font-size:14px;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  .kpi-box .value{font-size:24px;font-weight:700;color:#1a1a2e}
+  .kpi-box .sub{font-size:14px;color:#999;margin-top:2px}
+  .obs{border-left:4px solid #94a3b8;background:#f8fafc;padding:14px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px;line-height:1.8}
+  .obs .tag{font-weight:700;font-size:14px;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .review{border-left:4px solid #f59e0b;background:#fffbeb;padding:14px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px;line-height:1.8}
+  .review .tag{font-weight:700;font-size:14px;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .hold{border-left:4px solid #d1d5db;background:#f9fafb;padding:14px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px;line-height:1.8;color:#6b7280}
+  .hold .tag{font-weight:700;font-size:14px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .chart-wrap{background:#f8f9fa;border-radius:8px;padding:16px;margin:16px 0;border:1px solid #e9ecef}
+  .chart-wrap canvas{max-height:300px}
+  .chart-title{font-size:13px;font-weight:600;margin-bottom:8px;color:#555}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
+  th{background:#f1f3f5;padding:8px 12px;text-align:left;font-weight:600;font-size:14px;color:#555;border-bottom:2px solid #dee2e6}
+  td{padding:8px 12px;border-bottom:1px solid #e9ecef}
+  tr:hover td{background:#f8f9fa}
+  .r{text-align:right;font-variant-numeric:tabular-nums}
+  .bold{font-weight:600}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:600}
+  .badge-green{background:#dcfce7;color:#166534}.badge-yellow{background:#fef9c3;color:#854d0e}.badge-red{background:#fee2e2;color:#991b1b}.badge-blue{background:#dbeafe;color:#1e40af}.badge-gray{background:#f3f4f6;color:#374151}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+  .placeholder{background:#f3f4f6;border:2px dashed #d1d5db;border-radius:8px;padding:24px;text-align:center;color:#9ca3af;font-size:14px;margin:16px 0}
+  /* 비교 범위 칩 */
+  .chip-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:14px}
+  .chip-bar span{font-weight:600;color:#555}
+  .chip{padding:6px 16px;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;border:2px solid #e9ecef;background:#fff;color:#555;transition:.2s}
+  .chip.active{background:#FF9900;color:#fff;border-color:#FF9900}
+  .chip:hover:not(.active){background:#f8f9fa}
+  .col-pt7{display:none}
+  .show3 .col-pt7{display:table-cell}
+  details{margin:12px 0}summary{cursor:pointer;font-weight:600;font-size:15px;color:#555;padding:8px 0}summary:hover{color:#FF9900}
+  .report-footer{margin-top:48px;padding-top:16px;border-top:1px solid #e9ecef;font-size:14px;color:#aaa;text-align:center}
+  .highlight-row{background:#fffbeb}
+  @media(max-width:640px){body{padding:20px 16px}.report-header h1{font-size:22px}.kpi-row{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}}
+  @media print{body{padding:20px;font-size:12px}.chart-wrap,.section{break-inside:avoid}}
 </style>
 </head>
 <body>
 
-<!-- ===== 헤더 ===== -->
 <div class="report-header">
-  <h1>9차 Playtest 보고서</h1>
+  <h1>9차 Playtest 분석 보고서</h1>
   <div class="subtitle">RUNuts — 비행 기반 소셜 VR 멀티플레이 게임</div>
   <div class="report-meta">
-    <span>📅 플테 기간: 2026-04-04 ~ 2026-04-06 (3일)</span>
-    <span>🏷️ 빌드: v0.13.0</span>
-    <span>📝 작성일: 2026-04-15</span>
+    <span>플테 기간: 2026-04-05(일) ~ 04-06(월) KST (2일)</span>
+    <span>빌드: v0.13.0</span>
+    <span>비교: 8차 (v0.11.x)</span>
+    <span>참여자: 68명</span>
+    <span>작성일: 2026-04-16</span>
   </div>
+</div>
+
+<div class="disclaimer">
+  이 보고서는 플테당 60~80명 규모의 탐색적 데이터 분석(EDA) 결과입니다. 통계적 유의성 검정은 포함되지 않으며, 수치는 <strong>경향성 참고</strong>로 봐주세요.
+</div>
+
+<!-- 글로벌 비교 범위 칩 -->
+<div class="chip-bar">
+  <span>비교 범위:</span>
+  <div class="chip active" onclick="setCompare(2,this)">2개 플테</div>
+  <div class="chip" onclick="setCompare(3,this)">3개 플테</div>
 </div>
 
 <!-- ===== 1. Executive Summary ===== -->
 <div class="section">
   <div class="section-heading">1. Executive Summary</div>
-  <div class="action-title">참여자 68명 중 잔존율 99% 달성 — Obby 클리어율 전회 대비 +5.7%p 개선으로 콘텐츠 난이도 조정 효과 확인</div>
+  <div class="kpi-row">
+    <div class="kpi-box"><div class="label">참여자</div><div class="value">68</div><div class="sub">8차: 81 (△-13)</div></div>
+    <div class="kpi-box"><div class="label">신규</div><div class="value">10</div><div class="sub">재참여 58 (85%)</div></div>
+    <div class="kpi-box"><div class="label">잔존</div><div class="value">67/68</div><div class="sub">이탈 1</div></div>
+    <div class="kpi-box"><div class="label">피크 DAU</div><div class="value">57</div><div class="sub">8차: 69</div></div>
+    <div class="kpi-box"><div class="label">총 체류</div><div class="value">55.5h</div><div class="sub">인당 중앙값 24.7분</div></div>
+    <div class="kpi-box"><div class="label">Obby 클리어율</div><div class="value">14.2%</div><div class="sub">8차: 8.5%</div></div>
+  </div>
+
+  <!-- 3개 플테 비교 테이블 (토글 연동) -->
+  <table class="compare-table">
+    <thead><tr><th>지표</th><th class="r col-pt7">7차</th><th class="r">8차</th><th class="r bold">9차</th><th class="r col-pt7">추세</th></tr></thead>
+    <tbody>
+      <tr><td>참여자</td><td class="r col-pt7">87</td><td class="r">81</td><td class="r bold">68</td><td class="r col-pt7">↘</td></tr>
+      <tr><td>총 세션</td><td class="r col-pt7">1,280</td><td class="r">1,187</td><td class="r bold">965</td><td class="r col-pt7">↘</td></tr>
+      <tr><td>총 체류</td><td class="r col-pt7">54.6h</td><td class="r">48.9h</td><td class="r bold">55.5h</td><td class="r col-pt7">↗ 반등</td></tr>
+      <tr><td>인당 세션</td><td class="r col-pt7">14.7</td><td class="r">14.7</td><td class="r bold">14.2</td><td class="r col-pt7">→ 유지</td></tr>
+      <tr><td>인당 체류</td><td class="r col-pt7">37.7분</td><td class="r">36.2분</td><td class="r bold">60.5분</td><td class="r col-pt7">↗ 증가</td></tr>
+      <tr><td>Obby 클리어율</td><td class="r col-pt7">—</td><td class="r">8.5%</td><td class="r bold">14.2%</td><td class="r col-pt7">↗ 증가</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ===== 2. 변경점 ↔ 지표 매핑 ===== -->
+<div class="section">
+  <div class="section-heading">2. 변경점 ↔ 지표 변화</div>
+  <div class="section-desc">v0.13.0 빌드에서 바뀐 것과 수치 변화를 나란히 정리합니다.</div>
+  <table>
+    <thead><tr><th>빌드 변경사항</th><th>관련 지표</th><th class="r">변화</th></tr></thead>
+    <tbody>
+      <tr><td>퀘스트 & 도전과제 시스템 개편</td><td>퀘스트 완료</td><td class="r">391 → 531 (+36%)</td></tr>
+      <tr><td>도전과제 9종 도입 (Fly/Chase/Run 3트랙)</td><td>도전과제 달성</td><td class="r">286건, GN 1,559 지급</td></tr>
+      <tr><td>ObbyClear 제거 → Flight 모드 추가</td><td>Obby 진입 / 태그 이용</td><td class="r">Obby +24% / 태그 -52%</td></tr>
+      <tr><td>난이도 조정</td><td>Obby 클리어율</td><td class="r">8.5% → 14.2% (+5.7%p)</td></tr>
+      <tr><td>로코모션 개선</td><td>Sky Tower 인당 체류</td><td class="r">6.7분 → 20.8분</td></tr>
+    </tbody>
+  </table>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    태그 모드 인당 이용이 2.6 → 1.5회로 42% 감소했다. ObbyClear→Flight 전환에 따른 유저 동선 변화인지 확인 필요.
+  </div>
+</div>
+
+<!-- ===== 3. 플레이타임 ===== -->
+<div class="section">
+  <div class="section-heading">3. 플레이타임</div>
+  <div class="section-desc">roomDisconnect.elapsedTime 합산 기준. 55명(roomDisconnect 기록 유저)의 총 체류시간 분포.</div>
+  <div class="grid-2">
+    <div>
+      <div class="kpi-row" style="margin-bottom:8px">
+        <div class="kpi-box"><div class="label">평균</div><div class="value">60.5분</div></div>
+        <div class="kpi-box"><div class="label">중앙값</div><div class="value">24.7분</div></div>
+      </div>
+      <table>
+        <thead><tr><th>구간</th><th class="r">인원</th><th class="r">비율</th></tr></thead>
+        <tbody>
+          <tr><td>0~5분</td><td class="r">9</td><td class="r">16%</td></tr>
+          <tr><td>5~15분</td><td class="r">9</td><td class="r">16%</td></tr>
+          <tr class="highlight-row"><td>15~30분</td><td class="r bold">13</td><td class="r bold">24%</td></tr>
+          <tr><td>30~60분</td><td class="r">10</td><td class="r">18%</td></tr>
+          <tr><td>60~120분</td><td class="r">6</td><td class="r">11%</td></tr>
+          <tr><td>120분+</td><td class="r">8</td><td class="r">15%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="chart-wrap" style="margin:0">
+      <div class="chart-title">유저별 체류시간 분포</div>
+      <canvas id="chartPlaytime" height="220"></canvas>
+    </div>
+  </div>
+  <div class="obs">
+    <div class="tag">관찰</div>
+    중앙값(24.7분)과 평균(60.5분)의 차이가 크다. 소수의 장시간 유저(120분+ 8명, 15%)가 평균을 끌어올리고 있다. 최빈 구간은 15~30분(24%).
+  </div>
+</div>
+
+<!-- ===== 4. 모드별 점유율 + 몰입도 ===== -->
+<div class="section">
+  <div class="section-heading">4. 모드별 점유율 + 몰입도</div>
+  <div class="section-desc">진입률(참여자 대비 해당 모드 경험 비율)과 인당 중앙값 체류시간(플레이어별 총 체류 합산 기준)을 표시합니다.</div>
+  <table>
+    <thead><tr><th>모드</th><th class="r">플레이어</th><th class="r">진입률</th><th class="r">인당 중앙값</th><th class="r">8차 인당 중앙값</th><th class="r">총 시간</th></tr></thead>
+    <tbody>
+      <tr><td>Casual (로비/상점/튜토리얼)</td><td class="r">55</td><td class="r">81%</td><td class="r">18.3분</td><td class="r">15.0분</td><td class="r">32.1h</td></tr>
+      <tr><td>Infection (태그)</td><td class="r">33</td><td class="r">49%</td><td class="r">18.3분</td><td class="r">12.1분</td><td class="r">14.6h</td></tr>
+      <tr class="highlight-row"><td class="bold">Obby - Sky Tower</td><td class="r">11</td><td class="r">16%</td><td class="r bold">20.8분</td><td class="r">6.7분</td><td class="r">4.5h</td></tr>
+      <tr><td>Horror</td><td class="r">11</td><td class="r">16%</td><td class="r">14.3분</td><td class="r">9.0분</td><td class="r">2.1h</td></tr>
+      <tr><td>Obby - Circuit</td><td class="r">10</td><td class="r">15%</td><td class="r">5.6분</td><td class="r">7.0분</td><td class="r">2.1h</td></tr>
+    </tbody>
+  </table>
+  <div class="chart-wrap">
+    <div class="chart-title" id="chartModeTitle">모드별 총 체류시간 (9차 vs 8차)</div>
+    <canvas id="chartModeTime" height="200"></canvas>
+  </div>
+  <div class="obs">
+    <div class="tag">관찰</div>
+    Sky Tower의 인당 체류가 6.7분 → 20.8분으로 대폭 증가했다. 로코모션 개선 또는 난이도 조정의 영향으로 보인다. Horror도 9.0분 → 14.3분으로 증가. Casual의 인당 중앙값 18.3분에는 로비 경유, 상점, 튜토리얼 체류가 모두 포함되어 있다.
+  </div>
+</div>
+
+<!-- ===== 5. 유저 유형별 분석 ===== -->
+<div class="section">
+  <div class="section-heading">5. 유저 유형별 분석</div>
+  <div class="section-desc">리텐션(8차 연속 참여) / 복귀(8차 불참, 이전 참여 있음) / 신규(첫 플테) 3분할. 플레이어별 합산 기준.</div>
+
+  <div class="grid-2">
+    <div>
+      <table>
+        <thead><tr><th>유형</th><th class="r">인원</th><th class="r">비율</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-green">리텐션</span></td><td class="r bold">28</td><td class="r">41%</td></tr>
+          <tr><td><span class="badge badge-blue">복귀</span></td><td class="r">30</td><td class="r">44%</td></tr>
+          <tr><td><span class="badge badge-yellow">신규</span></td><td class="r">10</td><td class="r">15%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="chart-wrap" style="margin:0">
+      <div class="chart-title">유저 유형 분포</div>
+      <canvas id="chartUserType" height="160"></canvas>
+    </div>
+  </div>
+
+  <div style="font-weight:700;font-size:15px;margin:20px 0 8px;color:#555">유형별 참여 깊이 비교</div>
+  <table>
+    <thead><tr><th>지표</th><th class="r">리텐션 (28명)</th><th class="r">복귀 (30명)</th><th class="r">신규 (10명)</th></tr></thead>
+    <tbody>
+      <tr><td>인당 체류 (중앙값)</td><td class="r bold">24.1분</td><td class="r">5.8분</td><td class="r">20.9분</td></tr>
+      <tr><td>인당 체류 (평균)</td><td class="r">48.0분</td><td class="r">42.6분</td><td class="r bold">70.6분</td></tr>
+      <tr><td>인당 세션</td><td class="r">15.0</td><td class="r">11.8</td><td class="r bold">18.9</td></tr>
+      <tr><td>인당 이벤트</td><td class="r">279</td><td class="r">233</td><td class="r bold">370</td></tr>
+      <tr><td>인당 상점 방문</td><td class="r">9.3</td><td class="r">8.3</td><td class="r bold">10.5</td></tr>
+      <tr><td>인당 구매</td><td class="r">0.9</td><td class="r bold">1.1</td><td class="r">0.9</td></tr>
+      <tr><td>인당 Obby 시작</td><td class="r bold">7.7</td><td class="r">3.8</td><td class="r">3.6</td></tr>
+      <tr><td>인당 태그</td><td class="r">0.8</td><td class="r bold">2.5</td><td class="r">0.3</td></tr>
+      <tr><td>인당 퀘스트</td><td class="r">8.0</td><td class="r">6.5</td><td class="r bold">11.2</td></tr>
+      <tr><td>인당 도전과제</td><td class="r bold">4.5</td><td class="r">3.9</td><td class="r">4.3</td></tr>
+      <tr><td>인당 테크트리</td><td class="r bold">9.1</td><td class="r">5.8</td><td class="r">3.9</td></tr>
+    </tbody>
+  </table>
+
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>신규(10명)가 가장 적극적이다.</strong> 인당 체류 70.6분, 세션 18.9회, 퀘스트 11.2개로 모든 지표에서 높다. 온보딩 퀘스트(Flight/Seed/WindFan)를 처음 받으므로 퀘스트 수가 많은 것은 자연스럽다.<br><br>
+    <strong>복귀(30명)는 양극화되어 있다.</strong> 중앙값 5.8분이지만 평균 42.6분으로, "잠깐 접속하고 나간 유저"와 "제대로 복귀한 유저"가 혼재한다. 태그 모드 이용(인당 2.5회)이 다른 유형보다 높다.<br><br>
+    <strong>리텐션(28명)은 Obby와 테크트리에 집중한다.</strong> Obby 시작(7.7회)과 테크트리 해금(9.1회)이 가장 높아, 콘텐츠 진행에 집중하는 코어 플레이어 패턴이다.
+  </div>
+
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    복귀 유저의 중앙값(5.8분)이 리텐션·신규 대비 크게 낮다. 복귀 유저 30명 중 "5분 미만 체류" 비율을 확인하고, 이들의 이탈 원인(접속 장애? 콘텐츠 부족? 친구 미접속?)을 파악하면 리텐션 개선에 도움이 될 수 있다.
+  </div>
+</div>
+
+<!-- ===== 6. 코호트 잔존 ===== -->
+<div class="section">
+  <div class="section-heading">6. 신규 유저 코호트 잔존</div>
+  <table>
+    <thead><tr><th>코호트</th><th class="r">크기</th><th class="r">→ 8차</th><th class="r">→ 9차</th><th class="r">9차 잔존율</th></tr></thead>
+    <tbody>
+      <tr><td>7차 신규</td><td class="r">24</td><td class="r">18 (75%)</td><td class="r">15 (63%)</td><td class="r">63%</td></tr>
+      <tr><td>8차 신규</td><td class="r">16</td><td class="r">—</td><td class="r">12 (75%)</td><td class="r">75%</td></tr>
+      <tr><td>9차 신규</td><td class="r">10</td><td class="r">—</td><td class="r">—</td><td class="r">—</td></tr>
+    </tbody>
+  </table>
+  <div class="obs">
+    <div class="tag">관찰</div>
+    8차 코호트의 75%가 9차에 복귀했다. 7차 코호트도 2회 경과 후 63%가 남아 있다. 표본이 작아(10~24명) 백분율 변동이 크므로 참고치로 활용.
+  </div>
+</div>
+
+<!-- ===== 7. Shop + 경제 ===== -->
+<div class="section">
+  <div class="section-heading">7. Shop + Golden Nuts 경제</div>
+
+  <div class="section-desc">Golden Nuts(GN)는 도전과제/퀘스트로만 획득하고, 코스메틱 구매/테크트리 해금에 소비하는 프리미엄 화폐.</div>
 
   <div class="kpi-row">
-    <div class="kpi-box">
-      <div class="label">참여자</div>
-      <div class="value">68</div>
-      <div class="delta delta-down">▼13 vs 8차</div>
+    <div class="kpi-box"><div class="label">GN 유입 (9차)</div><div class="value">2,830</div><div class="sub">퀘스트 1,273 + 도전과제 1,557</div></div>
+    <div class="kpi-box"><div class="label">구매 건수</div><div class="value">65</div><div class="sub">27종, 36명</div></div>
+    <div class="kpi-box"><div class="label">테크트리 해금</div><div class="value">469</div><div class="sub">13종, 51명</div></div>
+    <div class="kpi-box"><div class="label">잔액 중앙값</div><div class="value">29 GN</div><div class="sub">전체 443명 기준</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:#555">인기 코스메틱 TOP 5</div>
+      <table>
+        <thead><tr><th>아이템</th><th class="r">구매</th><th class="r">가격</th></tr></thead>
+        <tbody>
+          <tr><td>Cool DJ Suit</td><td class="r">8명</td><td class="r">20 GN</td></tr>
+          <tr><td>Cool DJ Headset</td><td class="r">7명</td><td class="r">20 GN</td></tr>
+          <tr><td>Pixel Sunglasses</td><td class="r">5명</td><td class="r">20 GN</td></tr>
+          <tr><td>Purple Wizard Suit</td><td class="r">4명</td><td class="r">20 GN</td></tr>
+          <tr><td>Purple Suit</td><td class="r">4명</td><td class="r">10 GN</td></tr>
+        </tbody>
+      </table>
     </div>
-    <div class="kpi-box">
-      <div class="label">신규 유저</div>
-      <div class="value">10</div>
-      <div class="delta delta-down">▼6 vs 8차</div>
-    </div>
-    <div class="kpi-box">
-      <div class="label">잔존율</div>
-      <div class="value" style="color:#16a34a">99%</div>
-      <div class="delta delta-up">▲3%p vs 8차</div>
-    </div>
-    <div class="kpi-box">
-      <div class="label">총 세션</div>
-      <div class="value">965</div>
-      <div class="delta delta-down">▼222 vs 8차</div>
-    </div>
-    <div class="kpi-box">
-      <div class="label">피크 DAU</div>
-      <div class="value">57</div>
-      <div class="delta delta-down">▼12 vs 8차</div>
-    </div>
-    <div class="kpi-box">
-      <div class="label">Obby 클리어율</div>
-      <div class="value" style="color:#16a34a">14.2%</div>
-      <div class="delta delta-up">▲5.7%p vs 8차</div>
+    <div>
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:#555">테크트리 해금 TOP 5</div>
+      <table>
+        <thead><tr><th>아이템</th><th class="r">유저</th><th class="r">비용</th></tr></thead>
+        <tbody>
+          <tr><td>Firework (가젯)</td><td class="r">51명</td><td class="r">2 GN</td></tr>
+          <tr><td>Web Gun (무기)</td><td class="r">50명</td><td class="r">3 GN</td></tr>
+          <tr><td>Ultimate Band (궁극기)</td><td class="r">47명</td><td class="r">10 GN</td></tr>
+          <tr><td>Spider Shooter (가젯)</td><td class="r">44명</td><td class="r">5 GN</td></tr>
+          <tr><td>Homing Gun (무기)</td><td class="r">40명</td><td class="r">4 GN</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <div class="insight-box">
-    <div class="insight-label">💡 핵심 요약</div>
-    참여 규모는 8차 대비 감소했으나, 잔존율(99%)과 Obby 클리어율(14.2%)이 크게 개선되어 <strong>참여 품질이 향상</strong>되었다. 튜토리얼 완수율도 56.5% → 63.6%로 개선. 다만 신규 유저 유입(10명)이 줄어 <strong>모집 채널 다변화</strong>가 필요하다.
+  <div class="obs">
+    <div class="tag">관찰</div>
+    코스메틱 구매자(36명)는 참여자의 53%. DJ 세트(조끼+모자+고글)가 인기. 테크트리는 Firework(51명, 75%)가 가장 먼저 해금되고, 고가 무기(Acorn Trap 5GN, 25명)로 갈수록 해금률이 낮아진다. GN 잔액 중앙값 29GN은 코스메틱 1개(10~20GN) 구매 가능한 수준.
   </div>
 </div>
 
-<!-- ===== 2. 참여자 분석 ===== -->
+<!-- ===== 8. 온보딩 + 퀘스트 + 도전과제 ===== -->
 <div class="section">
-  <div class="section-heading">2. 참여자 분석</div>
-  <div class="action-title">재참여 비율 85% — 코어 유저 기반 안정화, 신규 유입은 감소세</div>
+  <div class="section-heading">8. 온보딩 · 퀘스트 · 도전과제</div>
 
+  <div class="section-desc">튜토리얼 단계별 이탈 지점 + 퀘스트/도전과제 달성 현황.</div>
+
+  <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:#555">튜토리얼 단계별 (10명 진입)</div>
   <table>
-    <thead><tr><th>구분</th><th class="num">인원</th><th class="num">비율</th><th>비고</th></tr></thead>
+    <thead><tr><th>단계</th><th>내용</th><th class="r">완료</th><th class="r">평균 소요</th></tr></thead>
     <tbody>
-      <tr><td>총 참여자</td><td class="num"><strong>68</strong></td><td class="num">100%</td><td></td></tr>
-      <tr><td>　신규</td><td class="num">10</td><td class="num">15%</td><td>첫 플레이테스트 참여</td></tr>
-      <tr><td>　재참여</td><td class="num">58</td><td class="num">85%</td><td>이전 플테 경험자</td></tr>
-      <tr><td colspan="4" style="height:8px;border:none;"></td></tr>
-      <tr><td><span class="signal signal-green"></span>잔존</td><td class="num" style="color:#16a34a"><strong>67</strong></td><td class="num">99%</td><td>최근 4회 플테 + Discord 활동</td></tr>
-      <tr><td><span class="signal signal-yellow"></span>휴면</td><td class="num" style="color:#eab308">0</td><td class="num">0%</td><td></td></tr>
-      <tr><td><span class="signal signal-red"></span>이탈</td><td class="num" style="color:#dc2626">1</td><td class="num">1%</td><td>Discord 탈퇴</td></tr>
+      <tr><td>StartTutorial</td><td>튜토리얼 시작</td><td class="r">11명</td><td class="r">14.7초</td></tr>
+      <tr><td>Rotation</td><td>회전 조작</td><td class="r">10명</td><td class="r">15.1초</td></tr>
+      <tr><td>Glide</td><td>활공</td><td class="r">10명</td><td class="r">14.4초</td></tr>
+      <tr><td>JetPack</td><td>제트팩</td><td class="r">10명</td><td class="r">13.3초</td></tr>
+      <tr><td>ChargeAndLaunch</td><td>충전 + 발사</td><td class="r">10명</td><td class="r">11.9초</td></tr>
+      <tr><td>LiftEffect</td><td>상승 효과</td><td class="r">10명</td><td class="r">11.9초</td></tr>
+      <tr class="highlight-row"><td class="bold">Weapon</td><td>무기 사용</td><td class="r bold">8명</td><td class="r bold">40.7초</td></tr>
+      <tr><td>Ultimate</td><td>궁극기</td><td class="r">2명</td><td class="r">14.9초</td></tr>
+      <tr><td>Tag</td><td>태그 체험</td><td class="r">3명</td><td class="r">3.0초</td></tr>
+      <tr><td>EndTutorial</td><td>완료</td><td class="r">4명</td><td class="r">5.1초</td></tr>
     </tbody>
   </table>
 
-  <div class="action-title" style="margin-top:20px">국가별 분포 — 미국(60%) 중심, 영국·캐나다 안정적</div>
+  <div class="obs">
+    <div class="tag">관찰</div>
+    Rotation~LiftEffect까지는 10명 전원 통과하지만, <strong>Weapon 단계에서 2명 이탈</strong>하고 소요시간이 40.7초로 다른 단계(11~15초)의 3배다. Ultimate 단계에서 추가 이탈이 발생하여 최종 완료는 4명.
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:20px 0 8px;color:#555">퀘스트 달성 (9차 기간)</div>
   <table>
-    <thead><tr><th>국가</th><th class="num">인원</th><th class="num">비율</th></tr></thead>
+    <thead><tr><th>퀘스트</th><th>페이즈</th><th class="r">달성</th><th class="r">유저</th><th class="r">GN 지급</th></tr></thead>
     <tbody>
-      <tr><td>🇺🇸 미국</td><td class="num">41</td><td class="num">60%</td></tr>
-      <tr><td>🇬🇧 영국</td><td class="num">7</td><td class="num">10%</td></tr>
-      <tr><td>🇨🇦 캐나다</td><td class="num">5</td><td class="num">7%</td></tr>
-      <tr><td>🇦🇺 호주</td><td class="num">3</td><td class="num">4%</td></tr>
-      <tr><td>🇳🇱 네덜란드</td><td class="num">2</td><td class="num">3%</td></tr>
-      <tr><td>기타</td><td class="num">10</td><td class="num">15%</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- ===== 3. 게임플레이 분석 ===== -->
-<div class="section">
-  <div class="section-heading">3. 게임플레이 분석</div>
-  <div class="action-title">피크 DAU 57명(Day 2), 인당 평균 14.2세션 — 세션 밀도 8차 대비 유사</div>
-
-  <div class="kpi-row">
-    <div class="kpi-box">
-      <div class="label">총 이벤트</div>
-      <div class="value">18,505</div>
-    </div>
-    <div class="kpi-box">
-      <div class="label">인당 세션</div>
-      <div class="value">14.2</div>
-    </div>
-    <div class="kpi-box">
-      <div class="label">인당 이벤트</div>
-      <div class="value">272</div>
-    </div>
-    <div class="kpi-box">
-      <div class="label">활성 일수</div>
-      <div class="value">3일</div>
-    </div>
-  </div>
-
-  <!-- DAU 차트 -->
-  <div class="chart-wrap">
-    <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#555">일별 활성 유저 (DAU)</div>
-    <canvas id="chartDau" height="200"></canvas>
-  </div>
-
-  <div class="insight-box">
-    <div class="insight-label">💡 인사이트</div>
-    Day 2(토요일)에 피크 57명을 기록한 후 Day 3에 급감(16명). 주말 집중 패턴은 8차와 동일하며, <strong>평일까지 참여를 유도하는 이벤트</strong>가 필요하다.
-  </div>
-
-  <!-- 모드별 이용 -->
-  <div class="action-title" style="margin-top:20px">게임 모드별 이용 — 태그 모드 102회, Obby 366회 시작</div>
-  <div class="chart-wrap">
-    <canvas id="chartModes" height="200"></canvas>
-  </div>
-</div>
-
-<!-- ===== 4. FTUE / 온보딩 분석 ===== -->
-<div class="section">
-  <div class="section-heading">4. FTUE / 온보딩 분석</div>
-  <div class="action-title">튜토리얼 완수율 63.6% (+7.1%p) — 개선 추세이나 스킵 3건 주의</div>
-
-  <table>
-    <thead><tr><th>단계</th><th class="num">유저 수</th><th class="num">비율</th><th>vs 8차</th></tr></thead>
-    <tbody>
-      <tr><td>튜토리얼 시작</td><td class="num">11</td><td class="num">100%</td><td></td></tr>
-      <tr><td>튜토리얼 완료</td><td class="num">7</td><td class="num">63.6%</td><td class="delta-up">▲7.1%p</td></tr>
-      <tr><td>튜토리얼 스킵</td><td class="num">3</td><td class="num">27.3%</td><td class="delta-down">▲18.6%p</td></tr>
+      <tr><td>Login (매일 로그인)</td><td>Fixed</td><td class="r">130</td><td class="r">48</td><td class="r">260</td></tr>
+      <tr><td>Flight 200m</td><td>Onboarding</td><td class="r">111</td><td class="r">49</td><td class="r">333</td></tr>
+      <tr><td>WindFan 1회</td><td>Onboarding</td><td class="r">77</td><td class="r">32</td><td class="r">231</td></tr>
+      <tr><td>GlideDistance</td><td>Random</td><td class="r">67</td><td class="r">24</td><td class="r">138</td></tr>
+      <tr><td>Tag Match</td><td>Fixed</td><td class="r">59</td><td class="r">24</td><td class="r">118</td></tr>
+      <tr><td>Seed 100개</td><td>Onboarding</td><td class="r">43</td><td class="r">19</td><td class="r">129</td></tr>
     </tbody>
   </table>
 
-  <div class="insight-box warning">
-    <div class="insight-label">⚠️ 주의</div>
-    튜토리얼 스킵률(27.3%)이 8차(8.7%)에서 크게 증가. 재참여 유저가 스킵하는 것은 자연스러우나, <strong>신규 유저의 스킵 여부를 구분</strong>하여 모니터링할 필요가 있다.
+  <div style="font-weight:600;font-size:13px;margin:20px 0 8px;color:#555">도전과제 달성 TOP 10 (9차 기간)</div>
+  <table>
+    <thead><tr><th>도전과제</th><th>트랙</th><th class="r">달성</th><th class="r">GN</th></tr></thead>
+    <tbody>
+      <tr><td>GlideSpeed Lv1 (60km/h)</td><td>Fly</td><td class="r">39명</td><td class="r">78</td></tr>
+      <tr><td>GlideDistance Lv1 (1,000m)</td><td>Fly</td><td class="r">33명</td><td class="r">66</td></tr>
+      <tr><td>GlideSpeed Lv2 (100km/h)</td><td>Fly</td><td class="r">31명</td><td class="r">124</td></tr>
+      <tr><td>GlideSpeed Lv3 (150km/h)</td><td>Fly</td><td class="r">28명</td><td class="r">224</td></tr>
+      <tr><td>GlideSpeed Lv4 (200km/h)</td><td>Fly</td><td class="r">23명</td><td class="r">345</td></tr>
+      <tr><td>MostTagsInOneGame Lv1 (3태그)</td><td>Chase</td><td class="r">21명</td><td class="r">42</td></tr>
+      <tr><td>RunnerFlightDistance Lv1 (1,000m)</td><td>Run</td><td class="r">18명</td><td class="r">36</td></tr>
+      <tr><td>MostTagsInOneGame Lv2 (5태그)</td><td>Chase</td><td class="r">17명</td><td class="r">68</td></tr>
+      <tr><td>GlideDistance Lv2 (10,000m)</td><td>Fly</td><td class="r">17명</td><td class="r">68</td></tr>
+      <tr><td>MostTagsInOneGame Lv3 (6태그)</td><td>Chase</td><td class="r">14명</td><td class="r">112</td></tr>
+    </tbody>
+  </table>
+
+  <div class="obs">
+    <div class="tag">관찰</div>
+    Fly 트랙이 가장 많이 달성되었다 (GlideSpeed Lv4까지 23명). Chase 트랙의 MostTagsInOneGame도 Lv3까지 14명이 도달. Run 트랙은 상대적으로 낮다 (Lv1 18명). 온보딩 퀘스트 중 Seed 수집(19명/49명 = 39%)의 달성률이 가장 낮아 진입 장벽으로 보인다.
   </div>
 </div>
 
-<!-- ===== 5. 리텐션 분석 ===== -->
+<!-- ===== 9. 크로스 플랫폼 ===== -->
 <div class="section">
-  <div class="section-heading">5. 리텐션 분석</div>
-  <div class="action-title">잔존율 99%로 전회(96%) 대비 개선 — 이탈 1명(Discord 탈퇴)</div>
+  <div class="section-heading">9. 크로스 플랫폼 행동 (Discord × 인게임)</div>
+  <div class="section-desc">Discord 누적 메시지 활동량과 인게임 참여 깊이의 관계. User Activity Log 누적 메시지 기준, 63명 매칭(미매칭 5명 제외).</div>
+
+  <table>
+    <thead><tr><th>Discord 활동</th><th class="r">인원</th><th class="r">평균 체류</th><th class="r">평균 세션</th><th class="r">평균 이벤트</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge badge-gray">Silent</span> (0 메시지)</td><td class="r">1</td><td class="r">0.0분</td><td class="r">2.0</td><td class="r">80</td></tr>
+      <tr><td><span class="badge badge-yellow">Visitor</span> (1~10)</td><td class="r">19</td><td class="r">17.5분</td><td class="r">5.5</td><td class="r">133</td></tr>
+      <tr class="highlight-row"><td><span class="badge badge-blue">Regular</span> (11~50)</td><td class="r bold">22</td><td class="r bold">60.8분</td><td class="r bold">16.5</td><td class="r bold">310</td></tr>
+      <tr class="highlight-row"><td><span class="badge badge-green">Core</span> (51+)</td><td class="r bold">21</td><td class="r bold">61.7분</td><td class="r bold">19.3</td><td class="r bold">358</td></tr>
+    </tbody>
+  </table>
 
   <div class="chart-wrap">
-    <canvas id="chartRetention" height="200"></canvas>
+    <div class="chart-title">Discord 메시지 활동 × 인게임 평균 체류시간</div>
+    <canvas id="chartCross" height="200"></canvas>
   </div>
 
-  <div class="insight-box action">
-    <div class="insight-label">✅ 긍정 신호</div>
-    68명 중 67명이 잔존 상태를 유지하고 있어 <strong>코어 유저 기반이 매우 견고</strong>하다. 이탈 1명은 Discord 서버 자체 탈퇴에 의한 것으로, 게임 경험과는 무관한 이탈이다.
+  <div class="obs">
+    <div class="tag">관찰</div>
+    Discord에서 메시지를 11개 이상 보낸 유저(Regular+Core, 43명)의 인게임 평균 체류는 <strong>61분</strong>으로, 10개 이하(Visitor, 19명)의 <strong>17.5분</strong>과 3.5배 차이가 난다. Regular(11~50)과 Core(51+)는 체류에 큰 차이가 없으나(60.8 vs 61.7), 세션 수(16.5 vs 19.3)에서 Core가 약간 높다.
+  </div>
+
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    Discord 활동이 낮은 Visitor 그룹(19명)의 인게임 체류가 짧은 것은, Discord 커뮤니티 참여가 게임 몰입과 상관이 있음을 시사한다. 다만 인과 방향(Discord 활동이 게임 몰입을 높이는지, 게임을 많이 하는 사람이 Discord도 활발한 것인지)은 이 데이터만으로 판단 불가.
   </div>
 </div>
 
-<!-- ===== 6. 이벤트 분석 ===== -->
+<!-- ===== 10. 관찰 & 검토 사항 ===== -->
 <div class="section">
-  <div class="section-heading">6. 이벤트 분석</div>
-  <div class="action-title">Obby 클리어율 14.2% — 난이도 조정 효과 확인, 상점 방문은 감소</div>
+  <div class="section-heading">10. 관찰 & 검토 사항</div>
 
-  <table>
-    <thead><tr><th>이벤트</th><th class="num">9차</th><th class="num">8차</th><th class="num">변화</th></tr></thead>
-    <tbody>
-      <tr><td>Obby 시작</td><td class="num">366</td><td class="num">294</td><td class="num delta-up">+72</td></tr>
-      <tr><td>Obby 클리어</td><td class="num">52</td><td class="num">25</td><td class="num delta-up">+27</td></tr>
-      <tr><td>Obby 사망</td><td class="num">1,020</td><td class="num">583</td><td class="num delta-down">+437</td></tr>
-      <tr><td>Obby 클리어율</td><td class="num" style="font-weight:700;color:#16a34a">14.2%</td><td class="num">8.5%</td><td class="num delta-up">+5.7%p</td></tr>
-      <tr><td>태그 종료</td><td class="num">102</td><td class="num">213</td><td class="num delta-down">-111</td></tr>
-      <tr><td>상점 입장</td><td class="num">614</td><td class="num">1,132</td><td class="num delta-down">-518</td></tr>
-      <tr><td>아이템 장착</td><td class="num">648</td><td class="num">892</td><td class="num delta-down">-244</td></tr>
-      <tr><td>퀘스트 완료</td><td class="num">531</td><td class="num">391</td><td class="num delta-up">+140</td></tr>
-      <tr><td>궁극기 사용</td><td class="num">2,573</td><td class="num">3,473</td><td class="num delta-down">-900</td></tr>
-    </tbody>
-  </table>
-
-  <div class="insight-box">
-    <div class="insight-label">💡 인사이트</div>
-    Obby 모드의 시작 횟수와 클리어율이 모두 상승하여 <strong>난이도 조정이 효과적</strong>이었다. 반면 상점 방문(-46%)과 태그 모드(-52%)는 감소했는데, 이는 참여자 수 감소와 더불어 <strong>Obby 모드 집중 플레이</strong> 경향을 반영한다.
-  </div>
-
-  <div class="insight-box action">
-    <div class="insight-label">✅ 권장사항</div>
-    <ul style="margin:4px 0 0 16px;padding:0;">
-      <li><strong>P0</strong>: Obby 모드 난이도 개선 방향 유지 — 클리어율 20%+ 목표</li>
-      <li><strong>P1</strong>: 태그 모드 참여 유도 이벤트 검토 — 모드 간 균형 필요</li>
-      <li><strong>P1</strong>: 상점/아이템 시스템 개선 — 방문 동기 강화</li>
-      <li><strong>P2</strong>: 퀘스트 시스템 효과 긍정적 — 확장 검토</li>
+  <div class="obs">
+    <div class="tag">유지되고 있는 것</div>
+    <ul style="margin:8px 0 0 16px;padding:0;line-height:2">
+      <li>코어 유저 기반 안정: 잔존 67/68, 재참여율 85%</li>
+      <li>인당 참여 밀도 유지: 세션 14.2, 이벤트 272 (8차와 유사)</li>
+      <li>Obby 클리어율 3회 연속 상승 추세</li>
+      <li>퀘스트 참여 증가: 인당 4.8 → 7.8 (+63%)</li>
+      <li>코호트 잔존율 63~75%</li>
     </ul>
   </div>
-</div>
 
-<!-- ===== 7. 인사이트 & 권장사항 ===== -->
-<div class="section">
-  <div class="section-heading">7. 인사이트 & 권장사항</div>
-
-  <div class="insight-box action">
-    <div class="insight-label">✅ 핵심 발견 & 액션 아이템</div>
-    <table style="margin-top:8px;">
-      <thead><tr><th>우선순위</th><th>발견</th><th>권장 액션</th></tr></thead>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    <table style="margin-top:8px">
+      <thead><tr><th>관찰</th><th>맥락</th></tr></thead>
       <tbody>
-        <tr><td><strong>P0</strong></td><td>신규 유입 감소 (16→10명)</td><td>모집 채널 다변화: Reddit, VR 커뮤니티, 크로스 프로모션</td></tr>
-        <tr><td><strong>P0</strong></td><td>Obby 클리어율 14.2%로 개선</td><td>현재 난이도 방향 유지, 20%+ 목표로 미세 조정</td></tr>
-        <tr><td><strong>P1</strong></td><td>태그 모드 이용 52% 감소</td><td>태그 모드 보상/이벤트 추가로 참여 유도</td></tr>
-        <tr><td><strong>P1</strong></td><td>상점 방문 46% 감소</td><td>신규 아이템 또는 기간 한정 프로모션 검토</td></tr>
-        <tr><td><strong>P2</strong></td><td>튜토리얼 스킵률 증가</td><td>재참여 유저와 신규 유저 분리 추적</td></tr>
+        <tr><td>신규 유입 감소 (16→10명)</td><td>모집 채널/홍보 시점이 동일했는지 확인</td></tr>
+        <tr><td>태그 인당 이용 42% 감소</td><td>ObbyClear→Flight 전환에 따른 동선 변화 가능성</td></tr>
+        <tr><td>상점 인당 방문 36% 감소</td><td>PT8 Shop 도입 직후 탐색 수요 vs PT9 매력 감소 구분</td></tr>
+        <tr><td>튜토리얼 Weapon 단계 소요 40.7초</td><td>다른 단계 평균 13초 대비 3배, 난이도/UX 검토</td></tr>
+        <tr><td>Seed 수집 퀘스트 달성률 39%</td><td>온보딩 3종 중 가장 낮음, 목표값(100개) 적정성 검토</td></tr>
+        <tr><td>GN 잔액 중앙 29 (최대 145)</td><td>소비처 부족 시 인플레이션 가능, 신규 아이템 추가 시점 검토</td></tr>
       </tbody>
     </table>
   </div>
 
-  <div class="insight-box">
-    <div class="insight-label">📊 긍정적 트렌드</div>
-    <ul style="margin:4px 0 0 16px;padding:0;">
-      <li>잔존율 99% — 코어 유저 기반 매우 안정</li>
-      <li>튜토리얼 완수율 63.6% — 2회 연속 상승</li>
-      <li>퀘스트 완료 +36% — 퀘스트 시스템 정착</li>
-      <li>Obby 참여·클리어 모두 증가 — 콘텐츠 개선 효과</li>
+  <div class="hold">
+    <div class="tag">유보 — 데이터만으로 판단 어려움</div>
+    <ul style="margin:8px 0 0 16px;padding:0;line-height:2">
+      <li>로코모션 개선의 체감 효과 (ObbyR 체류 증가와의 인과)</li>
+      <li>복귀 유저의 행동 변화 (유저 유형별 체류 비교 미구현)</li>
+      <li>Seeds 경제 균형 (Seeds 획득 이벤트가 BigQuery에 미기록)</li>
     </ul>
   </div>
 </div>
 
 <!-- ===== 부록 ===== -->
 <div class="section">
-  <div class="section-heading">8. 부록</div>
+  <div class="section-heading">부록</div>
   <details>
-    <summary>📊 일별 상세 데이터</summary>
-    <table style="margin-top:8px;">
-      <thead><tr><th>날짜</th><th class="num">DAU</th><th class="num">세션</th><th class="num">이벤트</th></tr></thead>
+    <summary>일별 상세 데이터</summary>
+    <table style="margin-top:8px">
+      <thead><tr><th>날짜</th><th>요일</th><th class="r">DAU</th><th class="r">세션</th><th class="r">이벤트</th></tr></thead>
       <tbody>
-        <tr><td>2026-04-04 (금)</td><td class="num">30</td><td class="num">272</td><td class="num">5,041</td></tr>
-        <tr><td>2026-04-05 (토)</td><td class="num"><strong>57</strong></td><td class="num">609</td><td class="num">11,702</td></tr>
-        <tr><td>2026-04-06 (일)</td><td class="num">16</td><td class="num">84</td><td class="num">1,762</td></tr>
-        <tr style="font-weight:600;background:#f1f3f5"><td>합계</td><td class="num">-</td><td class="num">965</td><td class="num">18,505</td></tr>
+        <tr><td>04-05 (KST)</td><td>일</td><td class="r bold">49</td><td class="r bold">—</td><td class="r bold">10,441</td></tr>
+        <tr><td>04-06 (KST)</td><td>월</td><td class="r">38</td><td class="r">—</td><td class="r">8,064</td></tr>
       </tbody>
     </table>
   </details>
-
-  <details style="margin-top:8px;">
-    <summary>📋 데이터 수집 방법론</summary>
-    <div style="padding:12px 0;font-size:13px;color:#666;line-height:1.7">
-      <ul style="margin-left:16px;">
-        <li><strong>게임 이벤트</strong>: BigQuery (runuts-analytics.runuts.events) — Unity SDK 기반 자동 수집</li>
-        <li><strong>유저 매칭</strong>: BigQuery USER_ID = User Master meta_id</li>
-        <li><strong>잔존 분류</strong>: 최근 4개 플테 참여 + Discord 활동 상태 기반</li>
-        <li><strong>빌드 매핑</strong>: CLIENT_VERSION 0.13.0 = 9차 Playtest</li>
-        <li><strong>집계 시점</strong>: 2026-04-15 기준</li>
-      </ul>
+  <details style="margin-top:8px">
+    <summary>데이터 출처</summary>
+    <div style="padding:12px 0;font-size:13px;color:#555;line-height:1.8">
+      <table>
+        <tbody>
+          <tr><td class="bold">게임 이벤트</td><td>BigQuery <code>runuts-analytics.runuts.events_with_users</code> (358K건)</td></tr>
+          <tr><td class="bold">체류시간</td><td><code>roomDisconnect</code> EVENT_JSON → <code>elapsedTime</code> (초)</td></tr>
+          <tr><td class="bold">경제 데이터</td><td><code>purchaseItem</code> + <code>VIRTUAL_CURRENCY_JSON</code> + <code>achievementClaimed</code></td></tr>
+          <tr><td class="bold">퀘스트/도전과제</td><td><code>dailyQuestClaimed</code> / <code>achievementClaimed</code> EVENT_JSON 파라미터</td></tr>
+          <tr><td class="bold">가격 참조</td><td><code>sns_scripts/game_config/ItemPrices.json</code></td></tr>
+          <tr><td class="bold">비교 기준</td><td>8차 Playtest (v0.11.x), 직전 정규 플테</td></tr>
+        </tbody>
+      </table>
     </div>
   </details>
 </div>
 
-<!-- 푸터 -->
 <div class="report-footer">
-  RUNuts Analytics Dashboard · 9차 Playtest 보고서 · 생성일 2026-04-15<br>
-  이 보고서는 BigQuery + Google Sheets 데이터 기반으로 작성되었습니다.
+  RUNuts Analytics · PT09 · 2026-04-16<br>
+  EDA 기술통계 보고서 · BigQuery + Google Sheets + 게임 설계 데이터 기반
 </div>
 
 <script>
-// DAU 차트
-new Chart(document.getElementById('chartDau'), {
-  type: 'bar',
-  data: {
-    labels: ['04-04 (금)', '04-05 (토)', '04-06 (일)'],
-    datasets: [
-      { label: 'DAU', data: [30, 57, 16], backgroundColor: ['#60a5fa','#FF9900','#60a5fa'], borderRadius: 4 },
-      { label: '세션', data: [272, 609, 84], backgroundColor: 'rgba(99,102,241,0.2)', borderColor: '#6366f1', type: 'line', yAxisID: 'y1', borderWidth: 2, pointRadius: 4, tension: 0.2 }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 12 } } },
-    scales: {
-      y: { beginAtZero: true, title: { display: true, text: 'DAU', font: { size: 11 } }, grid: { color: '#e9ecef' } },
-      y1: { position: 'right', beginAtZero: true, title: { display: true, text: '세션', font: { size: 11 } }, grid: { display: false } },
-      x: { grid: { display: false } }
-    }
-  }
+const C={primary:'#FF9900',gray:'#d1d5db',green:'#22c55e',blue:'#60a5fa',yellow:'#eab308',grid:'#e9ecef'};
+
+// 체류시간 히스토그램
+new Chart(document.getElementById('chartPlaytime'),{
+  type:'bar',
+  data:{labels:['0-5분','5-15분','15-30분','30-60분','60-120분','120분+'],datasets:[{label:'유저 수',data:[9,9,13,10,6,8],backgroundColor:[C.gray,C.gray,C.primary,C.blue,C.blue,C.green],borderRadius:4}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'명',font:{size:11}},grid:{color:C.grid}},x:{grid:{display:false}}}}
 });
 
-// 모드별 이용 차트
-new Chart(document.getElementById('chartModes'), {
-  type: 'bar',
-  data: {
-    labels: ['Obby 시작', 'Obby 클리어', '태그 종료', '상점 입장', '아이템 장착', '퀘스트 완료', '궁극기 사용'],
-    datasets: [
-      { label: '9차', data: [366, 52, 102, 614, 648, 531, 2573], backgroundColor: '#FF9900', borderRadius: 3 },
-      { label: '8차', data: [294, 25, 213, 1132, 892, 391, 3473], backgroundColor: '#d1d5db', borderRadius: 3 }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-    plugins: { legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 12 } } },
-    scales: {
-      x: { beginAtZero: true, grid: { color: '#e9ecef' } },
-      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
-    }
-  }
+// 모드별 체류시간 (mode labels: Casual, Infection, Sky Tower(ObbyR), Horror, Circuit(Obby))
+// 주의: PT07 기간(v0.10.0)의 Obby는 Circuit 맵 (2-2 UT부터 Circuit)
+var chartModeInstance = new Chart(document.getElementById('chartModeTime'),{
+  type:'bar',
+  data:{labels:['Casual','Infection','Sky Tower','Horror','Circuit'],datasets:[
+    {label:'9차',data:[32.1,14.6,4.5,2.1,2.1],backgroundColor:C.primary,borderRadius:3},
+    {label:'8차',data:[32.1,9.7,0.7,2.6,3.4],backgroundColor:C.gray,borderRadius:3}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'top',labels:{font:{size:14},boxWidth:12}}},scales:{x:{beginAtZero:true,title:{display:true,text:'시간',font:{size:14}},grid:{color:C.grid}},y:{grid:{display:false},ticks:{font:{size:14}}}}}
+});
+// PT07 데이터 (Sky Tower=ObbyR, Circuit=Obby)
+var pt7Dataset={label:'7차',data:[31.4,12.2,0.8,3.8,4.8],backgroundColor:'#94a3b8',borderRadius:3};
+
+// 크로스 플랫폼
+new Chart(document.getElementById('chartCross'),{
+  type:'bar',
+  data:{labels:['Silent (0)','Visitor (1-10)','Regular (11-50)','Core (51+)'],datasets:[
+    {label:'평균 체류 (분)',data:[0,17.5,60.8,61.7],backgroundColor:[C.gray,C.yellow,C.blue,C.green],borderRadius:4}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'분',font:{size:11}},grid:{color:C.grid}},x:{grid:{display:false}}}}
 });
 
-// 잔존 차트
-new Chart(document.getElementById('chartRetention'), {
-  type: 'doughnut',
-  data: {
-    labels: ['잔존', '이탈'],
-    datasets: [{ data: [67, 1], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0 }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false, cutout: '60%',
-    plugins: {
-      legend: { position: 'right', labels: { font: { size: 12 }, padding: 16 } },
-      tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}명 (${(ctx.raw/68*100).toFixed(0)}%)` } }
-    }
-  }
+// 유저 유형
+new Chart(document.getElementById('chartUserType'),{
+  type:'doughnut',
+  data:{labels:['리텐션 (28)','복귀 (30)','신규 (10)'],datasets:[{data:[28,30,10],backgroundColor:[C.green,C.blue,C.yellow],borderWidth:0}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'bottom',labels:{font:{size:14},padding:12}}}}
 });
+
+// 글로벌 비교 범위 칩
+function setCompare(n,el){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.body.classList.toggle('show3',n===3);
+  // 모드별 차트 동기화
+  if(typeof chartModeInstance!=='undefined'){
+    var ds=chartModeInstance.data.datasets;
+    if(n===3){
+      if(ds.length<3) ds.push(pt7Dataset);
+      document.getElementById('chartModeTitle').textContent='모드별 총 체류시간 (7차 vs 8차 vs 9차)';
+    } else {
+      if(ds.length>2) ds.pop();
+      document.getElementById('chartModeTitle').textContent='모드별 총 체류시간 (9차 vs 8차)';
+    }
+    chartModeInstance.update();
+  }
+}
 </script>
 </body>
 </html>
