@@ -741,15 +741,17 @@ new Chart(document.getElementById('chartPlaytime'),{
 });
 
 // 일별 추이 (KST 자정 GROUP BY, 2일)
+// dataset order: line(0)이 bar(2)보다 먼저 그려져 위에 표시 → hover 영역 확보
 new Chart(document.getElementById('chartDaily'),{
   data:{labels:['4/26 (일, 06:00~23:54)','4/27 (월, 00:04~12:22)'],
     datasets:[
-      {type:'bar',label:'DAU',data:[65,46],backgroundColor:C.primary,borderRadius:3,yAxisID:'y'},
-      {type:'line',label:'세션',data:[887,468],borderColor:C.blue,backgroundColor:'rgba(96,165,250,0.1)',tension:0.3,yAxisID:'y1'},
-      {type:'line',label:'이벤트',data:[16531,9079],borderColor:C.green,backgroundColor:'rgba(34,197,94,0.1)',tension:0.3,yAxisID:'y2',hidden:true}
+      {type:'line',label:'세션',data:[887,468],borderColor:C.blue,backgroundColor:'rgba(96,165,250,0.1)',tension:0.3,yAxisID:'y1',order:0,pointRadius:6,pointHoverRadius:10,borderWidth:3},
+      {type:'line',label:'이벤트',data:[16531,9079],borderColor:C.green,backgroundColor:'rgba(34,197,94,0.1)',tension:0.3,yAxisID:'y2',hidden:true,order:0,pointRadius:6,pointHoverRadius:10,borderWidth:3},
+      {type:'bar',label:'DAU',data:[65,46],backgroundColor:'rgba(255,153,0,0.7)',borderRadius:3,yAxisID:'y',order:2}
     ]},
   options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'top',labels:{font:{size:13},boxWidth:12}}},
+    interaction:{intersect:false,mode:'index'},
+    plugins:{legend:{position:'top',labels:{font:{size:13},boxWidth:12,usePointStyle:true}}},
     scales:{
       y:{beginAtZero:true,position:'left',title:{display:true,text:'DAU',font:{size:11}},grid:{color:C.grid}},
       y1:{beginAtZero:true,position:'right',title:{display:true,text:'세션',font:{size:11}},grid:{display:false}},
