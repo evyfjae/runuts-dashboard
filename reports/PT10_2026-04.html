@@ -492,13 +492,28 @@
   </div>
 
   <div style="font-weight:600;font-size:13px;margin:24px 0 8px;color:#555">신규 유저 17명 한정 온보딩 심층 (Sprint 006 효과 검증)</div>
-  <div class="section-desc">PT10이 첫 정규 플테인 유저 17명 한정. 17명 중 14명이 BigQuery 로그 활동 (3명은 가입 후 활동 미미).</div>
+  <div class="section-desc">
+    <strong>신규 정의</strong>: Game Users 시트 <code>played_playtests</code>에 "10차 Playtest"가 있고 그 외 정규 플테(2-1 UT~9차)에 참여 이력이 없는 유저 = PT10이 첫 정규 플테인 유저 17명. 17명 모두 BigQuery에 PT10 활동 이벤트 있음 (13~1,569 events 범위).
+  </div>
 
   <div class="kpi-row">
-    <div class="kpi-box"><div class="label">신규 코호트</div><div class="value">17명</div><div class="sub">활성 14명 (82%)</div></div>
+    <div class="kpi-box"><div class="label">신규 코호트</div><div class="value">17명</div><div class="sub">전원 BigQuery 활동</div></div>
     <div class="kpi-box"><div class="label">Tutorial 완료율</div><div class="value">100%</div><div class="sub">12명 진입 → 12명 완료</div></div>
     <div class="kpi-box"><div class="label">D1 retention</div><div class="value">46.7%</div><div class="sub">7/15 양일 참여</div></div>
     <div class="kpi-box"><div class="label">인당 체류 중앙값</div><div class="value">63.4분</div><div class="sub">평균 83.9분 / 최대 342분</div></div>
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:#555">신규 17명 행동 분류</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>분류</th><th class="r">인원</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td>roomDisconnect 발생 (정상 게임 세션 종료)</td><td class="r">14명</td><td>본 분석의 체류·모드별 집계 베이스</td></tr>
+        <tr><td>roomDisconnect 없음 (다른 활동은 있음)</td><td class="r">3명</td><td>예: 튜토리얼+Shop 14회(119 events) 1명, 짧게 게임 시작(13 events) 1명 등</td></tr>
+        <tr><td>tutorialStepStart 진입</td><td class="r">12명</td><td>전원(12/12) EndTutorial 완료 = 100%</td></tr>
+        <tr><td>튜토리얼 건너뜀 (이탈 아님)</td><td class="r">5명</td><td>이미 게임을 알거나 친구 따라 직접 모드 진입. 1명은 1,569 events·122 roomConnect로 매우 활발</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <div class="grid-2">
@@ -508,12 +523,12 @@
         <table>
           <thead><tr><th>지표</th><th class="r">신규 17명</th><th class="r">전체 85명</th></tr></thead>
           <tbody>
-            <tr><td>Tutorial 진입</td><td class="r">12명 (활성 중 86%)</td><td class="r">62명 (전체 73%)</td></tr>
-            <tr><td>Tutorial 완료</td><td class="r">12명 (100%)</td><td class="r">57명 (91.9%)</td></tr>
+            <tr><td>Tutorial 진입 (전체 코호트 대비)</td><td class="r">12명 (71%)</td><td class="r">62명 (73%)</td></tr>
+            <tr><td>Tutorial 완료 (진입자 대비)</td><td class="r">12명 (100%)</td><td class="r">57명 (91.9%)</td></tr>
             <tr><td>Tutorial 스킵</td><td class="r">1명</td><td class="r">10명</td></tr>
             <tr><td>Tutorial 평균 소요</td><td class="r">227초</td><td class="r">155.7초</td></tr>
-            <tr><td>인당 평균 체류</td><td class="r">83.9분</td><td class="r">62.6분</td></tr>
-            <tr><td>인당 중앙값 체류</td><td class="r">63.4분</td><td class="r">41.9분</td></tr>
+            <tr><td>인당 평균 체류 (roomDisconnect 14명)</td><td class="r">83.9분</td><td class="r">62.6분</td></tr>
+            <tr><td>인당 중앙값 체류 (roomDisconnect 14명)</td><td class="r">63.4분</td><td class="r">41.9분</td></tr>
             <tr><td>도전과제 달성자</td><td class="r">15명 (88%, 109 클레임)</td><td class="r">—</td></tr>
             <tr><td>Obby 도전자 / 클리어율</td><td class="r">9명 / 8.2% (73→6)</td><td class="r">— / 9.2% (424→39)</td></tr>
           </tbody>
@@ -535,14 +550,14 @@
           </tbody>
         </table>
       </div>
-      <div style="font-size:13px;color:#666;margin-top:8px">활성 14명 중 50%(7명)가 60분 이상 체류 — 신규 유저의 깊이 있는 첫 경험.</div>
+      <div style="font-size:13px;color:#666;margin-top:8px">roomDisconnect 14명 중 50%(7명)가 60분 이상 체류 — 신규 유저의 깊이 있는 첫 경험.</div>
     </div>
   </div>
 
-  <div style="font-weight:600;font-size:13px;margin:20px 0 8px;color:#555">신규 17명 모드 진입 분포</div>
+  <div style="font-weight:600;font-size:13px;margin:20px 0 8px;color:#555">신규 17명 모드 진입 분포 (roomDisconnect 발생 14명 기준)</div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>모드</th><th class="r">진입 유저</th><th class="r">진입률 (활성 14 대비)</th><th class="r">총 체류</th></tr></thead>
+      <thead><tr><th>모드</th><th class="r">진입 유저</th><th class="r">진입률 (14명 대비)</th><th class="r">총 체류</th></tr></thead>
       <tbody>
         <tr><td>Casual (로비/상점/캐주얼)</td><td class="r">14명</td><td class="r">100%</td><td class="r">620.3분</td></tr>
         <tr><td>Infection (태그)</td><td class="r">12명</td><td class="r">86%</td><td class="r">344.1분</td></tr>
@@ -569,13 +584,14 @@
 
   <div class="obs">
     <div class="tag">관찰</div>
-    신규 17명 중 활성 14명의 Tutorial 진입자 12명 전원이 완료(100%) — 전체 91.9%보다 높다. D1 retention 46.7%(전체 40.0%보다 +6.7%p), 인당 체류 중앙값 63.4분(전체 41.9분의 1.5배)도 신규의 깊이 있는 첫 경험을 시사. 모드 진입은 Casual(100%) → Infection(86%) → Horror(50%)로 자연스러운 단계적 확장. Shop 전환율 50.0%는 전체(39.1%) 대비 +10.9%p로 신규의 코스메틱 구매 의향이 강하다.
+    신규 17명 중 Tutorial 진입자 12명이 전원 완료(100%) — 전체 91.9%보다 높다. D1 retention 46.7%(전체 40.0%보다 +6.7%p), roomDisconnect 14명의 인당 체류 중앙값 63.4분(전체 41.9분의 1.5배)도 신규의 깊이 있는 첫 경험을 시사. 모드 진입은 Casual(100%) → Infection(86%) → Horror(50%)로 자연스러운 단계적 확장. Shop 전환율 50.0%는 전체(39.1%) 대비 +10.9%p로 신규의 코스메틱 구매 의향이 강하다.
   </div>
   <div class="review">
     <div class="tag">검토 사항</div>
-    17명 중 3명은 BigQuery 로그 0 — Discord 매칭 미달 24명과 유사 패턴. 가입 후 첫 세션 진입 실패 또는 매칭 미동기화. Tester Pipeline에서 이 3명의 유입 경로 확인 필요.<br>
-    Tutorial 평균 소요 227초는 전체 155.7초의 1.5배. 신규가 더 천천히 학습하는 자연스러운 패턴이지만, JetPack 단계 73.6초 이상치(섹션 8 단계별 표 참조)가 신규에게 더 큰 부담일 수 있음. 신규 12명의 단계별 통과 시간 추가 분석 권장.<br>
-    Obby 진입률 64%(9/14)는 다른 모드 대비 낮음. 추가 도전 유도 또는 난이도 조정 검토.
+    <strong>튜토리얼 미진입 5명의 행동</strong>: 이탈이 아니라 튜토리얼을 건너뛰고 게임을 직접 진입한 케이스. 1명은 1,569 events / 122 roomConnect의 매우 활발한 베테랑급 활동(이미 게임을 알고 있었거나 친구 따라 진입). 신규지만 첫 정규 플테 이전에 외부 학습이 있었을 가능성 — Discord·트레일러 등 채널별 유입 경로 추적 권장.<br>
+    <strong>roomDisconnect 없는 3명</strong>: 각자 다른 활동 패턴 (1명 튜토리얼+Shop 14회, 1명 튜토리얼+궁극기, 1명 짧게 13 events). 게임 세션 정상 종료 안 함 — 비정상 종료(앱 강제 종료, 네트워크 끊김)일 가능성. Sentry 로그와 cross-check 권장.<br>
+    <strong>Tutorial 평균 소요 227초</strong>: 전체 155.7초의 1.5배 — 신규가 더 천천히 학습하는 자연스러운 패턴이지만, JetPack 단계 73.6초 이상치(섹션 8 단계별 표 참조)가 신규에게 더 큰 부담일 수 있음. 신규 12명의 단계별 통과 시간 추가 분석 권장.<br>
+    <strong>Obby 진입률 64%(9/14)</strong>: 다른 모드 대비 낮음. 추가 도전 유도 또는 난이도 조정 검토.
   </div>
   <div class="hold">
     <div class="tag">유보 — 다음 보고서 보강</div>
