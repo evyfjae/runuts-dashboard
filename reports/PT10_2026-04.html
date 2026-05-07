@@ -491,98 +491,95 @@
     <strong>Fly 트랙</strong>이 가장 활발 (Lv1~4 21~39명). <strong>Run 트랙</strong>은 PT9에 18명 도입 후 PT10에 21+19명으로 비중 확대 (Lv2 신규 달성). <strong>Chase 트랙</strong>은 PT9와 비슷한 수준 유지.
   </div>
 
-  <!-- ═══ 신규 유저 17명 한정 온보딩 심층 (Sprint 006 효과 검증의 핵심) ═══ -->
-  <div style="margin-top:32px;padding:20px;background:#fff7ed;border-radius:12px;border:2px solid #fed7aa">
-    <div style="font-weight:900;font-size:18px;color:#9a3412;margin-bottom:8px">🎯 신규 유저 17명 한정 온보딩 심층 분석</div>
-    <div style="font-size:13px;color:#7c2d12;margin-bottom:16px">Sprint 006 "온보딩·튜토리얼" 작업의 핵심 검증 — PT10이 첫 정규 플테인 유저 17명 한정. 17명 중 14명이 BigQuery 로그 활동 (3명은 가입 후 활동 미미).</div>
+  <div style="font-weight:600;font-size:13px;margin:24px 0 8px;color:#555">신규 유저 17명 한정 온보딩 심층 (Sprint 006 효과 검증)</div>
+  <div class="section-desc">PT10이 첫 정규 플테인 유저 17명 한정. 17명 중 14명이 BigQuery 로그 활동 (3명은 가입 후 활동 미미).</div>
 
-    <div class="kpi-row">
-      <div class="kpi-box"><div class="label">신규 코호트</div><div class="value">17명</div><div class="sub">활성 14명 (82%)</div></div>
-      <div class="kpi-box"><div class="label">Tutorial 완료율</div><div class="value alert">100%</div><div class="sub">12명 진입 → 12명 완료</div></div>
-      <div class="kpi-box"><div class="label">D1 retention</div><div class="value alert">46.7%</div><div class="sub">7/15 양일 참여</div></div>
-      <div class="kpi-box"><div class="label">인당 체류 중앙값</div><div class="value">63.4분</div><div class="sub">평균 83.9분 / 최대 342분</div></div>
-    </div>
+  <div class="kpi-row">
+    <div class="kpi-box"><div class="label">신규 코호트</div><div class="value">17명</div><div class="sub">활성 14명 (82%)</div></div>
+    <div class="kpi-box"><div class="label">Tutorial 완료율</div><div class="value">100%</div><div class="sub">12명 진입 → 12명 완료</div></div>
+    <div class="kpi-box"><div class="label">D1 retention</div><div class="value">46.7%</div><div class="sub">7/15 양일 참여</div></div>
+    <div class="kpi-box"><div class="label">인당 체류 중앙값</div><div class="value">63.4분</div><div class="sub">평균 83.9분 / 최대 342분</div></div>
+  </div>
 
-    <div class="grid-2">
-      <div>
-        <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:#555">신규 17명 행동 깊이</div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>지표</th><th class="r">신규 17명</th><th class="r">전체 85명 (참고)</th></tr></thead>
-            <tbody>
-              <tr class="highlight-row"><td><strong>Tutorial 진입</strong></td><td class="r bold">12명 (활성 중 86%)</td><td class="r">62명 (전체 73%)</td></tr>
-              <tr class="highlight-row"><td><strong>Tutorial 완료</strong></td><td class="r alert">12명 (100%)</td><td class="r">57명 (91.9%)</td></tr>
-              <tr><td>Tutorial 스킵</td><td class="r">1명</td><td class="r">10명</td></tr>
-              <tr><td>Tutorial 평균 소요</td><td class="r">227초</td><td class="r">155.7초</td></tr>
-              <tr><td>인당 평균 체류</td><td class="r">83.9분</td><td class="r">62.6분</td></tr>
-              <tr><td>인당 중앙값 체류</td><td class="r">63.4분</td><td class="r">41.9분</td></tr>
-              <tr><td>도전과제 달성자</td><td class="r">15명 (88%)</td><td class="r">— (109 클레임 in 신규)</td></tr>
-              <tr><td>Obby 도전자</td><td class="r">9명</td><td class="r">—</td></tr>
-              <tr><td>Obby 클리어율</td><td class="r">8.2% (73→6)</td><td class="r">9.2% (424→39)</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div>
-        <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:#555">신규 17명 체류시간 분포</div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>구간</th><th class="r">인원</th><th class="r">비율</th></tr></thead>
-            <tbody>
-              <tr><td>0~5분</td><td class="r">1</td><td class="r">7%</td></tr>
-              <tr><td>5~15분</td><td class="r">2</td><td class="r">14%</td></tr>
-              <tr><td>15~30분</td><td class="r">1</td><td class="r">7%</td></tr>
-              <tr><td>30~60분</td><td class="r">3</td><td class="r">21%</td></tr>
-              <tr class="highlight-row"><td>60분 이상</td><td class="r bold">7</td><td class="r bold">50%</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div style="font-size:13px;color:#666;margin-top:8px">📌 활성 14명 중 <strong>50%(7명)가 60분 이상 체류</strong>. 신규 유저의 깊이 있는 첫 경험이 돋보임.</div>
+  <div class="grid-2">
+    <div>
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:#555">행동 깊이 — 신규 17명 vs 전체 85명</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>지표</th><th class="r">신규 17명</th><th class="r">전체 85명</th></tr></thead>
+          <tbody>
+            <tr><td>Tutorial 진입</td><td class="r">12명 (활성 중 86%)</td><td class="r">62명 (전체 73%)</td></tr>
+            <tr><td>Tutorial 완료</td><td class="r">12명 (100%)</td><td class="r">57명 (91.9%)</td></tr>
+            <tr><td>Tutorial 스킵</td><td class="r">1명</td><td class="r">10명</td></tr>
+            <tr><td>Tutorial 평균 소요</td><td class="r">227초</td><td class="r">155.7초</td></tr>
+            <tr><td>인당 평균 체류</td><td class="r">83.9분</td><td class="r">62.6분</td></tr>
+            <tr><td>인당 중앙값 체류</td><td class="r">63.4분</td><td class="r">41.9분</td></tr>
+            <tr><td>도전과제 달성자</td><td class="r">15명 (88%, 109 클레임)</td><td class="r">—</td></tr>
+            <tr><td>Obby 도전자 / 클리어율</td><td class="r">9명 / 8.2% (73→6)</td><td class="r">— / 9.2% (424→39)</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
+    <div>
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:#555">신규 17명 체류시간 분포</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>구간</th><th class="r">인원</th><th class="r">비율</th></tr></thead>
+          <tbody>
+            <tr><td>0~5분</td><td class="r">1</td><td class="r">7%</td></tr>
+            <tr><td>5~15분</td><td class="r">2</td><td class="r">14%</td></tr>
+            <tr><td>15~30분</td><td class="r">1</td><td class="r">7%</td></tr>
+            <tr><td>30~60분</td><td class="r">3</td><td class="r">21%</td></tr>
+            <tr><td>60분 이상</td><td class="r">7</td><td class="r">50%</td></tr>
+            <tr><td>합계 (활성)</td><td class="r">14</td><td class="r">100%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:13px;color:#666;margin-top:8px">활성 14명 중 50%(7명)가 60분 이상 체류 — 신규 유저의 깊이 있는 첫 경험.</div>
+    </div>
+  </div>
 
-    <div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:#555">신규 17명 모드 진입 분포</div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>모드</th><th class="r">진입 유저</th><th class="r">진입률 (활성 14 대비)</th><th class="r">총 체류</th></tr></thead>
-        <tbody>
-          <tr><td>Casual (로비/상점/캐주얼)</td><td class="r bold">14명</td><td class="r">100%</td><td class="r">620.3분</td></tr>
-          <tr><td>Infection (태그)</td><td class="r">12명</td><td class="r">86%</td><td class="r">344.1분</td></tr>
-          <tr><td>Horror</td><td class="r">7명</td><td class="r">50%</td><td class="r">108.0분</td></tr>
-          <tr><td>Obby (Circuit)</td><td class="r">5명</td><td class="r">36%</td><td class="r">30.2분</td></tr>
-          <tr><td>ObbyR (Sky Tower)</td><td class="r">4명</td><td class="r">29%</td><td class="r">43.8분</td></tr>
-          <tr><td>ObbyC</td><td class="r">4명</td><td class="r">29%</td><td class="r">27.6분</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <div style="font-weight:600;font-size:13px;margin:20px 0 8px;color:#555">신규 17명 모드 진입 분포</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>모드</th><th class="r">진입 유저</th><th class="r">진입률 (활성 14 대비)</th><th class="r">총 체류</th></tr></thead>
+      <tbody>
+        <tr><td>Casual (로비/상점/캐주얼)</td><td class="r">14명</td><td class="r">100%</td><td class="r">620.3분</td></tr>
+        <tr><td>Infection (태그)</td><td class="r">12명</td><td class="r">86%</td><td class="r">344.1분</td></tr>
+        <tr><td>Horror</td><td class="r">7명</td><td class="r">50%</td><td class="r">108.0분</td></tr>
+        <tr><td>Obby (Circuit)</td><td class="r">5명</td><td class="r">36%</td><td class="r">30.2분</td></tr>
+        <tr><td>ObbyR (Sky Tower)</td><td class="r">4명</td><td class="r">29%</td><td class="r">43.8분</td></tr>
+        <tr><td>ObbyC</td><td class="r">4명</td><td class="r">29%</td><td class="r">27.6분</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-    <div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:#555">신규 17명 Shop conversion funnel</div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>단계</th><th class="r">신규 17명</th><th class="r">전체 85명</th><th class="r">신규/전체 비교</th></tr></thead>
-        <tbody>
-          <tr><td>① 상점 방문 (shopEnter)</td><td class="r bold">14명</td><td class="r">69명</td><td class="r"><span class="delta-up">신규 비율 20%</span></td></tr>
-          <tr><td>② 아이템 장착 (equipItem)</td><td class="r">15명</td><td class="r">61명</td><td class="r"><span class="delta-up">신규 비율 25%</span></td></tr>
-          <tr><td>③ 구매 (purchaseItem)</td><td class="r bold">7명</td><td class="r">27명</td><td class="r"><span class="delta-up">신규 비율 26%</span></td></tr>
-          <tr class="highlight-row"><td><strong>전환율 ① → ③</strong></td><td class="r alert">50.0%</td><td class="r">39.1%</td><td class="r"><span class="delta-up">신규가 +10.9%p 높음</span></td></tr>
-        </tbody>
-      </table>
-    </div>
+  <div style="font-weight:600;font-size:13px;margin:20px 0 8px;color:#555">신규 17명 Shop conversion funnel</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>단계</th><th class="r">신규 17명</th><th class="r">전체 85명</th><th class="r">신규 비율</th></tr></thead>
+      <tbody>
+        <tr><td>① 상점 방문 (shopEnter)</td><td class="r">14명</td><td class="r">69명</td><td class="r">20%</td></tr>
+        <tr><td>② 아이템 장착 (equipItem)</td><td class="r">15명</td><td class="r">61명</td><td class="r">25%</td></tr>
+        <tr><td>③ 구매 (purchaseItem)</td><td class="r">7명</td><td class="r">27명</td><td class="r">26%</td></tr>
+        <tr><td>전환율 ① → ③</td><td class="r">50.0%</td><td class="r">39.1%</td><td class="r">+10.9%p</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-    <div class="obs">
-      <div class="tag">관찰</div>
-      <strong>신규 17명 중 활성 14명의 Tutorial 진입자 12명 전원 완료(100%)</strong> — 전체 91.9%보다 높은 가장 강한 신호. <strong>D1 retention 46.7%</strong>(전체 40.0%보다 +6.7%p 높음)와 <strong>인당 체류 중앙값 63.4분</strong>(전체 41.9분의 1.5배)도 신규 깊이 있는 첫 경험을 시사. <strong>모드 진입은 Casual(100%) → Infection(86%) → Horror(50%)</strong>로 자연스러운 단계적 확장. <strong>Shop 전환율 50.0%</strong>는 전체(39.1%) 대비 +10.9%p 높아 신규 유저의 코스메틱 구매 의향이 강하다.
-    </div>
-    <div class="review">
-      <div class="tag">검토 사항</div>
-      <strong>17명 중 3명은 BigQuery 로그 0</strong> — Discord 매칭 미달 24명과 유사 패턴. 가입 후 첫 세션 진입 실패 또는 매칭 미동기화. Tester Pipeline에서 이 3명의 유입 경로 확인 필요.<br>
-      <strong>Tutorial 평균 소요 227초</strong>는 전체 155.7초의 1.5배 — 신규는 더 천천히 학습한다는 자연스러운 패턴이지만, JetPack 단계 73.6초 이상치(전체 8번 섹션 참조)가 신규에게 더 큰 부담일 수 있음. 신규 12명의 단계별 통과 시간 분포 추가 분석 권장.<br>
-      <strong>Obby 클리어율 8.2%</strong>는 전체 9.2%와 비슷하지만, 신규 9명만 도전 — 신규의 Obby 진입률 64%(9/14)는 전반적으로 낮다. 추가 도전 유도 또는 난이도 조정 검토.
-    </div>
-    <div class="hold">
-      <div class="tag">유보 — 다음 보고서 보강</div>
-      PT9 신규 10명 / PT8 신규 16명과의 BigQuery 직접 비교(튜토리얼·체류·D1 등)는 신규 ID 정확 추출 후 다음 보고서에 추가 예정. 현재 코호트 잔존 표(섹션 6)에는 PT8 신규 16명 → 10차 5명(31%), PT9 신규 10명 → 10차 2명(20%) 잔존이 명시되어 있음.
-    </div>
+  <div class="obs">
+    <div class="tag">관찰</div>
+    신규 17명 중 활성 14명의 Tutorial 진입자 12명 전원이 완료(100%) — 전체 91.9%보다 높다. D1 retention 46.7%(전체 40.0%보다 +6.7%p), 인당 체류 중앙값 63.4분(전체 41.9분의 1.5배)도 신규의 깊이 있는 첫 경험을 시사. 모드 진입은 Casual(100%) → Infection(86%) → Horror(50%)로 자연스러운 단계적 확장. Shop 전환율 50.0%는 전체(39.1%) 대비 +10.9%p로 신규의 코스메틱 구매 의향이 강하다.
+  </div>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    17명 중 3명은 BigQuery 로그 0 — Discord 매칭 미달 24명과 유사 패턴. 가입 후 첫 세션 진입 실패 또는 매칭 미동기화. Tester Pipeline에서 이 3명의 유입 경로 확인 필요.<br>
+    Tutorial 평균 소요 227초는 전체 155.7초의 1.5배. 신규가 더 천천히 학습하는 자연스러운 패턴이지만, JetPack 단계 73.6초 이상치(섹션 8 단계별 표 참조)가 신규에게 더 큰 부담일 수 있음. 신규 12명의 단계별 통과 시간 추가 분석 권장.<br>
+    Obby 진입률 64%(9/14)는 다른 모드 대비 낮음. 추가 도전 유도 또는 난이도 조정 검토.
+  </div>
+  <div class="hold">
+    <div class="tag">유보 — 다음 보고서 보강</div>
+    PT9 신규 10명 / PT8 신규 16명과의 BigQuery 직접 비교(튜토리얼·체류·D1 등)는 신규 ID 정확 추출 후 다음 보고서에 추가 예정. 코호트 잔존 표(섹션 6)에는 PT8 신규 16명 → 10차 5명(31%), PT9 신규 10명 → 10차 2명(20%) 잔존이 명시되어 있음.
   </div>
 
   <div class="col-pt8">
@@ -651,9 +648,7 @@
       <li><strong>Shop 방문·장착 +35~36%</strong>, 잔존율 97.8% 유지</li>
       <li><strong>D1 retention 40.0%</strong> (양일 참여 26명)</li>
       <li><strong>Discord ↔ 인게임 상관 재확인</strong> — Core 4.5배 차이</li>
-      <li><strong>신규 유저 17명 한정 온보딩 — Sprint 006 효과 정점</strong>:</li>
-      <li style="margin-left:16px">• Tutorial 100% 완료 (12/12), D1 retention 46.7%, 인당 체류 중앙값 63.4분</li>
-      <li style="margin-left:16px">• Shop 전환율 50.0% (전체 39.1%보다 +10.9%p)</li>
+      <li><strong>신규 17명 한정 온보딩</strong>: Tutorial 100% 완료(12/12), D1 retention 46.7%, 인당 체류 중앙값 63.4분, Shop 전환율 50.0% — 모두 전체 평균 상회</li>
     </ul>
   </div>
 
