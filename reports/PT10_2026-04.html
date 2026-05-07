@@ -146,7 +146,7 @@
 <!-- ===== 3. 플레이타임 ===== -->
 <div class="section">
   <div class="section-heading">3. 플레이타임 + 일별 추이</div>
-  <div class="section-desc">roomDisconnect.elapsedTime 합산 기준 (10차 67명 / 9차 55명 / 8차 68명) + UTC 일별 추이.</div>
+  <div class="section-desc">roomDisconnect.elapsedTime 합산 기준 (10차 67명 / 9차 55명 / 8차 68명) + KST 자정 GROUP BY 일별 추이 (BigQuery TIMESTAMP_ADD INTERVAL 9 HOUR).</div>
 
   <div class="grid-2">
     <div>
@@ -181,14 +181,31 @@
   </div>
 
   <div class="chart-wrap">
-    <div class="chart-title">10차 일별 추이 (KST)</div>
+    <div class="chart-title">10차 일별 추이 (KST 기준 자정 GROUP BY) — 플테 KST 4/26 06:00 ~ 4/27 12:22</div>
     <canvas id="chartDaily" height="200"></canvas>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table>
+      <thead><tr><th>KST 날짜</th><th>요일</th><th>활동 시간대</th><th class="r">DAU</th><th class="r">세션 (roomConnect)</th><th class="r">이벤트</th><th class="r">전체 비중</th></tr></thead>
+      <tbody>
+        <tr class="highlight-row"><td>2026-04-26</td><td>일</td><td>06:00 ~ 23:54 (18시간)</td><td class="r bold">65</td><td class="r bold">887</td><td class="r bold">16,531</td><td class="r">64.5%</td></tr>
+        <tr><td>2026-04-27</td><td>월</td><td>00:04 ~ 12:22 (12시간)</td><td class="r">46</td><td class="r">468</td><td class="r">9,079</td><td class="r">35.5%</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <div class="obs">
     <div class="tag">관찰</div>
     <strong>중앙값 +70% 증가</strong>: 9차에서 13명이었던 15~30분 구간이 3명으로 축소되고, <strong>30분 이상 구간이 24명 → 39명(+63%)으로 확대</strong>. 콘텐츠 깊이가 충분해져 코어 유저가 더 오래 머문 패턴. 120분+ 헤비 플레이어는 8명 → 13명.<br><br>
-    <strong>2일차(4/27 월) 피크</strong>: DAU 65명 / 16,820 events로 전체의 65% 차지. 1일차(4/26 일)는 늦은 오후 시작, 3일차(4/28 화)는 종료 후 잔여 접속.
+    <strong>1일차(4/26 일) 메인 활동</strong>: DAU 65명 / 16,531 events / 887 세션 — 전체의 64.5% 차지 (18시간).<br>
+    <strong>2일차(4/27 월) 마무리</strong>: DAU 46명 / 9,079 events / 468 세션 (12시간, 12:22 종료). 1일차와 일부 유저 중복.
+  </div>
+
+  <div class="hold">
+    <div class="tag">v7 → v8 정정 — 시간대 변환 함정</div>
+    이전 v7 표기 "4/26 (일) 38 / 4/27 (월) 65 / 4/28 (화) 19" 는 BigQuery <code>EVENT_DATE</code>(UTC) 기준 행 3개를 단순 "+1일"로 KST 변환한 오류였다. 실제 플테는 KST 4/26 06:00 ~ 4/27 12:22로 <strong>2일에 종료</strong>됐다 (4/28 (화)는 존재하지 않음).<br>
+    정확한 KST 변환은 시간 단위 — <code>DATE(TIMESTAMP_ADD(EVENT_TIMESTAMP, INTERVAL 9 HOUR))</code>로 KST 자정 기준 GROUP BY 사용.
   </div>
 </div>
 
@@ -589,14 +606,24 @@
 
   <details>
     <summary>일별 상세 데이터 + Discord 멤버 변화</summary>
-    <div style="font-weight:600;font-size:13px;margin:8px 0;color:#555">일별</div>
+    <div style="font-weight:600;font-size:13px;margin:8px 0;color:#555">일별 (KST 자정 GROUP BY 기준 — 본문과 동일)</div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>UTC 날짜</th><th>KST</th><th>요일</th><th class="r">DAU</th><th class="r">세션</th><th class="r">이벤트</th></tr></thead>
+        <thead><tr><th>KST 날짜</th><th>요일</th><th>활동 시간대</th><th class="r">DAU</th><th class="r">세션</th><th class="r">이벤트</th></tr></thead>
         <tbody>
-          <tr><td>2026-04-25</td><td>4/26</td><td>일</td><td class="r">38</td><td class="r">308</td><td class="r">5,865</td></tr>
-          <tr class="highlight-row"><td>2026-04-26</td><td>4/27</td><td>월</td><td class="r bold">65</td><td class="r bold">920</td><td class="r bold">16,820</td></tr>
-          <tr><td>2026-04-27</td><td>4/28</td><td>화</td><td class="r">19</td><td class="r">127</td><td class="r">2,925</td></tr>
+          <tr class="highlight-row"><td>2026-04-26</td><td>일</td><td>06:00 ~ 23:54</td><td class="r bold">65</td><td class="r bold">887</td><td class="r bold">16,531</td></tr>
+          <tr><td>2026-04-27</td><td>월</td><td>00:04 ~ 12:22</td><td class="r">46</td><td class="r">468</td><td class="r">9,079</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-weight:600;font-size:13px;margin:8px 0 4px;color:#555">참고: BigQuery EVENT_DATE (UTC) 기준 — 시트 Playtest Daily의 출처 (KST 변환 시 단순 +1일은 오류)</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>UTC 날짜</th><th class="r">DAU (UTC unique)</th><th class="r">세션</th><th class="r">이벤트</th><th>실제 KST 시간대</th></tr></thead>
+        <tbody>
+          <tr><td>2026-04-25</td><td class="r">38</td><td class="r">308</td><td class="r">5,865</td><td>KST 4/26 06:00~09:00</td></tr>
+          <tr><td>2026-04-26</td><td class="r">65</td><td class="r">920</td><td class="r">16,820</td><td>KST 4/26 09:00 ~ 4/27 09:00</td></tr>
+          <tr><td>2026-04-27</td><td class="r">19</td><td class="r">127</td><td class="r">2,925</td><td>KST 4/27 09:00 ~ 12:22</td></tr>
         </tbody>
       </table>
     </div>
@@ -688,14 +715,14 @@ new Chart(document.getElementById('chartPlaytime'),{
   }
 });
 
-// 일별 추이 (10차)
+// 일별 추이 (10차) — KST 기준 자정 GROUP BY
 new Chart(document.getElementById('chartDaily'),{
   data:{
-    labels:['4/26 (일)','4/27 (월)','4/28 (화)'],
+    labels:['4/26 (일, 06:00~23:54)','4/27 (월, 00:04~12:22)'],
     datasets:[
-      {type:'bar',label:'DAU',data:[38,65,19],backgroundColor:C.primary,borderRadius:3,yAxisID:'y'},
-      {type:'line',label:'세션',data:[308,920,127],borderColor:C.blue,backgroundColor:'rgba(96,165,250,0.1)',tension:0.3,yAxisID:'y1'},
-      {type:'line',label:'이벤트',data:[5865,16820,2925],borderColor:C.green,backgroundColor:'rgba(34,197,94,0.1)',tension:0.3,yAxisID:'y2',hidden:true}
+      {type:'bar',label:'DAU',data:[65,46],backgroundColor:C.primary,borderRadius:3,yAxisID:'y'},
+      {type:'line',label:'세션',data:[887,468],borderColor:C.blue,backgroundColor:'rgba(96,165,250,0.1)',tension:0.3,yAxisID:'y1'},
+      {type:'line',label:'이벤트',data:[16531,9079],borderColor:C.green,backgroundColor:'rgba(34,197,94,0.1)',tension:0.3,yAxisID:'y2',hidden:true}
     ]
   },
   options:{
