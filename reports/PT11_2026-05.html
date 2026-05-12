@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11차 Playtest 분석 보고서 — RUNuts</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;background:#fff;color:#1a1a2e;line-height:1.8;font-size:15px;max-width:960px;margin:0 auto;padding:40px 32px}
+  .report-header{border-bottom:3px solid #FF9900;padding-bottom:24px;margin-bottom:32px}
+  .report-header h1{font-weight:900;font-size:28px;color:#1a1a2e;margin-bottom:4px}
+  .report-header .subtitle{font-size:15px;color:#666;margin-bottom:12px}
+  .report-meta{display:flex;flex-wrap:wrap;gap:16px 24px;font-size:14px;color:#888}
+  .disclaimer{background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:14px;color:#666;line-height:1.7}
+  .section{margin-bottom:36px}
+  .section-heading{font-weight:900;font-size:20px;color:#1a1a2e;border-left:4px solid #FF9900;padding-left:12px;margin-bottom:16px}
+  .section-desc{font-size:14px;color:#555;margin-bottom:12px;line-height:1.7}
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+  .kpi-box{background:#f8f9fa;border-radius:8px;padding:16px;text-align:center;border:1px solid #e9ecef}
+  .kpi-box .label{font-size:14px;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  .kpi-box .value{font-size:24px;font-weight:700;color:#1a1a2e}
+  .kpi-box .sub{font-size:14px;color:#999;margin-top:2px}
+  .obs{border-left:4px solid #94a3b8;background:#f8fafc;padding:14px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px;line-height:1.8}
+  .obs .tag{font-weight:700;font-size:14px;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .review{border-left:4px solid #f59e0b;background:#fffbeb;padding:14px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px;line-height:1.8}
+  .review .tag{font-weight:700;font-size:14px;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .hold{border-left:4px solid #d1d5db;background:#f9fafb;padding:14px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px;line-height:1.8;color:#6b7280}
+  .hold .tag{font-weight:700;font-size:14px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .new-feature{border-left:4px solid #6366f1;background:#eef2ff;padding:14px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px;line-height:1.8}
+  .new-feature .tag{font-weight:700;font-size:14px;color:#4338ca;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .chart-wrap{background:#f8f9fa;border-radius:8px;padding:16px;margin:16px 0;border:1px solid #e9ecef}
+  .chart-wrap canvas{max-height:300px}
+  .chart-title{font-size:13px;font-weight:600;margin-bottom:8px;color:#555}
+  .table-wrap{overflow-x:auto;margin:12px 0}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:480px}
+  th{background:#f1f3f5;padding:8px 12px;text-align:left;font-weight:600;font-size:14px;color:#555;border-bottom:2px solid #dee2e6;white-space:nowrap}
+  td{padding:8px 12px;border-bottom:1px solid #e9ecef}
+  tr:hover td{background:#f8f9fa}
+  .r{text-align:right;font-variant-numeric:tabular-nums}
+  .bold{font-weight:600}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:14px;font-weight:600;white-space:nowrap}
+  .badge-green{background:#dcfce7;color:#166534}.badge-yellow{background:#fef9c3;color:#854d0e}.badge-red{background:#fee2e2;color:#991b1b}.badge-blue{background:#dbeafe;color:#1e40af}.badge-gray{background:#f3f4f6;color:#374151}.badge-purple{background:#ede9fe;color:#5b21b6}.badge-indigo{background:#e0e7ff;color:#3730a3}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+  .delta-up{color:#16a34a;font-weight:600}.delta-down{color:#dc2626;font-weight:600}.delta-flat{color:#6b7280}
+  .alert{color:#dc2626;font-weight:700}
+  details{margin:12px 0}summary{cursor:pointer;font-weight:600;font-size:15px;color:#555;padding:8px 0}summary:hover{color:#FF9900}
+  .chip-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:14px;flex-wrap:wrap}
+  .chip-bar span{font-weight:600;color:#555}
+  .chip{padding:6px 16px;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;border:2px solid #e9ecef;background:#fff;color:#555;transition:.2s}
+  .chip.active{background:#FF9900;color:#fff;border-color:#FF9900}
+  .chip:hover:not(.active){background:#f8f9fa}
+  .col-pt9{display:none}
+  body.show3 .col-pt9{display:table-cell}
+  body.show3 span.col-pt9,body.show3 div.col-pt9{display:inline}
+  .report-footer{margin-top:48px;padding-top:16px;border-top:1px solid #e9ecef;font-size:14px;color:#aaa;text-align:center}
+  .highlight-row{background:#fffbeb}
+  .meta-row{font-size:13px;color:#888;margin-top:6px}
+  .source-tag{display:inline-block;font-size:12px;color:#999;font-weight:400;margin-left:8px}
+  @media(max-width:640px){body{padding:20px 16px}.report-header h1{font-size:22px}.kpi-row{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}}
+  @media print{body{padding:20px;font-size:12px}.chart-wrap,.section{break-inside:avoid}.table-wrap{overflow:visible}}
+</style>
+</head>
+<body>
+
+<div class="report-header">
+  <h1>11차 Playtest 분석 보고서</h1>
+  <div class="subtitle">RUNuts — 비행 기반 소셜 VR 멀티플레이 게임</div>
+  <div class="report-meta">
+    <span>플테 기간: 2026-05-10(일) 06:01 ~ 05-11(월) 12:04 KST</span>
+    <span>빌드: v0.15.0</span>
+    <span>참여자: 49명</span>
+    <span>작성일: 2026-05-12</span>
+  </div>
+  <div class="meta-row">비교: 10차(직전 정규, v0.14.0_0425, 85명) · 9차(2회전 정규, v0.13.0, 68명) — 칩으로 토글</div>
+</div>
+
+<div class="disclaimer">
+  플테당 50~90명 규모의 탐색적 데이터 분석(EDA). 통계적 유의성 검정 없이 <strong>경향성 참고</strong> 용도. 모든 수치는 BigQuery <code>events_with_users</code> 또는 Game Users·Playtest Summary 시트에서 직접 산출 (추정·근사값 미사용).<br><br>
+  <strong>이상점 표기</strong>: ±10~30% 변화는 색상(<span class="delta-up">초록</span>/<span class="delta-down">빨강</span>), ±50% 또는 ±5%p 이상 또는 +60% 이상은 <span class="alert">빨간 굵은 글씨</span>로 표기. 신규 기능(PT11 도입)은 <span class="badge badge-indigo">NEW</span> 배지.<br><br>
+  <strong>📢 PlayFab v2 마이그레이션 안내</strong>: 2026-05-12 적용. <code>VIRTUAL_CURRENCY_JSON</code> 키 형식이 <code>C1</code>/<code>C2</code> → <code>currency-seed</code>/<code>currency-goldennut</code>로 변경되었고, <code>STATISTICS_JSON</code>이 snake_case + <code>_cs</code>(centiseconds) suffix로 변경. 이 보고서의 PT10·PT9 비교 수치는 기존 v1 키 시점에 산출된 값을 그대로 사용했으며, PT11은 v2 키 기준 직접 산출. <strong>값의 의미는 동일</strong>(GN/Seeds 화폐는 그대로). 자세한 함정 분류는 <code>docs/PLAYTEST_ANALYSIS_GUIDE.md</code> 8.8 (F-14) 참조.
+</div>
+
+<div class="chip-bar">
+  <span>비교 범위:</span>
+  <div class="chip" onclick="setCompare(2,this)">2개 플테</div>
+  <div class="chip active" onclick="setCompare(3,this)">3개 플테</div>
+</div>
+
+<!-- ===== 1. Executive Summary ===== -->
+<div class="section">
+  <div class="section-heading">1. Executive Summary</div>
+  <div class="kpi-row">
+    <div class="kpi-box"><div class="label">참여자 (시트)</div><div class="value alert">49</div><div class="sub">10차 85 (<span class="alert">-42%</span>)</div></div>
+    <div class="kpi-box"><div class="label">신규/복귀/리텐션</div><div class="value" style="font-size:20px">7/10/32</div><div class="sub"><span class="alert">신규 -59% / 복귀 -72%</span></div></div>
+    <div class="kpi-box"><div class="label">D1 retention (BQ)</div><div class="value">66.7%</div><div class="sub">24/36 (5/10→5/11)</div></div>
+    <div class="kpi-box"><div class="label">인당 체류 중앙값</div><div class="value">29.8분</div><div class="sub">10차 41.9분 (<span class="delta-down">-29%</span>)</div></div>
+    <div class="kpi-box"><div class="label">Tutorial 완료율</div><div class="value alert">94.1%</div><div class="sub">10차 91.9% (<span class="delta-up">+2.2%p</span>)</div></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>지표</th><th class="r col-pt9">9차</th><th class="r">10차</th><th class="r bold">11차</th><th class="r">추세</th></tr></thead>
+      <tbody>
+        <tr><td>참여자 (시트 Playtest Summary)</td><td class="r col-pt9">68</td><td class="r">85</td><td class="r bold">49</td><td class="r"><span class="alert">↘ -42%</span></td></tr>
+        <tr><td>총 세션 (roomConnect, BigQuery)</td><td class="r col-pt9">965</td><td class="r">1,355</td><td class="r bold">669</td><td class="r"><span class="alert">↘ -51%</span></td></tr>
+        <tr><td>총 체류 (h, roomDisconnect 합산)</td><td class="r col-pt9">55.5</td><td class="r">69.9</td><td class="r bold">36.0</td><td class="r"><span class="alert">↘ -48%</span></td></tr>
+        <tr><td>인당 체류 중앙값 (분)</td><td class="r col-pt9">24.7</td><td class="r">41.9</td><td class="r bold">29.8</td><td class="r"><span class="delta-down">↘ -29%</span></td></tr>
+        <tr><td>피크 DAU (KST 자정 기준)</td><td class="r col-pt9">49</td><td class="r">65</td><td class="r bold">36</td><td class="r"><span class="alert">↘ -45%</span></td></tr>
+        <tr><td>PCCU (분당 동시 max)</td><td class="r col-pt9">19</td><td class="r">19</td><td class="r bold">13</td><td class="r"><span class="delta-down">↘ -32%</span></td></tr>
+        <tr><td>Tutorial 완료율 (tutorialEnd 기준)</td><td class="r col-pt9">63.6%</td><td class="r">91.9%</td><td class="r bold">94.1%</td><td class="r"><span class="delta-up">↗ +2.2%p</span></td></tr>
+        <tr><td>잔존율 (양일 활동 / 전체)</td><td class="r col-pt9">99.0%</td><td class="r">97.8%</td><td class="r bold">98.0%</td><td class="r"><span class="delta-flat">→ 안정</span></td></tr>
+        <tr><td>Obby 클리어율 (obbyClear ÷ obbyStart)</td><td class="r col-pt9">14.2%</td><td class="r">9.2%</td><td class="r bold">11.3%</td><td class="r"><span class="delta-up">↗ +2.1%p</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="obs">
+    <div class="tag">관찰</div>
+    참여자 49명으로 PT10 대비 <strong>참여자 -42% / 총 세션 -51%</strong>의 큰 축소. 유저 유형별로는 <strong>리텐션 32명(PT10과 동일 유지)이지만 복귀 -72%(36→10명)·신규 -59%(17→7명)으로 모집 단의 신규·복귀 유입이 모두 큰 폭 후퇴</strong> — 복귀 감소폭이 절대 수치(-26명)·비율 모두 더 크다. 인당 체류 중앙값 29.8분은 PT10(41.9분) 대비 -29%지만 <strong>PT9(24.7분)보다는 +21% 높은 수준</strong>이라 코어 유저의 깊이는 유지된 패턴. <strong>Tutorial 완료율 94.1%(+2.2%p)와 잔존율 98.0%</strong>는 안정적이며, PT10의 효과가 PT11에서도 유지되고 있음을 시사. 신규 기능 도입(<span class="badge badge-indigo">바주카</span>·<span class="badge badge-indigo">Tag PvP 매치</span>·<span class="badge badge-indigo">궁극기 6종</span>) 영향은 별도 섹션에서 분석.
+  </div>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    PT11 참여자 -42% 축소의 원인 분리 필요: ① <strong>PT11 시작일 2026-05-10(일)이 미국 어머니의 날(5월 둘째 일요일)과 정확히 일치</strong> — 미국 베이스 71% 비중 감안 시 외부 일정 영향 가능성 높음 ② PT10(4/26) 직후 짧은 간격(2주)으로 인한 코어층 외 피로 ③ 신규 빌드 사전 안내·홍보 채널별 변동. <strong>F-10 베이스 차이 명시</strong>: 시트 Game Users 49명 / BigQuery roomDisconnect 발생자 39명 / GN balance 보유자 49명 — 모드별·체류 분석은 39명 베이스, KPI는 49명 시트 기준.
+  </div>
+</div>
+
+<!-- ===== 2. 변경점 ↔ 지표 변화 ===== -->
+<div class="section">
+  <div class="section-heading">2. 변경점 ↔ 지표 변화</div>
+  <div class="section-desc">v0.15.0는 Stage 2(PvP 아레나 6주) 1차 빌드. <strong>바주카 무기 도입</strong>·<strong>Tag PvP 매치 시스템</strong>·<strong>궁극기 6종 통합</strong> 등 신규 기능 중심. <strong>확정된 빌드 변경</strong>과 매핑되는 지표만 정리.</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>빌드 변경 (v0.15.0)</th><th>관련 지표</th><th class="r">변화</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-indigo">NEW</span> 바주카(rocket launcher) 도입 — Casual·Infection 모드</td><td>rocketLauncherFire / Grab 이벤트</td><td class="r"><span class="delta-up">발사 1,906발 / 36명 / 픽업 824건</span></td></tr>
+        <tr><td><span class="badge badge-indigo">NEW</span> Tag PvP 매치 시스템 (Blue/Red 팀) — Infection 모드</td><td>tagMatchStart/End/PlayerJoin/Leave</td><td class="r"><span class="delta-up">71 매치 / 13명 참여 / 296 입장</span></td></tr>
+        <tr><td><span class="badge badge-indigo">NEW</span> 궁극기 6종 통합 (Chaser 3종 + Runner 3종)</td><td>useUltimate 이벤트</td><td class="r"><span class="delta-up">1,188 사용 / 46명</span></td></tr>
+        <tr><td>PlayFab v2 마이그레이션 완료</td><td>VIRTUAL_CURRENCY·STATISTICS·ITEMS 키 형식</td><td class="r">데이터 영향 (F-14)</td></tr>
+        <tr><td>튜토리얼 단계 유지 (PT10 정비 효과)</td><td>Tutorial 완료율</td><td class="r"><span class="delta-up">91.9% → 94.1% (+2.2%p)</span></td></tr>
+        <tr><td>Obby 모드 (일반·Sky·Slope) 유지</td><td>Obby 클리어율</td><td class="r"><span class="delta-up">9.2% → 11.3% (+2.1%p)</span></td></tr>
+        <tr><td>Shop 코스메틱 카탈로그 변동 없음 (36종)</td><td>구매 다양성</td><td class="r"><span class="delta-down">20종 → 13종 (-35%)</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="obs">
+    <div class="tag">관찰</div>
+    Stage 2 1차 빌드의 핵심은 <strong>PvP 아레나 기반 콘텐츠</strong>(바주카·Tag 매치·궁극기). 도입된 신규 기능 3종 모두 의미 있는 참여 수치 기록(바주카 36명, Tag 13명, 궁극기 46명). 신규 기능 효과 분석은 섹션 9~12 참조.
+  </div>
+</div>
+
+<!-- ===== 3. 플레이타임 + 일별 추이 ===== -->
+<div class="section">
+  <div class="section-heading">3. 플레이타임 + 일별 추이</div>
+  <div class="section-desc">roomDisconnect.elapsedTime 합산. 시트 기준 참여자(49명) 중 BigQuery roomDisconnect 발생자(39명)만 집계. KST 자정 기준 GROUP BY (BigQuery <code>DATE(TIMESTAMP_ADD(EVENT_TIMESTAMP, INTERVAL 9 HOUR))</code>).</div>
+
+  <div class="grid-2">
+    <div>
+      <div class="kpi-row" style="margin-bottom:8px">
+        <div class="kpi-box"><div class="label">평균</div><div class="value">55.4분</div><div class="sub">10차 62.6 / <span class="col-pt9">9차 60.5</span></div></div>
+        <div class="kpi-box"><div class="label">중앙값</div><div class="value">29.8분</div><div class="sub">10차 41.9 / <span class="col-pt9">9차 24.7</span></div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>구간</th><th class="r bold">11차</th><th class="r">10차</th><th class="r col-pt9">9차</th></tr></thead>
+          <tbody>
+            <tr><td>0~5분</td><td class="r bold">6 (15%)</td><td class="r">10 (15%)</td><td class="r col-pt9">9 (16%)</td></tr>
+            <tr><td>5~15분</td><td class="r bold">3 (8%)</td><td class="r">15 (22%)</td><td class="r col-pt9">9 (16%)</td></tr>
+            <tr class="highlight-row"><td>15~30분</td><td class="r bold">11 (28%)</td><td class="r">3 (4%)</td><td class="r col-pt9">13 (24%)</td></tr>
+            <tr><td>30~60분</td><td class="r bold">5 (13%)</td><td class="r">14 (21%)</td><td class="r col-pt9">10 (18%)</td></tr>
+            <tr><td>60~120분</td><td class="r bold">10 (26%)</td><td class="r">12 (18%)</td><td class="r col-pt9">6 (11%)</td></tr>
+            <tr><td>120분+</td><td class="r bold">4 (10%)</td><td class="r">13 (19%)</td><td class="r col-pt9">8 (15%)</td></tr>
+            <tr><td>총 체류 (h)</td><td class="r bold">36.0</td><td class="r">69.9</td><td class="r col-pt9">55.5</td></tr>
+            <tr><td>합계 (명)</td><td class="r">39</td><td class="r">67</td><td class="r col-pt9">55</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="chart-wrap" style="margin:0">
+      <div class="chart-title">유저별 체류시간 분포 (11/10/9차)</div>
+      <canvas id="chartPlaytime" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">11차 일별 추이 (KST 자정 기준 GROUP BY)</div>
+    <canvas id="chartDaily" height="200"></canvas>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table>
+      <thead><tr><th>KST 날짜</th><th>요일</th><th>활동 시간대</th><th class="r">DAU</th><th class="r">세션 (roomConnect)</th><th class="r">이벤트</th></tr></thead>
+      <tbody>
+        <tr class="highlight-row"><td>2026-05-10</td><td>일</td><td>06:01 ~ 23:51 (18시간)</td><td class="r bold">36</td><td class="r bold">396</td><td class="r bold">8,747</td></tr>
+        <tr><td>2026-05-11</td><td>월</td><td>00:10 ~ 12:04 (12시간)</td><td class="r">28</td><td class="r">273</td><td class="r">8,836</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>15~30분 구간이 11명(28%)으로 가장 큰 비중</strong> — PT10에서 3명까지 줄어들었던 중간 구간이 PT11에서 부각. <strong>60~120분 구간 10명(26%)으로 코어층 유지</strong>. 다만 <strong>120분+ 헤비 4명(10%)으로 PT10 13명(19%) 대비 -69%</strong>: 매우 장시간 체류 유저가 감소.<br>
+    <strong>1일차(5/10 일)</strong>: DAU 36 / 8,747 events / 396 세션 — 18시간 동안 전체의 50%. <strong>2일차(5/11 월)</strong>: DAU 28 / 8,836 events. <strong>이벤트 수는 1일차와 거의 동일(+1%)</strong>한데 DAU·세션은 줄어 — <strong>2일차 코어 유저의 인당 활동 깊이가 높음</strong> (인당 이벤트 1일차 243 → 2일차 316, +30%).
+  </div>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    120분+ 헤비 4명 → 절대 수치 감소이지만, 참여자 -42%에 비해 19% → 10% 비율 변화. 코어 헤비층은 유지되었으나 전체 풀이 작아진 영향이 더 큼.
+  </div>
+</div>
+
+<!-- ===== 4. 모드별 점유율 + 몰입도 ===== -->
+<div class="section">
+  <div class="section-heading">4. 모드별 점유율 + 몰입도</div>
+  <div class="section-desc">gameplayType 합산 기준 — unique 유저(BQ COUNT DISTINCT) + 총 체류 + 평균/중앙값 세션 시간. 룸 분산 효과를 정확히 보기 위해 모드 합산.</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>모드</th>
+        <th class="r bold">11차 유저</th>
+        <th class="r bold">11차 체류</th>
+        <th class="r bold">11차 평균/중앙</th>
+        <th class="r">10차 체류 (유저)</th>
+        <th class="r col-pt9">9차 체류 (유저)</th>
+        <th class="r">추세</th>
+      </tr></thead>
+      <tbody>
+        <tr><td><strong>Casual</strong> (로비/상점/캐주얼)</td><td class="r bold">39명</td><td class="r bold">19.3h</td><td class="r">2.9분 / 0.4분</td><td class="r">36.5h (67명)</td><td class="r col-pt9">32.2h (55명)</td><td class="r"><span class="delta-down">↘ -47%</span></td></tr>
+        <tr class="highlight-row"><td><strong>Infection</strong> (Tag PvP) <span class="badge badge-indigo">§9 신규 매치 시스템</span></td><td class="r bold">25명</td><td class="r bold">8.7h</td><td class="r">6.0분 / 1.8분</td><td class="r">18.8h (43명)</td><td class="r col-pt9">14.6h (33명)</td><td class="r"><span class="delta-down">↘ -54%</span></td></tr>
+        <tr><td><strong>Horror</strong></td><td class="r bold">12명</td><td class="r bold">1.6h</td><td class="r">6.7분 / 7.7분</td><td class="r">8.8h (34명)</td><td class="r col-pt9">2.1h (11명)</td><td class="r"><span class="alert">⬇ -82%</span></td></tr>
+        <tr><td>ObbyR (Sky Tower)</td><td class="r">15명</td><td class="r">4.5h</td><td class="r">6.9분 / 2.4분</td><td class="r">2.0h (16명)</td><td class="r col-pt9">4.5h (11명)</td><td class="r"><span class="delta-up">↗ +125%</span></td></tr>
+        <tr><td>Obby (Circuit)</td><td class="r">9명</td><td class="r">0.6h</td><td class="r">1.8분 / 0.4분</td><td class="r">3.2h (19명)</td><td class="r col-pt9">2.1h (10명)</td><td class="r"><span class="alert">⬇ -81%</span></td></tr>
+        <tr><td>ObbyC</td><td class="r">9명</td><td class="r">1.4h</td><td class="r">6.5분 / 7.5분</td><td class="r">0.7h (8명)</td><td class="r col-pt9">0.0h (1명)</td><td class="r"><span class="delta-up">↗ +118%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">모드별 총 체류시간 (11/10/9차, gameplayType 합산)</div>
+    <canvas id="chartModeTime" height="200"></canvas>
+  </div>
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>모든 모드 체류 시간 감소</strong>는 참여자 -42% 영향 직접 반영. 그러나 <strong>ObbyR(Sky Tower)는 +125%(2.0→4.5h)·ObbyC는 +118%(0.6→1.4h)</strong>로 역으로 증가 — 참여자 감소에도 인당 시간이 늘어남(ObbyR 4.0→6.9분 / ObbyC 2.4→6.5분). <strong>Horror -82%</strong>는 PT10의 4.2배 폭증 효과 종료 + 신규 PvP 콘텐츠로 유저 시간 이동 가능성. <strong>Tag PvP 매치 시스템 도입에도 Infection -54%</strong>: 매치 자체는 71회로 활성화되었으나 모드 전체 체류는 PT10의 PvP-경험 풀 축소(43→25명) 영향이 더 큼.
+  </div>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    <strong>ObbyR·ObbyC 인당 시간 증가의 원인</strong> — Sky Obby clear stat이 11명 클리어 기록(섹션 12 STATISTICS 참조)으로 안정 활용. <strong>Horror -82%</strong>: 콘텐츠 변경 없는데 활용 급감 — PvP 신규 콘텐츠로 유저 시간 이동인지, Horror에 대한 신선도 효과 종료인지 분리 분석 권장. <strong>Casual 중앙값 0.4분</strong>은 로비 잠시 머무는 짧은 입퇴장이 지배적인 패턴 일관.
+  </div>
+</div>
+
+<!-- ===== 5. 유저 유형별 분석 ===== -->
+<div class="section">
+  <div class="section-heading">5. 유저 유형별 분석</div>
+  <div class="section-desc">리텐션(직전 정규 + 현재 양참여) / 복귀(이전 정규 참여 이력 + 직전 미참여 + 현재) / 신규(현재가 첫 정규 플테). Game Users 시트 <code>played_playtests</code> 시퀀스 기반 일관 알고리즘.</div>
+
+  <div class="grid-2">
+    <div>
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:#555">최근 3차수 유저 유형 분포</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>유형</th><th class="r col-pt9">9차 (68명)</th><th class="r">10차 (85명)</th><th class="r bold">11차 (49명)</th><th class="r">11차 vs 10차</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-green">리텐션</span></td><td class="r col-pt9">28 (41%)</td><td class="r">32 (38%)</td><td class="r bold">32 (65%)</td><td class="r"><span class="delta-flat">→ 32명 유지</span></td></tr>
+            <tr><td><span class="badge badge-blue">복귀</span></td><td class="r col-pt9">23 (34%)</td><td class="r">36 (42%)</td><td class="r bold">10 (20%)</td><td class="r"><span class="alert">-72% (-26명)</span></td></tr>
+            <tr><td><span class="badge badge-yellow">신규</span></td><td class="r col-pt9">17 (25%)</td><td class="r">17 (20%)</td><td class="r bold">7 (14%)</td><td class="r"><span class="alert">-59% (-10명)</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:13px;color:#666;margin-top:8px">📌 PT10 보고서 §5에 표기된 PT9 분류(28/30/10)와 일부 차이 — 본 보고서는 played_playtests 시퀀스 기반 일관 알고리즘으로 재산출 (UT 포함 정규 시퀀스). PT10·PT11 분류는 기존 보고서 값과 일치.</div>
+    </div>
+    <div class="chart-wrap" style="margin:0">
+      <div class="chart-title">유저 유형 분포 (11차)</div>
+      <canvas id="chartUserType" height="160"></canvas>
+    </div>
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:20px 0 8px;color:#555">PT11 유형별 인당 누적 활동 (Game Users 시트 기준)</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>지표</th><th class="r">리텐션 (32명)</th><th class="r">복귀 (10명)</th><th class="r">신규 (7명)</th></tr></thead>
+      <tbody>
+        <tr><td>인당 평균 누적 세션</td><td class="r bold">272.2</td><td class="r">136.9</td><td class="r">7.3</td></tr>
+        <tr><td>인당 중앙값 누적 세션</td><td class="r">189</td><td class="r">109</td><td class="r">7</td></tr>
+        <tr><td>인당 평균 누적 이벤트</td><td class="r bold">4,396</td><td class="r">1,757</td><td class="r">158</td></tr>
+        <tr><td>인당 중앙값 누적 이벤트</td><td class="r">3,032</td><td class="r">1,858</td><td class="r">151</td></tr>
+        <tr><td>인당 평균 참여 플테 수</td><td class="r bold">7.84</td><td class="r">4.00</td><td class="r">1.00</td></tr>
+        <tr><td>참여 플테 (최소~최대)</td><td class="r">2~15</td><td class="r">2~8</td><td class="r">1~1</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>리텐션 32명은 PT10과 동일 (수 유지)</strong> — PT10 참여자 85명 중 32명(38%)이 PT11에 재참여한 강한 코어. 인당 평균 누적 세션 272회·이벤트 4,396건·참여 플테 7.84회로 진성 베테랑. 리텐션 비중은 PT10 38% → PT11 65%로 큰 폭 상승 — 전체 풀이 작아지면서 코어 비중이 부각된 패턴.<br>
+    <strong>복귀 -72%(36→10명)·신규 -59%(17→7명)</strong>: 모집 단의 신규·복귀 유입이 동시 후퇴. 복귀 절대 감소 26명이 신규 감소 10명보다 큼 — <strong>"PT9~10에 이전 활동 있던 유저들의 PT11 복귀 채널이 약화됐는지" 검토 필요</strong>.<br>
+    <strong>신규 7명 인당 누적 세션 7회·이벤트 158건·참여 플테 1회</strong>: PT11이 첫 정규 플테인 진정한 첫 경험 코호트 (섹션 8 신규 7명 한정 온보딩 분석 참조).
+  </div>
+
+  <details>
+    <summary>10차 참여자 중 11차 미참여자 53명 명단 (활동량 순)</summary>
+    <div style="font-size:14px;color:#555;line-height:1.7;margin-top:8px">
+      PT10 참여 85명 - 양참여(리텐션) 32명 = <strong>53명이 PT11 미참여</strong> (PT10 참여자의 62%). 누적 이벤트 순으로 정렬. last_play_date는 BigQuery 마지막 활동 (PT10 종료 4/27 직후가 다수 — Game Users 시트 last_play_timestamp 기준).
+    </div>
+    <div class="table-wrap" style="margin-top:8px">
+      <table>
+        <thead><tr><th>Meta Name</th><th>국가</th><th class="r">누적 세션</th><th class="r">누적 이벤트</th><th class="r">참여 플테</th><th>마지막 활동</th></tr></thead>
+        <tbody>
+          <tr><td>mix</td><td>US</td><td class="r">398</td><td class="r">5,536</td><td class="r">9</td><td>2026-04-26</td></tr>
+          <tr><td>Wizard</td><td>US</td><td class="r">181</td><td class="r">5,110</td><td class="r">5</td><td>2026-04-25</td></tr>
+          <tr><td>Bowser-runuts</td><td>NL</td><td class="r">140</td><td class="r">3,239</td><td class="r">8</td><td>2026-04-26</td></tr>
+          <tr><td>Cosmo-runuts</td><td>US</td><td class="r">153</td><td class="r">2,874</td><td class="r">5</td><td>2026-04-26</td></tr>
+          <tr><td>ratatolle</td><td>CR</td><td class="r">187</td><td class="r">2,717</td><td class="r">8</td><td>2026-04-25</td></tr>
+          <tr><td>Zagger</td><td>GB</td><td class="r">206</td><td class="r">2,712</td><td class="r">6</td><td>2026-04-26</td></tr>
+          <tr><td>luca</td><td>GB</td><td class="r">198</td><td class="r">2,668</td><td class="r">8</td><td>2026-04-26</td></tr>
+          <tr><td>Jax22</td><td>US</td><td class="r">188</td><td class="r">2,412</td><td class="r">7</td><td>2026-04-27</td></tr>
+          <tr><td>Resouled</td><td>GB</td><td class="r">103</td><td class="r">1,965</td><td class="r">6</td><td>2026-04-25</td></tr>
+          <tr><td>Gabimaru</td><td>SE</td><td class="r">127</td><td class="r">1,899</td><td class="r">7</td><td>2026-04-26</td></tr>
+          <tr><td>Bananaman1.1</td><td>US</td><td class="r">61</td><td class="r">1,822</td><td class="r">4</td><td>2026-04-27</td></tr>
+          <tr><td>RTXCrimson</td><td>CA</td><td class="r">126</td><td class="r">1,821</td><td class="r">7</td><td>2026-04-27</td></tr>
+          <tr><td>Coolkidisdagoat</td><td>US</td><td class="r">118</td><td class="r">1,764</td><td class="r">7</td><td>2026-04-26</td></tr>
+          <tr><td>OG moe</td><td>US</td><td class="r">89</td><td class="r">1,680</td><td class="r">4</td><td>2026-04-26</td></tr>
+          <tr><td>OnnxOfficialYT</td><td>US</td><td class="r">272</td><td class="r">1,669</td><td class="r">3</td><td>2026-04-26</td></tr>
+          <tr><td>TMTMarius-runuts</td><td>LT</td><td class="r">153</td><td class="r">1,589</td><td class="r">9</td><td>2026-04-26</td></tr>
+          <tr><td>saberthootie</td><td>PA</td><td class="r">109</td><td class="r">1,487</td><td class="r">6</td><td>2026-04-26</td></tr>
+          <tr><td>Chickenlover</td><td>US</td><td class="r">36</td><td class="r">1,484</td><td class="r">2</td><td>2026-04-25</td></tr>
+          <tr><td>Wirt0517-runuts</td><td>US</td><td class="r">54</td><td class="r">1,347</td><td class="r">4</td><td>2026-04-26</td></tr>
+          <tr><td>Jordan</td><td>LT</td><td class="r">57</td><td class="r">1,261</td><td class="r">7</td><td>2026-04-26</td></tr>
+          <tr><td>Adooona</td><td>NZ</td><td class="r">30</td><td class="r">1,042</td><td class="r">3</td><td>2026-04-25</td></tr>
+          <tr><td>Freddy Marty Bear VR</td><td>US</td><td class="r">60</td><td class="r">998</td><td class="r">3</td><td>2026-04-26</td></tr>
+          <tr><td>.</td><td>CA</td><td class="r">58</td><td class="r">874</td><td class="r">5</td><td>2026-04-26</td></tr>
+          <tr><td>dark omnivr</td><td>US</td><td class="r">86</td><td class="r">856</td><td class="r">3</td><td>2026-04-26</td></tr>
+          <tr><td>RibbonVR</td><td>US</td><td class="r">48</td><td class="r">671</td><td class="r">2</td><td>2026-04-26</td></tr>
+          <tr><td>Slushious</td><td>US</td><td class="r">48</td><td class="r">662</td><td class="r">5</td><td>2026-04-26</td></tr>
+          <tr><td>koda</td><td>US</td><td class="r">56</td><td class="r">654</td><td class="r">3</td><td>2026-04-27</td></tr>
+          <tr><td>HamboneHill</td><td>US</td><td class="r">22</td><td class="r">595</td><td class="r">3</td><td>2026-04-26</td></tr>
+          <tr><td>Andreizproo</td><td>RO</td><td class="r">24</td><td class="r">564</td><td class="r">4</td><td>2026-04-26</td></tr>
+          <tr><td>Liam</td><td>US</td><td class="r">22</td><td class="r">564</td><td class="r">1</td><td>2026-04-26</td></tr>
+          <tr><td>IsaacredVR</td><td>GB</td><td class="r">17</td><td class="r">460</td><td class="r">3</td><td>2026-04-26</td></tr>
+          <tr><td>scopezzvr</td><td>GB</td><td class="r">26</td><td class="r">457</td><td class="r">2</td><td>2026-04-26</td></tr>
+          <tr><td>H0pperKB</td><td>US</td><td class="r">27</td><td class="r">433</td><td class="r">2</td><td>2026-04-27</td></tr>
+          <tr><td>LGDVR</td><td>US</td><td class="r">17</td><td class="r">379</td><td class="r">4</td><td>2026-04-26</td></tr>
+          <tr><td>Hazmer</td><td>US</td><td class="r">9</td><td class="r">373</td><td class="r">2</td><td>2026-04-27</td></tr>
+          <tr><td>William Afton</td><td>US</td><td class="r">10</td><td class="r">349</td><td class="r">3</td><td>2026-04-26</td></tr>
+          <tr><td>SPED</td><td>US</td><td class="r">39</td><td class="r">332</td><td class="r">4</td><td>2026-04-26</td></tr>
+          <tr><td>Sawefg</td><td>GB</td><td class="r">22</td><td class="r">332</td><td class="r">2</td><td>2026-04-26</td></tr>
+          <tr><td>EllistheGoat</td><td>US</td><td class="r">15</td><td class="r">324</td><td class="r">2</td><td>2026-04-25</td></tr>
+          <tr><td>THEGAMINGKING078</td><td>GB</td><td class="r">21</td><td class="r">313</td><td class="r">2</td><td>2026-04-26</td></tr>
+          <tr><td>Chicken</td><td>CA</td><td class="r">14</td><td class="r">279</td><td class="r">2</td><td>2026-04-26</td></tr>
+          <tr><td>CoffinVR</td><td>US</td><td class="r">20</td><td class="r">243</td><td class="r">1</td><td>2026-04-26</td></tr>
+          <tr><td>Juicenow</td><td>US</td><td class="r">12</td><td class="r">238</td><td class="r">3</td><td>2026-04-26</td></tr>
+          <tr><td>PurpleguyVR</td><td>US</td><td class="r">21</td><td class="r">234</td><td class="r">3</td><td>2026-04-26</td></tr>
+          <tr><td>coltdamonk</td><td>US</td><td class="r">4</td><td class="r">202</td><td class="r">2</td><td>2026-04-25</td></tr>
+          <tr><td>Wolfiesvr6868</td><td>US</td><td class="r">5</td><td class="r">174</td><td class="r">1</td><td>2026-04-26</td></tr>
+          <tr><td>Kellen</td><td>US</td><td class="r">6</td><td class="r">158</td><td class="r">2</td><td>2026-04-26</td></tr>
+          <tr><td>sharkvr</td><td>CA</td><td class="r">1</td><td class="r">119</td><td class="r">1</td><td>2026-04-25</td></tr>
+          <tr><td>Bibsicle</td><td>US</td><td class="r">4</td><td class="r">105</td><td class="r">2</td><td>2026-04-26</td></tr>
+          <tr><td>Profooball</td><td>US</td><td class="r">6</td><td class="r">80</td><td class="r">1</td><td>2026-04-25</td></tr>
+          <tr><td>Adam_17400</td><td>US</td><td class="r">5</td><td class="r">50</td><td class="r">1</td><td>2026-04-25</td></tr>
+          <tr><td>Tay</td><td>ZZ</td><td class="r">5</td><td class="r">46</td><td class="r">2</td><td>2026-04-25</td></tr>
+          <tr><td>JiberishVR</td><td>GB</td><td class="r">1</td><td class="r">31</td><td class="r">1</td><td>2026-04-26</td></tr>
+          <tr><td class="bold">합계 (53명)</td><td>—</td><td class="r bold">3,481</td><td class="r bold">62,889</td><td class="r bold">평균 3.8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="review" style="margin-top:12px">
+      <div class="tag">검토 사항</div>
+      <strong>상위 활동량 미참여자 다수 존재</strong>: mix(US, 누적 5,536 이벤트·9 플테), Wizard(US, 5,110·5), Bowser-runuts(NL, 3,239·8) 등 — PT10에서 적극 활동했던 코어 유저가 PT11에 빠짐. <strong>국가 분포 US 우세 (35/53명, 66%)</strong>: 미국 어머니의 날 영향 가설과 일치. 다음 조치 권장: ① 활동량 상위 10~15명 1:1 컨택 (불참 사유 청취) ② 다음 PT 공지 시 미참여자 53명 별도 알림 채널 활용 ③ 다음 PT 일정 선정 시 미국 공휴일·기념일 회피.
+    </div>
+  </details>
+</div>
+
+<!-- ===== 6. 코호트 잔존 + D1 retention ===== -->
+<div class="section">
+  <div class="section-heading">6. 코호트 잔존 + D1 retention</div>
+
+  <div style="font-weight:600;font-size:13px;margin:8px 0;color:#555">D1 retention (11차 내 — 5/10 일 → 5/11 월)</div>
+  <div class="kpi-row">
+    <div class="kpi-box"><div class="label">1일차 DAU</div><div class="value">36</div><div class="sub">5/10 활동</div></div>
+    <div class="kpi-box"><div class="label">2일차 DAU</div><div class="value">28</div><div class="sub">5/11 활동</div></div>
+    <div class="kpi-box"><div class="label">양일 참여</div><div class="value">24</div><div class="sub">D1 retention 66.7%</div></div>
+    <div class="kpi-box"><div class="label">2일차 신규</div><div class="value">4</div><div class="sub">5/11만 참여</div></div>
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:#555">신규 유저 코호트 잔존 (각 차수에 첫 정규 참여한 유저의 후속 잔존)</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>코호트</th><th class="r">크기</th><th class="r">→ 9차</th><th class="r">→ 10차</th><th class="r">→ 11차</th></tr></thead>
+      <tbody>
+        <tr><td>8차 신규</td><td class="r">16</td><td class="r">3 (19%)</td><td class="r">5 (31%)</td><td class="r">2 (13%)</td></tr>
+        <tr><td>9차 신규</td><td class="r">10</td><td class="r">—</td><td class="r">2 (20%)</td><td class="r">1 (10%)</td></tr>
+        <tr class="highlight-row"><td>10차 신규</td><td class="r">17</td><td class="r">—</td><td class="r">—</td><td class="r bold">4 (24%)</td></tr>
+        <tr><td>11차 신규</td><td class="r">7</td><td class="r">—</td><td class="r">—</td><td class="r">7 (자기 참여)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>D1 retention 66.7%</strong>(24/36) — PT10의 40%에서 크게 향상. 다만 PT11 참여 풀이 작아(36명) 비율 변동성 큼. <strong>10차 신규 17명 중 4명(24%)이 11차 복귀</strong> — 직전 코호트 D14 잔존 자체는 양호한 수준. 8차 신규의 11차 잔존 13%, 9차 신규의 11차 잔존 10%는 시간 경과에 따른 자연 감소.
+  </div>
+</div>
+
+<!-- ===== 7. Shop + Golden Nuts 경제 + Conversion Funnel ===== -->
+<div class="section">
+  <div class="section-heading">7. Shop + Golden Nuts 경제 + Conversion Funnel</div>
+  <div class="section-desc">Golden Nuts(GN, PlayFab v2 키 <code>currency-goldennut</code>, 이전 <code>C2</code>) = 도전과제·퀘스트 획득 → 코스메틱·테크트리 소비 프리미엄 화폐. Seeds(<code>currency-seed</code>, 이전 <code>C1</code>) = 무료 화폐. 모든 unique buyer 카운트는 <code>COUNT(DISTINCT USER_ID)</code> 직접 산출.</div>
+
+  <div style="font-weight:600;font-size:13px;margin:8px 0;color:#555">Shop Conversion Funnel (PT 별 unique 유저 기준)</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>단계</th><th class="r bold">11차</th><th class="r">10차</th><th class="r col-pt9">9차</th><th class="r">11차 vs 10차</th></tr></thead>
+      <tbody>
+        <tr><td>① 상점 방문 (shopEnter)</td><td class="r bold">35명</td><td class="r">69명</td><td class="r col-pt9">51명</td><td class="r"><span class="alert">-49%</span></td></tr>
+        <tr><td>② 아이템 장착 (equipItem)</td><td class="r bold">29명</td><td class="r">61명</td><td class="r col-pt9">45명</td><td class="r"><span class="alert">-52%</span></td></tr>
+        <tr><td>③ 구매 (purchaseItem)</td><td class="r bold">13명</td><td class="r">27명</td><td class="r col-pt9">28명</td><td class="r"><span class="alert">-52%</span></td></tr>
+        <tr class="highlight-row"><td><strong>전환율 ① → ③</strong></td><td class="r">37.1%</td><td class="r">39.1%</td><td class="r col-pt9">54.9%</td><td class="r"><span class="delta-down">↘ -2.0%p</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-box"><div class="label">unique 구매자</div><div class="value">13명</div><div class="sub">10차 27 (<span class="alert">-52%</span>) / <span class="col-pt9">9차 28</span></div></div>
+    <div class="kpi-box"><div class="label">구매 횟수</div><div class="value">21건</div><div class="sub">10차 39 (<span class="delta-down">-46%</span>)</div></div>
+    <div class="kpi-box"><div class="label">GN 잔액 중앙값</div><div class="value">13</div><div class="sub">10차 13 (<span class="delta-flat">→ 동일</span>)</div></div>
+    <div class="kpi-box"><div class="label">GN 잔액 평균</div><div class="value">24.6</div><div class="sub">10차 19.7 (<span class="delta-up">+25%</span>)</div></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>경제 지표</th><th class="r bold">11차</th><th class="r">10차</th><th class="r col-pt9">9차</th><th class="r">추세</th></tr></thead>
+      <tbody>
+        <tr><td>코스메틱 unique 구매자 (전체)</td><td class="r bold">13명</td><td class="r">27명</td><td class="r col-pt9">28명</td><td class="r"><span class="alert">↘ -52%</span></td></tr>
+        <tr><td>코스메틱 구매 횟수</td><td class="r bold">21건</td><td class="r">39건</td><td class="r col-pt9">65건</td><td class="r"><span class="delta-down">↘ -46%</span></td></tr>
+        <tr><td>구매된 코스메틱 종류 (전체 카탈로그 36종 중)</td><td class="r bold">13종 (36%)</td><td class="r">20종 (56%)</td><td class="r col-pt9">27종 (75%)</td><td class="r"><span class="delta-down">↘ 다양성 -20%p</span></td></tr>
+        <tr><td>GN 잔액 평균*</td><td class="r bold">24.6</td><td class="r">19.7</td><td class="r col-pt9">19.4</td><td class="r"><span class="delta-up">↗ +25%</span></td></tr>
+        <tr><td>GN 잔액 중앙값*</td><td class="r bold">13</td><td class="r">13</td><td class="r col-pt9">8</td><td class="r"><span class="delta-flat">→ 동일</span></td></tr>
+        <tr><td>GN 잔액 최대*</td><td class="r bold">116</td><td class="r">110</td><td class="r col-pt9">145</td><td class="r"><span class="delta-up">↗ +5%</span></td></tr>
+        <tr><td>GN 100+ 보유자</td><td class="r bold">3명</td><td class="r">1명</td><td class="r col-pt9">2명</td><td class="r"><span class="delta-up">↗ 헤비 +2명</span></td></tr>
+        <tr><td>Seeds 평균*</td><td class="r bold">3,573</td><td class="r">3,562</td><td class="r col-pt9">3,932</td><td class="r"><span class="delta-flat">→ 동일</span></td></tr>
+        <tr><td>Seeds 중앙값*</td><td class="r bold">1,623</td><td class="r">3,492</td><td class="r col-pt9">4,829</td><td class="r"><span class="alert">↘ -54%</span></td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:13px;color:#666;margin-top:8px">* PT11은 PlayFab v2 키(<code>currency-goldennut</code>) 기준 49명 집계. PT10/PT9는 v1 키(<code>C2</code>) 시점에 산출된 값을 그대로 인용 (각각 85·68명 baseline). v2 재수집 시 PT10 GN 보유 81명(-4)으로 줄어드는 차이 발견됨 — 일부 유저 currency가 v2 마이그레이션 후 NULL이 된 케이스 추정. 본 표의 PT10 수치는 보고서 시점 v1 baseline 유지.</div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:#555">코스메틱 카테고리별 unique 구매자</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>카테고리</th><th class="r">11차</th><th class="r">10차</th><th class="r col-pt9">9차</th></tr></thead>
+          <tbody>
+            <tr><td>DJ 시리즈 (LIKE %dj%)</td><td class="r bold">1명</td><td class="r">7명</td><td class="r col-pt9">16명</td></tr>
+            <tr><td>Wizard 시리즈 (LIKE %wizard%)</td><td class="r bold">5명</td><td class="r">11명</td><td class="r col-pt9">11명</td></tr>
+            <tr><td>Pixel 시리즈 (LIKE %pixel%)</td><td class="r bold">3명</td><td class="r">4명</td><td class="r col-pt9">—</td></tr>
+            <tr><td>전체 unique 구매자</td><td class="r bold">13명</td><td class="r">27명</td><td class="r col-pt9">28명</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:13px;color:#666;margin-top:8px">출처: <code>purchaseItem</code> EVENT_JSON itemId LIKE 검색 + <code>COUNT(DISTINCT USER_ID)</code>. 중복 구매 시 1명으로 카운트.</div>
+    </div>
+    <div>
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:#555">11차 GN 잔액 분포 (전체 49명, 8 구간)</div>
+      <div class="chart-wrap" style="margin:0;padding:10px">
+        <canvas id="chartGNDist" height="200"></canvas>
+      </div>
+      <div class="table-wrap" style="margin-top:8px">
+        <table>
+          <thead><tr><th>구간</th><th class="r">인원</th><th class="r">비율</th></tr></thead>
+          <tbody>
+            <tr><td>0 GN</td><td class="r">1</td><td class="r">2.0%</td></tr>
+            <tr class="highlight-row"><td>1~5 GN</td><td class="r bold">12</td><td class="r bold">24.5%</td></tr>
+            <tr><td>6~10 GN</td><td class="r">8</td><td class="r">16.3%</td></tr>
+            <tr><td>11~20 GN</td><td class="r">10</td><td class="r">20.4%</td></tr>
+            <tr><td>21~30 GN</td><td class="r">4</td><td class="r">8.2%</td></tr>
+            <tr><td>31~50 GN</td><td class="r">8</td><td class="r">16.3%</td></tr>
+            <tr><td>51~100 GN</td><td class="r">3</td><td class="r">6.1%</td></tr>
+            <tr><td>100+ GN</td><td class="r">3</td><td class="r">6.1%</td></tr>
+            <tr><td class="bold">합계</td><td class="r bold">49</td><td class="r bold">99.9%*</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <details>
+    <summary>11차 인기 코스메틱 TOP 5 (전체 13종 중, TOP 5 합 13건/21건 = 62%)</summary>
+    <div class="table-wrap">
+      <table style="margin-top:8px">
+        <thead><tr><th>아이템</th><th class="r">구매 (=unique buyer)</th></tr></thead>
+        <tbody>
+          <tr><td>Green Wizard Hat</td><td class="r bold">3</td></tr>
+          <tr><td>Cowboy Hat</td><td class="r bold">3</td></tr>
+          <tr><td>Green Suit</td><td class="r bold">3</td></tr>
+          <tr><td>Pixel Sunglasses</td><td class="r">2</td></tr>
+          <tr><td>Brown Wizard Hat</td><td class="r">2</td></tr>
+          <tr><td><strong>TOP 5 합</strong></td><td class="r bold">13건 (62%)</td></tr>
+          <tr><td>나머지 8종 합</td><td class="r">8건 (38%)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:13px;color:#666;margin-top:8px">📌 모든 구매가 1명당 1회였음. "구매 횟수 = unique buyer" 패턴 PT11에서도 일관.</div>
+  </details>
+
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>Shop conversion 37.1%</strong>(상점 방문 → 구매)는 PT10 39.1%·PT9 54.9% 대비 -2.0~-17.8%p 하락 추세. 절대 수치 모두 -50%대로 큰 폭 감소(참여자 -42% 영향). <strong>구매 다양성도 13종(36%)으로 PT10 20종(56%)·PT9 27종(75%) 대비 지속 감소</strong> — 코스메틱 카탈로그 36종 변동 없음에도 구매 종류가 좁아지는 패턴.<br>
+    <strong>DJ 시리즈 7명 → 1명(-86%)</strong>: PT9 16 → PT10 7 → PT11 1로 일관 감소. Wizard 11→5(-55%), Pixel 4→3로 비교적 안정.<br>
+    <strong>GN 잔액</strong>: 평균 24.6(+25%) / 중앙값 13(동일) / 최대 116(+5%). <strong>100+ 보유자가 1→3명으로 증가</strong> — 헤비 코어층에서 GN 누적 패턴 강화. 0 GN은 1명으로 감소(PT10 6명) → 거의 모든 유저가 GN 보유.<br>
+    <strong>Seeds 중앙값 3,492 → 1,623(-54%)</strong>: Seeds 사용처(가젯·총·제트팩) 사용 빈도 증가 또는 평균 신규/짧은 체류 유저 비중 증가 영향.
+  </div>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    <strong>구매 다양성 36% → 카탈로그 36종 중 13종만 구매</strong>: 구매층 자체 축소(27→13명) + 인기 카테고리(DJ·Wizard) 감소. 신규 코스메틱 추가 또는 신규 유저 입문 번들 검토.<br>
+    <strong>GN 100+ 보유자 1→3명 증가</strong> + Seeds 중앙값 -54%: 상위 보유 양극화. 헤비 코어층 GN 소비처 부족 가능성 (PT10 검토 항목 지속).<br>
+    <strong>PlayFab v2 마이그레이션 후 일관성 확인</strong>: PT10 보고서 GN 잔액 평균 19.7(85명 baseline) vs v2 재수집 시 81명(-4명) — 일부 유저 currency 값이 v2 마이그레이션 후 NULL 처리됐을 가능성. PT11 49명 모두 v2 키로 정상 데이터 (섹션 부록 데이터 정합성 참조).
+  </div>
+</div>
+
+<!-- ===== 8. 온보딩 + 도전과제 + 신규 7명 한정 ===== -->
+<div class="section">
+  <div class="section-heading">8. 온보딩 · 도전과제</div>
+  <div class="section-desc">Tutorial 완료율 두 측정 기준이 공존: <strong>(A) 94.1%</strong>는 <code>tutorialEnd</code> 단일 이벤트 완료율, <strong>(B) 82.4%</strong>는 단계별 추적(StartTutorial → EndTutorial 진입 비율). A는 보편적 완료, B는 단계 통과 기준이라 다름.</div>
+
+  <div class="kpi-row">
+    <div class="kpi-box"><div class="label">완료율 (A) tutorialEnd</div><div class="value">94.1%</div><div class="sub">10차 91.9% (<span class="delta-up">+2.2%p</span>)</div></div>
+    <div class="kpi-box"><div class="label">완료율 (B) Step 추적</div><div class="value">82.4%</div><div class="sub">EndTutorial 14 / Start 17</div></div>
+    <div class="kpi-box"><div class="label">진입자</div><div class="value">17</div><div class="sub">10차 62 (<span class="alert">-73%</span>)</div></div>
+    <div class="kpi-box"><div class="label">스킵</div><div class="value">3</div><div class="sub">10차 10</div></div>
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:#555">튜토리얼 단계별 (tutorialStepStart/End EVENT_JSON, TU_INIT_ prefix 제거)</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>단계</th>
+        <th class="r bold">PT11 진입/완료 (users)</th>
+        <th class="r bold">PT11 평균(초)</th>
+        <th class="r">PT10 평균</th>
+        <th class="r col-pt9">PT9 평균</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>StartTutorial</td><td class="r bold">17 / 17</td><td class="r bold">9.4</td><td class="r">12.2 (62/61)</td><td class="r col-pt9">14.7 (11/11)</td></tr>
+        <tr><td>ChargeAndLaunch</td><td class="r bold">16 / 16</td><td class="r bold">11.3</td><td class="r">10.9 (55/55)</td><td class="r col-pt9">11.9 (10/10)</td></tr>
+        <tr><td>Rotation</td><td class="r bold">16 / 16</td><td class="r bold">11.9</td><td class="r">14.2 (52/52)</td><td class="r col-pt9">15.1 (10/10)</td></tr>
+        <tr><td>Glide</td><td class="r bold">16 / 16</td><td class="r bold">11.1</td><td class="r">8.4 (52/52)</td><td class="r col-pt9">14.4 (10/10)</td></tr>
+        <tr><td>LiftEffect</td><td class="r bold">16 / 16</td><td class="r bold">17.7</td><td class="r">15.3 (52/51)</td><td class="r col-pt9">11.9 (10/10)</td></tr>
+        <tr class="highlight-row"><td><strong>JetPack</strong></td><td class="r bold">16 / 16</td><td class="r alert">90.5</td><td class="r alert">73.6 (51/49)</td><td class="r col-pt9">13.3 (10/10)</td></tr>
+        <tr><td>Weapon</td><td class="r bold">16 / 15</td><td class="r bold">30.3</td><td class="r">25.6 (49/48)</td><td class="r col-pt9 alert">40.7 (10/8)</td></tr>
+        <tr><td>Tag</td><td class="r bold">15 / 14</td><td class="r bold">23.3</td><td class="r">19.6 (48/48)</td><td class="r col-pt9">3.0 (2/3)</td></tr>
+        <tr><td>EndTutorial</td><td class="r bold">15 / 14</td><td class="r bold">4.9</td><td class="r">5.4 (48/48)</td><td class="r col-pt9">5.1 (3/4)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="font-size:13px;color:#666;margin:8px 0 16px">
+    🔍 <strong>JetPack 90.5초 이상치 지속</strong>: PT9 13.3 / PT10 73.6 / PT11 90.5 — 다른 단계(9~30초) 대비 4~10배. PT10 정비에도 단계 자체 시간 미해소.<br>
+    🔍 <strong>Weapon 단계 30.3초</strong>: PT10 25.6초에서 약간 늘어남. 16/15(1명 이탈) — 미세한 이탈 지점.<br>
+    🔍 <strong>Tag 단계 23.3초</strong>: PT10 19.6초에서 +19%. 15/14 1명 이탈.
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:#555">11차 도전과제 TOP 10 (전체 22종 중, TOP 10 합 74건/101건 = 73%)</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>도전과제</th><th>트랙</th><th class="r">11차 (claims/users)</th><th class="r">10차 비교</th></tr></thead>
+      <tbody>
+        <tr><td>GlideDistance Lv1 (1,000m)</td><td><span class="badge badge-blue">Fly</span></td><td class="r">12 / 9</td><td class="r"><span class="delta-down">10차 32 (-20명 풀)</span></td></tr>
+        <tr><td>GlideSpeed Lv1 (60km/h)</td><td><span class="badge badge-blue">Fly</span></td><td class="r">11 / 9</td><td class="r"><span class="delta-down">10차 39 (-25명 풀)</span></td></tr>
+        <tr><td>GlideSpeed Lv2 (100km/h)</td><td><span class="badge badge-blue">Fly</span></td><td class="r">10 / 5</td><td class="r"><span class="delta-down">10차 31 (-25명 풀)</span></td></tr>
+        <tr><td>GlideSpeed Lv4 (200km/h)</td><td><span class="badge badge-blue">Fly</span></td><td class="r">8 / 5</td><td class="r"><span class="delta-down">10차 21</span></td></tr>
+        <tr><td>SurvivalCount Lv1</td><td><span class="badge badge-purple">Run</span></td><td class="r">7 / 7</td><td class="r"><span class="delta-down">10차 8 (-1)</span></td></tr>
+        <tr><td>MostTagsInOneGame Lv1 (3태그)</td><td><span class="badge badge-yellow">Chase</span></td><td class="r">6 / 6</td><td class="r"><span class="delta-flat">10차 20 (-14)</span></td></tr>
+        <tr><td>MostTagsInOneGame Lv3 (6태그)</td><td><span class="badge badge-yellow">Chase</span></td><td class="r">6 / 6</td><td class="r"><span class="delta-down">10차 17 (-11)</span></td></tr>
+        <tr><td>MostTagsInOneGame Lv2</td><td><span class="badge badge-yellow">Chase</span></td><td class="r">6 / 5</td><td class="r"><span class="delta-down">10차 17 (-11)</span></td></tr>
+        <tr><td>GlideSpeed Lv3 (150km/h)</td><td><span class="badge badge-blue">Fly</span></td><td class="r">4 / 4</td><td class="r"><span class="delta-down">10차 31</span></td></tr>
+        <tr><td>RunnerFlightDistance Lv1</td><td><span class="badge badge-purple">Run</span></td><td class="r">4 / 4</td><td class="r"><span class="delta-down">10차 21</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>Fly 트랙</strong>이 여전히 가장 활발 (Lv1~4 4~12명). <strong>Chase 트랙 MostTagsInOneGame Lv1~3</strong>은 6/6/6명으로 동등 분포 — Tag PvP 매치(섹션 11) 도입 효과로 추정. <strong>SurvivalCount Lv1 7명 부각</strong>: PT10 TOP에 없었던 도전과제가 PT11 신규로 진입. 도전과제 클레임 총량은 333건 → 101건(-70%)으로 큰 폭 감소 (참여자 -42% 영향 + 코어 유저 깊이 감소).
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:24px 0 8px;color:#555">신규 유저 7명 한정 온보딩 심층</div>
+  <div class="section-desc">
+    <strong>신규 정의</strong>: Game Users 시트 <code>played_playtests</code>에 "11차 Playtest"가 있고 그 외 정규 플테(2-1 UT~10차)에 참여 이력이 없는 유저 = PT11이 첫 정규 플테인 유저 7명. 모두 BigQuery 활동 있음.
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-box"><div class="label">신규 코호트</div><div class="value">7명</div><div class="sub">10차 17 (<span class="alert">-59%</span>)</div></div>
+    <div class="kpi-box"><div class="label">Tutorial 완료율</div><div class="value">100%</div><div class="sub">7/7 진입 → 7/7 완료</div></div>
+    <div class="kpi-box"><div class="label">roomDisconnect</div><div class="value">86%</div><div class="sub">6/7 (1명 미러로비 미진입)</div></div>
+    <div class="kpi-box"><div class="label">Shop 구매</div><div class="value">0%</div><div class="sub">PT10 41% (7/17)</div></div>
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:#555">신규 7명 행동 상세</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Meta Name</th>
+        <th class="r">Events</th>
+        <th class="r">Sessions</th>
+        <th class="r">Tutorial</th>
+        <th class="r">roomDisc</th>
+        <th class="r">Tag 매치 입장</th>
+        <th class="r">바주카 발사</th>
+        <th class="r">구매</th>
+      </tr></thead>
+      <tbody>
+        <tr class="highlight-row"><td>Dylancns</td><td class="r">302</td><td class="r">3</td><td class="r">✅</td><td class="r">✅</td><td class="r">3</td><td class="r">7</td><td class="r">0</td></tr>
+        <tr class="highlight-row"><td>YeepNPC</td><td class="r">302</td><td class="r">1</td><td class="r">✅</td><td class="r">✅</td><td class="r">11</td><td class="r">2</td><td class="r">0</td></tr>
+        <tr><td>Glitchpandavr</td><td class="r">169</td><td class="r">2</td><td class="r">✅</td><td class="r">✅</td><td class="r">0</td><td class="r">2</td><td class="r">0</td></tr>
+        <tr><td>nu4</td><td class="r">151</td><td class="r">2</td><td class="r">✅</td><td class="r">✅</td><td class="r">0</td><td class="r">2</td><td class="r">0</td></tr>
+        <tr><td>Angus the higland</td><td class="r">116</td><td class="r">2</td><td class="r">✅</td><td class="r">✅</td><td class="r">0</td><td class="r">0</td><td class="r">0</td></tr>
+        <tr><td>TheDude6921</td><td class="r">33</td><td class="r">1</td><td class="r">✅</td><td class="r">✅</td><td class="r">0</td><td class="r">0</td><td class="r">0</td></tr>
+        <tr><td>dino nugget</td><td class="r">32</td><td class="r">1</td><td class="r">✅</td><td class="r">❌</td><td class="r">0</td><td class="r">0</td><td class="r">0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:#555">신규 7명 행동 분류</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>분류</th><th class="r">인원</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td>풀 참여 (Tutorial + roomDisc + 신규 기능 사용)</td><td class="r">4명</td><td>Dylancns·YeepNPC·Glitchpandavr·nu4 — 모두 바주카 사용, Dylancns·YeepNPC는 Tag 매치 참여</td></tr>
+        <tr><td>참여만 (Tutorial + roomDisc, 신규 기능 미사용)</td><td class="r">2명</td><td>Angus the higland·TheDude6921 — Tag/바주카 미사용</td></tr>
+        <tr><td>튜토리얼만 완료 (roomDisc 없음)</td><td class="r">1명</td><td>dino nugget — 32 events, sdkStart는 했으나 미러로비 진입 안 함</td></tr>
+        <tr><td>구매 발생</td><td class="r">0명</td><td>PT10 신규 17명 중 7명(41%) 구매 vs PT11 신규 0명 — 신규 유저 코스메틱 진입 단절</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>Tutorial 완료율 100%(7/7)</strong>: PT10 신규 17명도 100% — 신규 유저의 튜토리얼 통과 패턴 일관. <strong>roomDisconnect 86%(6/7)</strong>: 1명(dino nugget)이 sdkStart 후 미러로비 진입 안 함 — 비정상 종료 또는 의도적 미진입. <strong>구매 0명</strong>은 PT10 신규 17명 중 7명(41%) 대비 큰 격차 — 코스메틱 진입 분리.<br>
+    <strong>Dylancns + YeepNPC 동일 events 302건</strong>: 정확히 같은 활동량의 두 메타 계정 — 동일 유저의 2개 계정(Sub Account) 또는 함께 플레이한 친구 관계 가능성. Discord 매칭 단계에서 cross-check 권장.<br>
+    <strong>신규 7명의 신규 기능 사용</strong>: 바주카 4명·Tag PvP 2명(Dylancns·YeepNPC) — 신규 유저도 신규 기능에 합리적 진입.
+  </div>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    <strong>신규 구매 0건</strong>: PT10 41% 대비 큰 격차. 표본이 작아(7명) 통계적 의미 약하지만, 신규 입문 번들·온보딩 단계 코스메틱 노출 강화 검토. <strong>dino nugget roomDisconnect 없음</strong>: 비정상 종료 또는 의도적 비진입 — Sentry 로그와 cross-check 권장. <strong>Dylancns + YeepNPC 동일 활동량</strong>: User Master Sub Account 시스템과 cross-check 후 1명/2명 처리 결정.
+  </div>
+</div>
+
+<!-- ===== 9. NEW: 바주카 사용 분석 (PT11 도입) ===== -->
+<div class="section">
+  <div class="section-heading">9. <span class="badge badge-indigo">NEW</span> 바주카 사용 분석 (Rocket Launcher)</div>
+  <div class="section-desc">PT11에서 Casual·Infection 모드에 도입된 신규 무기. <code>rocketLauncherFire</code>(발사) · <code>rocketLauncherGrab</code>(픽업) EVENT_JSON. 발사 이벤트는 <code>gameplayType</code>·<code>hitTarget</code>(0/1)·<code>warheadType</code>("Normal") 기록.</div>
+
+  <div class="kpi-row">
+    <div class="kpi-box"><div class="label">총 발사</div><div class="value">1,906발</div><div class="sub">고유 발사자 36명</div></div>
+    <div class="kpi-box"><div class="label">총 명중</div><div class="value">435발</div><div class="sub">평균 적중률 22.8%</div></div>
+    <div class="kpi-box"><div class="label">픽업</div><div class="value">824건</div><div class="sub">고유 픽업자 42명</div></div>
+    <div class="kpi-box"><div class="label">평균 발사/픽업 비</div><div class="value">2.31</div><div class="sub">픽업 후 평균 발사 수</div></div>
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:#555">모드별 사용 분포</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>모드</th><th class="r">발사</th><th class="r">고유 발사자</th><th class="r">명중</th><th class="r">적중률</th><th class="r">인당 발사</th></tr></thead>
+      <tbody>
+        <tr><td>Casual (로비·캐주얼)</td><td class="r bold">1,282</td><td class="r bold">33명</td><td class="r">307</td><td class="r"><strong>24.0%</strong></td><td class="r">38.8발</td></tr>
+        <tr><td>Infection (Tag PvP)</td><td class="r bold">624</td><td class="r bold">21명</td><td class="r">128</td><td class="r"><strong>20.5%</strong></td><td class="r">29.7발</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>두 모드 모두에서 활용</strong>: Casual에서 더 많이 사용(1,282발, 33명)되며 Infection에서도 안정 활용(624발, 21명). <strong>적중률 20~24%로 모드 간 차이 미미</strong> — 무기 자체 난이도가 모드별로 크게 다르지 않은 디자인. <strong>인당 발사 Casual 38.8발 vs Infection 29.7발</strong>: Casual에서 자유 사격 양상, Infection에서 매치 기반 제한적 사용. <strong>warheadType "Normal" 전용</strong>: sample 모두 단일 종류 — 향후 다른 헤드 추가 시 다양성 확장 여지. <strong>픽업만 한 유저 6명</strong> (픽업자 42명 − 발사자 36명): 들었지만 발사 안 한 케이스 — UX 진단 신호(공격 동작 인지·트리거 위치 등 확인).
+  </div>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    <strong>모드별 적중률 균형</strong>: 22~24%는 일반적 캐주얼 슈터 수준(과조준 어렵지 않음). 의도된 설계인지 추가 튜닝 필요인지 확인. <strong>Infection 적중률 약간 낮음(-3.5%p)</strong>: 매치 중 상대방 이동/회피로 인한 자연스러운 격차로 보임. <strong>픽업(824건) vs 발사(1,906발)</strong>: 픽업 후 평균 2.3발 발사 — 한 번 들면 여러 번 쏘는 패턴.
+  </div>
+</div>
+
+<!-- ===== 10. NEW: Tag PvP 매치 분석 ===== -->
+<div class="section">
+  <div class="section-heading">10. <span class="badge badge-indigo">NEW</span> Tag PvP 매치 분석 (Infection 모드)</div>
+  <div class="section-desc">PT11에서 Infection 모드에 도입된 Blue/Red 팀 기반 매치 시스템. <code>tagMatchStart/End/PlayerJoin/Leave</code> EVENT_JSON. 매치 종료 사유는 <code>endReason</code>(RunnerWin/ChaserWin/InsufficientPlayers) + <code>winnerTeam</code>(Blue/Red/None) + <code>elapsedTime</code>(초).</div>
+
+  <div class="kpi-row">
+    <div class="kpi-box"><div class="label">총 매치</div><div class="value">71</div><div class="sub">완료된 매치만</div></div>
+    <div class="kpi-box"><div class="label">참여자</div><div class="value">13명</div><div class="sub">전체 49명의 27%</div></div>
+    <div class="kpi-box"><div class="label">총 입장</div><div class="value">296건</div><div class="sub">tagMatchPlayerJoin</div></div>
+    <div class="kpi-box"><div class="label">Chaser 승률</div><div class="value">64.6%</div><div class="sub">42/65 (인원 부족 제외)</div></div>
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:#555">매치 결과 분포</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>결과</th><th class="r">매치 수</th><th class="r">비율</th><th class="r">평균 시간(초)</th><th class="r">평균 인원</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Red 팀 승 (ChaserWin)</strong></td><td class="r bold">42</td><td class="r">59%</td><td class="r">120.0</td><td class="r">2.8명</td></tr>
+        <tr><td><strong>Blue 팀 승 (RunnerWin)</strong></td><td class="r bold">23</td><td class="r">32%</td><td class="r">231.6</td><td class="r">5.5명</td></tr>
+        <tr><td>인원 부족 종료 (InsufficientPlayers)</td><td class="r">6</td><td class="r">9%</td><td class="r">41.9</td><td class="r">1.0명</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>Chaser 승률 우위 (Red 42 vs Blue 23 = 64.6% vs 35.4%)</strong>: Chaser는 잡으면 매치 빠른 종료, Runner는 시간 끝까지 버텨야 승 — 매치 메커닉에 따른 자연스러운 비대칭. <strong>인원 효과</strong>: Chaser 승 매치 평균 2.8명, Runner 승 매치 평균 5.5명 — <strong>사람 많을수록 Runner 유리</strong> (Chaser 손이 분산). <strong>매치 시간 격차</strong>: Chaser 승 120초 vs Runner 승 231초(2배 차이) — Runner는 시간 만료까지 버티는 승 구조. <strong>인원 부족 종료 6건(9%)</strong>: 매치 시작 후 1명만 남은 경우 자동 종료 — Tag 매치 안정성 개선 여지.
+  </div>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    <strong>Chaser 우위 64.6%</strong>: 의도된 비대칭인지 밸런스 조정 필요인지 확인 (일반적 비대칭 PvP는 50:50±10%p 권장). 인원 2.8명 vs 5.5명 매치 분포 격차도 함께 검토. <strong>InsufficientPlayers 9%</strong>: 매치 도중 leave 발생(<code>tagMatchPlayerLeave</code> 23건) — leave 시점·이유 분석으로 매치 안정성 강화. <strong>참여자 13명 = 전체 27%</strong>: Tag PvP 콘텐츠 도입은 적극 활용되지만 참여 풀 자체 작음 (모드 진입 유저 25명 중 13명만 매치 참여, 12명은 매치 외 활동) — 매치 모집 UI/유도 개선 여지.
+  </div>
+</div>
+
+<!-- ===== 11. NEW: 궁극기 사용 분석 ===== -->
+<div class="section">
+  <div class="section-heading">11. <span class="badge badge-indigo">NEW</span> 궁극기 사용 분석 (6종 통합)</div>
+  <div class="section-desc">PT11에서 도입된 6종 궁극기 (Chaser 3종 + Runner 3종). <code>useUltimate</code> EVENT_JSON의 <code>gameItemId</code>(<code>ultimate-...</code>) + <code>gameplayType</code> + <code>isTrialGameItem</code>.</div>
+
+  <div class="kpi-row">
+    <div class="kpi-box"><div class="label">총 사용</div><div class="value">1,188회</div><div class="sub">PT10 3,482 (-66%)</div></div>
+    <div class="kpi-box"><div class="label">사용자</div><div class="value">46명</div><div class="sub">전체 49명의 94%</div></div>
+    <div class="kpi-box"><div class="label">인당 평균</div><div class="value">25.8회</div><div class="sub">사용자 46명 기준</div></div>
+    <div class="kpi-box"><div class="label">궁극기 종류</div><div class="value">6종</div><div class="sub">Chaser 3 + Runner 3</div></div>
+  </div>
+
+  <div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:#555">궁극기 종류별 사용 (Casual + Infection)</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>궁극기 ID</th>
+        <th>역할</th>
+        <th class="r">Casual 사용</th>
+        <th class="r">Casual users</th>
+        <th class="r">Infection 사용</th>
+        <th class="r">Infection users</th>
+        <th class="r">총 users</th>
+      </tr></thead>
+      <tbody>
+        <tr class="highlight-row"><td><strong>chaser-flyinggiant</strong></td><td><span class="badge badge-red">Chaser</span></td><td class="r">313</td><td class="r bold">41</td><td class="r">17</td><td class="r">12</td><td class="r bold">42명</td></tr>
+        <tr><td>chaser-spider</td><td><span class="badge badge-red">Chaser</span></td><td class="r">144</td><td class="r">21</td><td class="r">7</td><td class="r">5</td><td class="r">21명</td></tr>
+        <tr><td>chaser-heavygiant</td><td><span class="badge badge-red">Chaser</span></td><td class="r">202</td><td class="r">9</td><td class="r">14</td><td class="r">3</td><td class="r">9명</td></tr>
+        <tr><td>runner-flash</td><td><span class="badge badge-blue">Runner</span></td><td class="r">78</td><td class="r">18</td><td class="r">10</td><td class="r">5</td><td class="r">19명</td></tr>
+        <tr><td><strong>runner-fist</strong></td><td><span class="badge badge-blue">Runner</span></td><td class="r bold">265</td><td class="r">15</td><td class="r">12</td><td class="r">5</td><td class="r">17명</td></tr>
+        <tr><td>runner-bomber</td><td><span class="badge badge-blue">Runner</span></td><td class="r">109</td><td class="r">13</td><td class="r">17</td><td class="r">9</td><td class="r">18명</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>chaser-flyinggiant 42명 사용</strong>: 궁극기 사용자 46명 중 91%·전체 49명 중 86%가 시도 — 6종 중 가장 인기. <strong>runner-fist 인당 16.3회</strong>(277회/17명 union): 사용자는 적지만 한 명당 매우 자주 사용 — 코어 매니아 패턴. <strong>chaser-heavygiant 인당 24.0회</strong>(216회/9명): 비슷한 매니아 패턴. <strong>총 사용 1,188회로 PT10 3,482 대비 -66%</strong>: 참여자 -42% + 인당 사용 횟수 감소(PT10 3,482/41 = 평균 85회 → PT11 1,188/46 = 25.8회).<br>
+    <strong>Chaser 궁극기 3종이 Runner 3종보다 사용량 압도</strong> (Chaser 697회 [Casual 659 + Infection 38] vs Runner 491회 [Casual 452 + Infection 39]): Tag 매치 Chaser 승률(64.6%)과 연관 가능 — Chaser 진영 메커닉이 더 적극적 사용 유도.
+  </div>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    <strong>chaser-flyinggiant 편중(94% 보급)</strong>: 다른 5종이 상대적으로 덜 사용됨 — 디폴트 궁극기인지, 가장 강력한지, 가장 접근성 좋은지 확인. 6종 밸런스 조정 시 사용 빈도 분포를 기준점으로 활용. <strong>runner-fist 인당 17.7회</strong>: 매니아 사용 패턴은 콘텐츠 활용도 면에서 긍정. 다른 Runner 궁극기(flash·bomber)도 동등하게 활용되도록 유도하는 방안 검토.
+  </div>
+</div>
+
+<!-- ===== 12. NEW: STATISTICS_JSON 분포 (PlayFab v2) ===== -->
+<div class="section">
+  <div class="section-heading">12. <span class="badge badge-indigo">NEW</span> Obby 클리어 통계 (STATISTICS_JSON / PlayFab v2)</div>
+  <div class="section-desc">PlayFab v2 마이그레이션 이후 새로 가시화된 <code>STATISTICS_JSON</code> 분포. 시간류 stat은 centiseconds(_cs) 단위 — 표시 시 /100 → 초 변환. 각 유저의 가장 최근 이벤트 기준.</div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Stat 키</th>
+        <th>의미</th>
+        <th class="r">기록 유저</th>
+        <th class="r">평균</th>
+        <th class="r">중앙값</th>
+        <th class="r">최대</th>
+      </tr></thead>
+      <tbody>
+        <tr class="highlight-row"><td><code>sky_obby_clear_count</code></td><td>Sky Obby 클리어 횟수</td><td class="r bold">11명</td><td class="r">2.7회</td><td class="r">2회</td><td class="r">9회</td></tr>
+        <tr class="highlight-row"><td><code>sky_obby_clear_time_cs</code></td><td>Sky Obby 가장 빠른 클리어 시간</td><td class="r bold">11명</td><td class="r">335.0초</td><td class="r">171.3초</td><td class="r">664.2초</td></tr>
+        <tr><td><code>obby_clear_count</code></td><td>Obby (일반) 클리어 횟수</td><td class="r">3명</td><td class="r">1.0회</td><td class="r">1회</td><td class="r">1회</td></tr>
+        <tr><td><code>obby_clear_time_cs</code></td><td>Obby (일반) 가장 빠른 클리어 시간</td><td class="r">3명</td><td class="r">136.7초</td><td class="r">153.1초</td><td class="r">206.2초</td></tr>
+        <tr><td><code>slope_obby_clear_count</code></td><td>Slope Obby 클리어 횟수</td><td class="r">3명</td><td class="r">1.3회</td><td class="r">1회</td><td class="r">2회</td></tr>
+        <tr><td><code>slope_obby_clear_time_cs</code></td><td>Slope Obby 가장 빠른 클리어 시간</td><td class="r">3명</td><td class="r">1,205.9초 (≈20분)</td><td class="r">1,058.6초 (≈17.6분)</td><td class="r">1,936.2초 (≈32분)</td></tr>
+        <tr><td><code>horror_total_seeds</code></td><td>호러 모드 누적 시드</td><td class="r">2명</td><td class="r">395</td><td class="r">280</td><td class="r">510</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="obs">
+    <div class="tag">관찰</div>
+    <strong>Sky Obby가 가장 많이 클리어된 모드 (11명)</strong>: 모드별 진입자 ObbyR 15명 중 11명(73%)이 1회 이상 클리어 성공 — Sky 타워 모드의 안정적 활용. 평균 클리어 시간 335초(약 5.6분)는 길지만 최대 9회 반복 클리어한 유저 존재 (코어 매니아). <strong>Slope Obby 평균 1,205.9초(≈20분)</strong>(중앙값 17.6분): Sky Obby(평균 335초) 대비 약 3.6배·Obby 일반(평균 136.7초) 대비 약 8.8배 긴 시간 — 난이도 또는 코스 길이 차이. <strong>Obby (일반) 3명만 클리어</strong>(전체 9명 진입 중 33%): Casual로 가는 라인이지만 클리어까지 가는 비율은 낮음. <strong>Horror 누적 시드 2명만 기록</strong>: Horror 모드 진입자 12명 중 2명(17%)만 시드 stat 기록 — 호러 모드 시드 메커닉 가시화율 낮음.
+  </div>
+  <div class="review">
+    <div class="tag">검토 사항</div>
+    <strong>Slope Obby 평균 20분</strong>은 다른 Obby 대비 매우 김 — 의도된 난이도인지, 막히는 구간이 있는지 확인. <strong>Sky Obby 최대 9회 반복</strong>: 동일 유저가 반복 클리어 — 콘텐츠 깊이 양호 신호. 다만 Sky Obby clear time 최대 664초(11분)도 있어 클리어 시간 분포가 광범위. <strong>STATISTICS 표본 부족</strong>: stat별 2~11명 수준이라 통계적 유의성 약함. 다음 PT부터 베이스 확보 시 의미 있는 비교 가능.
+  </div>
+</div>
+
+<!-- ===== 13. 관찰 & 검토 사항 ===== -->
+<div class="section">
+  <div class="section-heading">13. 관찰 & 검토 사항</div>
+
+  <div class="obs">
+    <div class="tag">긍정 변화 / 안정 유지</div>
+    <ul style="margin:8px 0 0 16px;padding:0;line-height:2">
+      <li><strong>Tutorial 완료율 +2.2%p</strong> (91.9% → 94.1%) — PT10 정비 효과 유지</li>
+      <li><strong>잔존율 98.0%</strong> — PT8/9/10/11 95%+ 일관 유지</li>
+      <li><strong>D1 retention 66.7%</strong>(양일 24명) — PT10 40% 대비 향상 (베이스 작음 감안)</li>
+      <li><strong>리텐션 32명 = PT10과 동일</strong> — 코어 유저 유지</li>
+      <li><strong>Obby 클리어율 +2.1%p</strong> (9.2% → 11.3%)</li>
+      <li><strong>ObbyR/ObbyC 인당 시간 증가</strong> (ObbyR 4.0→6.9분, ObbyC 2.4→6.5분)</li>
+      <li><span class="badge badge-indigo">NEW</span> <strong>바주카 1,906발/36명</strong> 신규 무기 적극 활용</li>
+      <li><span class="badge badge-indigo">NEW</span> <strong>Tag PvP 매치 71회/13명</strong> 신규 PvP 시스템 안정 정착</li>
+      <li><span class="badge badge-indigo">NEW</span> <strong>궁극기 6종 통합 사용 46명(94%)</strong> — 거의 모든 유저가 시도</li>
+      <li><span class="badge badge-indigo">NEW</span> <strong>STATISTICS_JSON 가시화</strong> — Sky Obby 클리어 11명·반복 최대 9회</li>
+    </ul>
+  </div>
+
+  <div class="review">
+    <div class="tag">검토 사항 (확인 필요한 추정)</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>관찰</th><th>맥락 / 다음 액션</th></tr></thead>
+        <tbody>
+          <tr><td><strong>참여자 -42% (85 → 49)</strong></td><td><strong>PT11 시작일 5/10(일) = 미국 어머니의 날 정확 일치</strong> (미국 베이스 71%) / PT10 직후 2주 간격 / 사전 홍보 채널 변동 — 다음 PT는 어머니의 날·아버지의 날·기념일 회피 권장</td></tr>
+          <tr><td><strong>복귀 -72% (36 → 10) + 신규 -59% (17 → 7)</strong></td><td>리텐션 32명 유지에도 신규·복귀 모집이 동시 후퇴. PT10에 +70%로 폭증한 신규 효과 종료 + PT10 참여자 53명(85명 중 62%)이 PT11 미참여 (섹션 5 토글 참조). 채널별 유입 경로 + 미참여자 후속 활동 추적 권장</td></tr>
+          <tr><td><strong>Horror -82% (8.8h → 1.6h)</strong></td><td>PT10에서 4.2배 폭증했던 효과 종료 + PvP 신규 콘텐츠로 시간 이동 가능성. 콘텐츠 변경 없으므로 신선도 효과 가능성 우세</td></tr>
+          <tr><td><strong>Casual·Infection -47%·-54%</strong></td><td>참여자 -42% 직접 영향 + Tag 매치(매치 외 활동 12명) 모집 효율</td></tr>
+          <tr><td><strong>JetPack 단계 73.6 → 90.5초</strong></td><td>PT10에서 73.6초(5.5배 이상치) 발견 후 PT11에 90.5초로 더 늘어남 — 단계 내 세부 동선 점검 필요</td></tr>
+          <tr><td><strong>Tag PvP Chaser 승률 64.6%</strong></td><td>의도된 비대칭인지 밸런스 조정 필요인지 확인. 인원 분포(Chaser 승 2.8명 vs Runner 승 5.5명)도 함께 검토</td></tr>
+          <tr><td><strong>InsufficientPlayers 9% (6/71 매치)</strong></td><td>매치 도중 leave(<code>tagMatchPlayerLeave</code> 23건) — leave 시점·이유로 매치 안정성 강화</td></tr>
+          <tr><td><strong>chaser-flyinggiant 41명 편중</strong></td><td>6종 궁극기 중 1종이 94% 보급 — 디폴트/강함/접근성 중 어느 요인인지 확인 후 밸런스 조정 기준점 활용</td></tr>
+          <tr><td><strong>신규 구매 0건 (PT10 41% 대비)</strong></td><td>표본 작지만 신규 입문 번들·온보딩 단계 코스메틱 노출 강화 검토</td></tr>
+          <tr><td><strong>구매 다양성 36% (13/36종)</strong></td><td>PT9 75% → PT10 56% → PT11 36% 지속 감소. 신규 코스메틱 추가 + 인기 카테고리(DJ -86%) 강화 검토</td></tr>
+          <tr><td><strong>GN 100+ 보유자 1 → 3명</strong></td><td>헤비 코어층 GN 누적 — 고가 코스메틱·테크트리 추가 시점 검토 (PT10 검토 항목 지속)</td></tr>
+          <tr><td><strong>Seeds 중앙값 -54%</strong> (3,492 → 1,623)</td><td>Seeds 소비처(가젯·총·제트팩) 사용 증가 가능성 + 신규/짧은 체류 유저 비중 영향</td></tr>
+          <tr><td><strong>Dylancns + YeepNPC 동일 events 302건</strong></td><td>정확히 동일한 활동량의 두 메타 계정 — Sub Account 또는 동행 플레이 관계 가능성. User Master Sub Account 시스템과 cross-check 후 1명/2명 처리 결정</td></tr>
+          <tr><td><strong>dino nugget roomDisconnect 없음</strong></td><td>32 events·1 session으로 sdkStart는 했지만 미러로비 진입 안 함 — Sentry 로그 cross-check 권장</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 부록 ===== -->
+<div class="section">
+  <div class="section-heading">부록</div>
+
+  <details>
+    <summary>국가별 분포 (11차, 전체 10개국 합계 = 49명)</summary>
+    <div class="table-wrap">
+      <table style="margin-top:8px">
+        <thead><tr><th>국가</th><th class="r">참여자</th><th class="r">비율</th></tr></thead>
+        <tbody>
+          <tr><td>US</td><td class="r bold">35</td><td class="r bold">71.4%</td></tr>
+          <tr><td>CA</td><td class="r">3</td><td class="r">6.1%</td></tr>
+          <tr><td>GB</td><td class="r">3</td><td class="r">6.1%</td></tr>
+          <tr><td>DK / ID / NL / DE / BR / IN / AU (각 1)</td><td class="r">7</td><td class="r">14.4%</td></tr>
+          <tr><td>(미명시 1)</td><td class="r">1</td><td class="r">2.0%</td></tr>
+          <tr><td><strong>합계</strong></td><td class="r bold">49</td><td class="r bold">100.0%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:13px;color:#666;margin-top:8px">📌 출처: Game Users 시트 + BigQuery USER_COUNTRY 양쪽 직접 검증 (CLIENT_VERSION = '0.15.0').</div>
+  </details>
+
+  <details>
+    <summary>게임 업계 표준 지표 — PT11</summary>
+    <div class="table-wrap">
+      <table style="margin-top:8px">
+        <thead><tr><th>지표</th><th class="r">PT11</th><th class="r">PT10</th><th class="r">설명</th></tr></thead>
+        <tbody>
+          <tr><td><strong>PCCU</strong> (Peak Concurrent Users)</td><td class="r bold">13명</td><td class="r">19명</td><td>분당 동시 활동 유저 max. KST 5/10 15:04 (플테 시작 후 약 9시간)</td></tr>
+          <tr><td><strong>Total Participants</strong></td><td class="r">49명</td><td class="r">85명</td><td>플테 기간 전체 참여한 unique 유저 (시트 기준)</td></tr>
+          <tr><td><strong>Peak DAU</strong></td><td class="r">36명</td><td class="r">65명</td><td>일별 unique 유저 max (BigQuery)</td></tr>
+          <tr><td><strong>D1 Retention</strong></td><td class="r">66.7%</td><td class="r alert">40.0%</td><td>1일차 참여자 중 2일차 복귀 비율 (24/36, BigQuery 기준)</td></tr>
+          <tr><td><strong>Avg Session Length</strong> (분, roomDisconnect)</td><td class="r">3.2</td><td class="r">3.1</td><td>roomDisconnect.elapsedTime 평균</td></tr>
+          <tr><td><strong>Median Playtime per User</strong> (분)</td><td class="r">29.8</td><td class="r">41.9</td><td>인당 총 체류 중앙값</td></tr>
+          <tr><td><strong>Sessions per User</strong></td><td class="r">13.7</td><td class="r">14.6</td><td>총 세션 / 참여자 (시트 기준)</td></tr>
+          <tr><td><strong>Tutorial Completion Rate</strong></td><td class="r">94.1%</td><td class="r">91.9%</td><td>tutorialEnd 이벤트 기준</td></tr>
+          <tr><td><strong>Shop Conversion Rate</strong></td><td class="r">37.1%</td><td class="r">39.1%</td><td>shopEnter unique → purchaseItem unique</td></tr>
+          <tr><td><strong>Cohort Retention (over PT)</strong></td><td class="r">98.0%</td><td class="r">97.8%</td><td>PT10+PT11 union 중 잔존 비율</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:13px;color:#666;margin-top:8px">📌 짧은 운영 기간(30시간) + 집중 모객 특성으로 D1 retention 등은 일반 라이브 게임의 동일 지표와 직접 비교 어려움 (참고치로 활용).</div>
+  </details>
+
+  <details>
+    <summary>데이터 출처 + 파이프라인 (PlayFab v2 키 명시)</summary>
+    <div style="padding:12px 0;font-size:13px;color:#555;line-height:1.8">
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            <tr><td class="bold">게임 이벤트</td><td>BigQuery <code>runuts-analytics.runuts.events_with_users</code></td></tr>
+            <tr><td class="bold">집계 시트</td><td>Game Users / Playtest Summary / Playtest Daily / Event Breakdown (UTC GROUP BY 원본)</td></tr>
+            <tr><td class="bold">파이프라인</td><td>BigQuery → <code>sync_game_data.py</code> → Sheets → <code>generate_report_data.py</code> → JSON → 본 HTML (+ 보강 분석은 <code>pt_report_data_collector.py</code>로 직접 BigQuery 쿼리)</td></tr>
+            <tr><td class="bold">체류시간</td><td><code>roomDisconnect</code> EVENT_JSON → <code>elapsedTime</code> (초)</td></tr>
+            <tr><td class="bold">모드별</td><td><code>roomDisconnect</code> EVENT_JSON → <code>gameplayType</code> + <code>roomName</code></td></tr>
+            <tr><td class="bold">경제 (PlayFab v2)</td><td><code>purchaseItem</code> + <code>VIRTUAL_CURRENCY_JSON</code> (<code>currency-goldennut</code>=GN, <code>currency-seed</code>=Seeds) — 2026-05-12 v1 키(<code>C1</code>/<code>C2</code>)에서 v2 FriendlyId로 변경</td></tr>
+            <tr><td class="bold">STATISTICS (PlayFab v2)</td><td><code>STATISTICS_JSON</code> — snake_case + 시간류 <code>_cs</code>(centiseconds) suffix. 동적 키 추출로 견고하게 처리</td></tr>
+            <tr><td class="bold">ITEMS (PlayFab v2)</td><td>v2부터 default 37개 자동 포함 (Catalog Tags: ["default"]) — 본 보고서는 EVENT_JSON itemId 기반이라 영향 없음</td></tr>
+            <tr><td class="bold">도전과제</td><td><code>achievementClaimed</code> + <code>game_config/Achievements.json</code> (track/reward)</td></tr>
+            <tr><td class="bold">튜토리얼 단계</td><td><code>tutorialStepStart/End</code> EVENT_JSON → <code>tutorialStepId</code> (TU_INIT_ prefix 제거) + <code>elapsedTime</code></td></tr>
+            <tr><td class="bold">바주카 (NEW)</td><td><code>rocketLauncherFire</code> + <code>rocketLauncherGrab</code> — gameplayType / hitTarget / warheadType / grabSeconds</td></tr>
+            <tr><td class="bold">Tag PvP 매치 (NEW)</td><td><code>tagMatchStart/End</code> + <code>tagMatchPlayerJoin/Leave</code> — matchSessionId / playerCount / winnerTeam / elapsedTime / endReason</td></tr>
+            <tr><td class="bold">궁극기 (NEW)</td><td><code>useUltimate</code> — gameItemId(ultimate-...) / gameplayType / isTrialGameItem</td></tr>
+            <tr><td class="bold">PCCU</td><td>분당 unique users max. KST 시간 = <code>TIMESTAMP_TRUNC(TIMESTAMP_ADD(EVENT_TIMESTAMP, INTERVAL 9 HOUR), MINUTE)</code></td></tr>
+            <tr><td class="bold">D1 retention</td><td>KST 자정 기준 5/10 ↔ 5/11 USER_ID 교집합</td></tr>
+            <tr><td class="bold">Shop conversion</td><td><code>shopEnter</code> / <code>equipItem</code> / <code>purchaseItem</code> 단계별 <code>COUNT(DISTINCT USER_ID)</code></td></tr>
+            <tr><td class="bold">PT9 데이터</td><td>BigQuery <code>CLIENT_VERSION = '0.13.0'</code>. EVENT_TIMESTAMP 2026-04-05 ~ 2026-04-06</td></tr>
+            <tr><td class="bold">PT10 데이터</td><td>BigQuery <code>CLIENT_VERSION = '0.14.0_0425'</code>. 정식 빌드만 (시도1 0.14.0은 무효 처리). EVENT_TIMESTAMP 2026-04-26 ~ 2026-04-27</td></tr>
+            <tr><td class="bold">PT11 데이터</td><td>BigQuery <code>CLIENT_VERSION = '0.15.0'</code>. EVENT_TIMESTAMP 2026-05-10 ~ 2026-05-11 KST</td></tr>
+            <tr><td class="bold">시간대</td><td>BigQuery는 UTC. KST 일별 = <code>DATE(TIMESTAMP_ADD(EVENT_TIMESTAMP, INTERVAL 9 HOUR))</code></td></tr>
+            <tr><td class="bold">표준 가이드</td><td><code>docs/PLAYTEST_ANALYSIS_GUIDE.md</code> (내부 표준, 14종 함정 매트릭스 8.1 / PlayFab v2 키 매핑 8.8 참조)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>데이터 정합성 메모 (F-10 베이스 차이 · F-14 PlayFab v2 마이그레이션 등)</summary>
+    <ul style="margin:8px 0 0 16px;padding:0;line-height:2;font-size:13px;color:#555">
+      <li><strong>F-10 베이스 차이 (PT11)</strong>: 시트 Game Users 49명 / BigQuery roomDisconnect 발생자 39명 / BigQuery sdkStart 활동자 49명 / GN balance 보유자 49명. KPI는 시트 기준 49명, 체류·모드별은 39명 베이스 명시.</li>
+      <li><strong>F-14 PlayFab v2 마이그레이션</strong>: 2026-05-12 적용. <code>VIRTUAL_CURRENCY_JSON</code>의 v1 키(<code>C1</code>/<code>C2</code>)와 v2 키(<code>currency-seed</code>/<code>currency-goldennut</code>) 양쪽 모두 지원하는 COALESCE 쿼리로 PT9~PT11 일관 산출. <strong>PT10 GN balance 재수집 시 v2 키로 81명(보고서 85명 - 4명)</strong> — 일부 유저 currency가 v2 마이그레이션 후 NULL 처리됐을 가능성. PT10 보고서 수치는 v1 시점에 산출된 85명 기준 유지.</li>
+      <li>참여자 수 출처 차이: 시트 49명(Playtest Summary, 모든 이벤트 발생 유저) ↔ BigQuery 모드별 unique 39명(roomDisconnect 발생 유저). 본문은 시트 기준을 메인, 모드별·플레이타임 분석은 39명 기준 명시.</li>
+      <li>유저 3분할(리텐션 32 + 복귀 10 + 신규 7 = 49)은 Game Users 시트 played_playtests 시퀀스 기준.</li>
+      <li>Tutorial 완료율 두 측정: <code>tutorialEnd</code> 94.1%(보편적 완료, 16/17) ↔ Step 추적 82.4%(EndTutorial 단계 통과, 14/17). 측정 기준이 다르므로 두 수치 모두 출처와 함께 명시. <strong>EndTutorial step의 end_count=30 vs end_users=14 격차</strong>: end_count 30은 unique users 14의 약 2배 — 동일 유저가 EndTutorial 이벤트를 2회 발생시킨 케이스로 추정(재로딩·재시작 가능성). unique users 기준으로 측정하면 일관됨.</li>
+      <li>Shop conversion 13/35 = 37.1% — 시트 기준 funnel과 약간 차이 가능(분석 노트 35%). collector 직접 산출 값을 사용.</li>
+      <li><strong>11차 5/9(토) 22명 활동</strong>: 시트 daily에 5/9 22명 dau가 기록되어 있으나 BigQuery v0.15.0 EVENT_TIMESTAMP는 5/10 06:01 ~ 5/11 12:04 KST. 5/9 데이터는 PT 시작 전 별도 빌드 테스트로 추정 (본 보고서는 BigQuery 실제 기간 5/10~5/11만 사용).</li>
+      <li>KJisacoolking777 동일 Meta Name으로 2개 USER_ID 발견 — Sub Account 가능성. 본 보고서는 BigQuery 데이터 기준이라 2명으로 카운트.</li>
+      <li>모든 unique 카운트는 BigQuery <code>COUNT(DISTINCT USER_ID)</code> 또는 시트 직접 집계.</li>
+    </ul>
+  </details>
+</div>
+
+<div class="report-footer">
+  RUNuts Analytics · 11차 Playtest · 2026-05-12<br>
+  EDA 기술통계 보고서 · BigQuery + Sheets + 게임 설계 데이터 기반 · Stage 2 1차 빌드 v0.15.0 (바주카·Tag PvP·궁극기 6종 도입)<br>
+  PlayFab v2 마이그레이션 적용 (F-14)
+</div>
+
+<script>
+function setCompare(n, el) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  if (n === 3) document.body.classList.add('show3');
+  else document.body.classList.remove('show3');
+}
+document.body.classList.add('show3');
+
+const C={primary:'#FF9900',gray:'#d1d5db',green:'#22c55e',blue:'#60a5fa',yellow:'#eab308',red:'#dc2626',purple:'#a855f7',slate:'#94a3b8',indigo:'#6366f1',grid:'#e9ecef'};
+
+// 체류시간 분포
+new Chart(document.getElementById('chartPlaytime'),{
+  type:'bar',
+  data:{labels:['0~5분','5~15분','15~30분','30~60분','60~120분','120분+'],
+    datasets:[
+      {label:'11차',data:[6,3,11,5,10,4],backgroundColor:C.primary,borderRadius:4},
+      {label:'10차',data:[10,15,3,14,12,13],backgroundColor:C.gray,borderRadius:4},
+      {label:'9차',data:[9,9,13,10,6,8],backgroundColor:C.slate,borderRadius:4}
+    ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{font:{size:13},boxWidth:12}}},
+    scales:{y:{beginAtZero:true,title:{display:true,text:'명',font:{size:11}},grid:{color:C.grid}},x:{grid:{display:false}}}}
+});
+
+// 일별 추이 (KST 자정 GROUP BY, 2일)
+// dataset order: line(0)이 bar(2)보다 먼저 그려져 위에 표시 → hover 영역 확보 (F-12)
+// 이벤트 line은 8,747·8,836로 거의 평탄(+1%) — DAU·세션과 단위 차이 크므로 별도 우측 축
+new Chart(document.getElementById('chartDaily'),{
+  data:{labels:['5/10 (일, 06:01~23:51)','5/11 (월, 00:10~12:04)'],
+    datasets:[
+      {type:'line',label:'세션 (좌측축)',data:[396,273],borderColor:C.blue,backgroundColor:'rgba(96,165,250,0.1)',tension:0.3,yAxisID:'y',order:0,pointRadius:6,pointHoverRadius:10,borderWidth:3},
+      {type:'line',label:'이벤트 (우측축)',data:[8747,8836],borderColor:C.green,backgroundColor:'rgba(34,197,94,0.1)',tension:0.3,yAxisID:'y2',order:1,pointRadius:6,pointHoverRadius:10,borderWidth:3,borderDash:[6,4]},
+      {type:'bar',label:'DAU (좌측축)',data:[36,28],backgroundColor:'rgba(255,153,0,0.7)',borderRadius:3,yAxisID:'y',order:2}
+    ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    interaction:{intersect:false,mode:'index'},
+    plugins:{legend:{position:'top',labels:{font:{size:13},boxWidth:12,usePointStyle:true}}},
+    scales:{
+      y:{beginAtZero:true,position:'left',title:{display:true,text:'DAU · 세션',font:{size:11}},grid:{color:C.grid}},
+      y2:{beginAtZero:true,position:'right',title:{display:true,text:'이벤트',font:{size:11}},grid:{display:false},ticks:{callback:v=>(v/1000)+'k'}},
+      x:{grid:{display:false}}}}
+});
+
+// 모드별 (gameplayType 합산)
+new Chart(document.getElementById('chartModeTime'),{
+  type:'bar',
+  data:{labels:['Casual','Infection','Horror','ObbyR (Sky Tower)','Obby (Circuit)','ObbyC'],
+    datasets:[
+      {label:'11차',data:[19.3,8.7,1.6,4.5,0.6,1.4],backgroundColor:C.primary,borderRadius:3},
+      {label:'10차',data:[36.5,18.8,8.8,2.0,3.2,0.6],backgroundColor:C.gray,borderRadius:3},
+      {label:'9차',data:[32.2,14.6,2.1,4.5,2.1,0.0],backgroundColor:C.slate,borderRadius:3}
+    ]},
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    plugins:{legend:{position:'top',labels:{font:{size:13},boxWidth:12}}},
+    scales:{x:{beginAtZero:true,title:{display:true,text:'시간(h)',font:{size:11}},grid:{color:C.grid}},
+      y:{grid:{display:false},ticks:{font:{size:13}}}}}
+});
+
+// 유저 3분할
+new Chart(document.getElementById('chartUserType'),{
+  type:'doughnut',
+  data:{labels:['리텐션 (32)','복귀 (10)','신규 (7)'],
+    datasets:[{data:[32,10,7],backgroundColor:[C.green,C.blue,C.yellow],borderWidth:2,borderColor:'#fff'}]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:13},boxWidth:12}}}}
+});
+
+// GN 분포 (8 구간) — PlayFab v2 키 (currency-goldennut)
+new Chart(document.getElementById('chartGNDist'),{
+  type:'bar',
+  data:{labels:['0','1~5','6~10','11~20','21~30','31~50','51~100','100+'],
+    datasets:[{label:'11차 (인원)',data:[1,12,8,10,4,8,3,3],backgroundColor:C.primary,borderRadius:3}]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{y:{beginAtZero:true,title:{display:true,text:'명',font:{size:11}}},x:{grid:{display:false}}}}
+});
+</script>
+
+</body>
+</html>
