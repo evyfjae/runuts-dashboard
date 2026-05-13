@@ -144,7 +144,7 @@
 <!-- ===== 3. 플레이타임 + 일별 추이 ===== -->
 <div class="section">
   <div class="section-heading">3. 플레이타임 + 일별 추이</div>
-  <div class="section-desc">80명 보정 베이스 (정상 67명 roomDisconnect.elapsedTime 합산 + 갭 13명 추정: 마지막 이벤트 + 20초). 시트 기준 참여자 85명. 구간 분포 표는 정상 67명 기준. KST 자정 기준 GROUP BY (BigQuery <code>DATE(TIMESTAMP_ADD(EVENT_TIMESTAMP, INTERVAL 9 HOUR))</code>).</div>
+  <div class="section-desc">80명 보정 베이스 (정상 67명 roomDisconnect.elapsedTime 합산 + 갭 13명 추정: 마지막 이벤트 + 20초). 시트 기준 참여자 85명. 구간 분포·차트·모드별 Casual 모두 보정 베이스로 통일. KST 자정 기준 GROUP BY (BigQuery <code>DATE(TIMESTAMP_ADD(EVENT_TIMESTAMP, INTERVAL 9 HOUR))</code>).</div>
 
   <div class="grid-2">
     <div>
@@ -154,17 +154,16 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>구간</th><th class="r bold">10차</th><th class="r">9차</th><th class="r col-pt8">8차</th></tr></thead>
+          <thead><tr><th>구간 (보정 베이스)</th><th class="r bold">10차 (80명)</th><th class="r">9차 (66명)</th><th class="r col-pt8">8차 (68명)</th></tr></thead>
           <tbody>
-            <tr><td>0~5분</td><td class="r bold">10 (15%)</td><td class="r">9 (16%)</td><td class="r col-pt8">16 (24%)</td></tr>
-            <tr><td>5~15분</td><td class="r bold">15 (22%)</td><td class="r">9 (16%)</td><td class="r col-pt8">10 (15%)</td></tr>
-            <tr><td>15~30분</td><td class="r bold">3 (4%)</td><td class="r">13 (24%)</td><td class="r col-pt8">11 (16%)</td></tr>
-            <tr><td>30~60분</td><td class="r bold">14 (21%)</td><td class="r">10 (18%)</td><td class="r col-pt8">16 (24%)</td></tr>
-            <tr><td>60~120분</td><td class="r bold">12 (18%)</td><td class="r">6 (11%)</td><td class="r col-pt8">9 (13%)</td></tr>
-            <tr class="highlight-row"><td>120분+</td><td class="r bold">13 (19%)</td><td class="r">8 (15%)</td><td class="r col-pt8">6 (9%)</td></tr>
+            <tr><td>0~5분</td><td class="r bold">18 (23%)</td><td class="r">15 (23%)</td><td class="r col-pt8">16 (24%)</td></tr>
+            <tr><td>5~15분</td><td class="r bold">18 (23%)</td><td class="r">13 (20%)</td><td class="r col-pt8">10 (15%)</td></tr>
+            <tr><td>15~30분</td><td class="r bold">4 (5%)</td><td class="r">13 (20%)</td><td class="r col-pt8">11 (16%)</td></tr>
+            <tr><td>30~60분</td><td class="r bold">15 (19%)</td><td class="r">11 (17%)</td><td class="r col-pt8">16 (24%)</td></tr>
+            <tr><td>60~120분</td><td class="r bold">12 (15%)</td><td class="r">6 (9%)</td><td class="r col-pt8">9 (13%)</td></tr>
+            <tr class="highlight-row"><td>120분+</td><td class="r bold">13 (16%)</td><td class="r">8 (12%)</td><td class="r col-pt8">6 (9%)</td></tr>
             <tr><td>총 체류 (h, 보정)</td><td class="r bold">71.6</td><td class="r">57.0</td><td class="r col-pt8">48.9</td></tr>
-            <tr><td>보정 베이스 (명)</td><td class="r">80</td><td class="r">66</td><td class="r col-pt8">68</td></tr>
-            <tr><td>정상 베이스 (명, 분포 표 기준)</td><td class="r">67</td><td class="r">55</td><td class="r col-pt8">68</td></tr>
+            <tr><td>합계 (명, 보정)</td><td class="r">80</td><td class="r">66</td><td class="r col-pt8">68</td></tr>
           </tbody>
         </table>
       </div>
@@ -192,7 +191,7 @@
 
   <div class="obs">
     <div class="tag">관찰</div>
-    <strong>중앙값 +37%</strong> (20.9 → 28.6분, 갭 보정 베이스): 9차에서 13명이던 15~30분 구간이 3명으로 축소되고, <strong>30분+ 구간이 24명 → 39명(+63%)으로 확대</strong>(정상 67명 분포 기준). 콘텐츠 깊이 효과로 코어 유저가 더 오래 머문 패턴. 120분+ 헤비 13명(19%)도 PT8(9%)·PT9(15%) 대비 증가.<br>
+    <strong>중앙값 +37%</strong> (20.9 → 28.6분, 갭 보정 베이스): 9차에서 13명이던 15~30분 구간이 4명으로 축소되고, <strong>30분+ 구간이 25명 → 40명(+60%)으로 확대</strong>(보정 베이스). 콘텐츠 깊이 효과로 코어 유저가 더 오래 머문 패턴. 120분+ 헤비 13명(16%)도 PT8(9%)·PT9(12%) 대비 증가. <strong>갭 13명 보정 분포</strong>: 0~5분 +8 / 5~15분 +3 / 15~30분 +1 / 30~60분 +1 — 짧은 세션 비중이 큼.<br>
     <strong>1일차(4/26 일)</strong>: DAU 65 / 16,531 events / 887 세션 — 18시간 동안 전체의 64.5% 차지.<br>
     <strong>2일차(4/27 월)</strong>: DAU 46명 (1일차와 26명 중복) / 9,079 events. 12시간 동안 마무리.
   </div>
@@ -214,7 +213,7 @@
         <th class="r">추세</th>
       </tr></thead>
       <tbody>
-        <tr><td><strong>Casual</strong> (로비/상점/캐주얼)</td><td class="r bold">67명</td><td class="r bold">36.5h</td><td class="r">2.9분 / 0.5분</td><td class="r">32.2h (55명)</td><td class="r col-pt8">32.1h (56명)</td><td class="r"><span class="delta-up">↗ 안정</span></td></tr>
+        <tr><td><strong>Casual</strong> (로비/상점/캐주얼, 갭 보정)</td><td class="r bold">80명</td><td class="r bold">38.2h</td><td class="r">2.9분 / 0.5분</td><td class="r">33.7h (66명)</td><td class="r col-pt8">32.1h (56명)</td><td class="r"><span class="delta-up">↗ +13%</span></td></tr>
         <tr class="highlight-row"><td><strong>Infection</strong> (태그)</td><td class="r bold">43명</td><td class="r bold">18.8h</td><td class="r">4.7분 / 0.5분</td><td class="r">14.6h (33명)</td><td class="r col-pt8">9.7h (24명)</td><td class="r"><span class="delta-up">↗ 지속 +29%</span></td></tr>
         <tr class="highlight-row"><td><strong>Horror</strong></td><td class="r bold">34명</td><td class="r bold">8.8h</td><td class="r">5.5분 / 0.5분</td><td class="r">2.1h (11명)</td><td class="r col-pt8">2.6h (18명)</td><td class="r"><span class="alert">⬆ +320%</span></td></tr>
         <tr><td>Obby (Circuit)</td><td class="r">19명</td><td class="r">3.2h</td><td class="r">4.1분 / 0.6분</td><td class="r">2.1h (10명)</td><td class="r col-pt8">3.4h (18명)</td><td class="r"><span class="delta-flat">→ 안정</span></td></tr>
@@ -841,9 +840,9 @@ new Chart(document.getElementById('chartPlaytime'),{
   type:'bar',
   data:{labels:['0~5분','5~15분','15~30분','30~60분','60~120분','120분+'],
     datasets:[
-      {label:'10차',data:[10,15,3,14,12,13],backgroundColor:C.primary,borderRadius:4},
-      {label:'9차',data:[9,9,13,10,6,8],backgroundColor:C.gray,borderRadius:4},
-      {label:'8차',data:[16,10,11,16,9,6],backgroundColor:C.slate,borderRadius:4}
+      {label:'10차 (80명 보정)',data:[18,18,4,15,12,13],backgroundColor:C.primary,borderRadius:4},
+      {label:'9차 (66명 보정)',data:[15,13,13,11,6,8],backgroundColor:C.gray,borderRadius:4},
+      {label:'8차 (68명)',data:[16,10,11,16,9,6],backgroundColor:C.slate,borderRadius:4}
     ]},
   options:{responsive:true,maintainAspectRatio:false,
     plugins:{legend:{position:'top',labels:{font:{size:13},boxWidth:12}}},
@@ -873,8 +872,8 @@ new Chart(document.getElementById('chartModeTime'),{
   type:'bar',
   data:{labels:['Casual','Infection','Horror','Obby (Circuit)','ObbyR (Sky Tower)','ObbyC'],
     datasets:[
-      {label:'10차',data:[36.5,18.8,8.8,3.2,2.0,0.6],backgroundColor:C.primary,borderRadius:3},
-      {label:'9차',data:[32.2,14.6,2.1,2.1,4.5,0.0],backgroundColor:C.gray,borderRadius:3},
+      {label:'10차 (Casual 80명 보정)',data:[38.2,18.8,8.8,3.2,2.0,0.6],backgroundColor:C.primary,borderRadius:3},
+      {label:'9차 (Casual 66명 보정)',data:[33.6,14.6,2.1,2.1,4.5,0.0],backgroundColor:C.gray,borderRadius:3},
       {label:'8차',data:[32.1,9.7,2.6,3.4,0.7,0.4],backgroundColor:C.slate,borderRadius:3}
     ]},
   options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',

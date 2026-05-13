@@ -153,7 +153,7 @@
 <!-- ===== 3. 플레이타임 + 일별 추이 ===== -->
 <div class="section">
   <div class="section-heading">3. 플레이타임 + 일별 추이</div>
-  <div class="section-desc">47명 보정 베이스 (정상 39명 roomDisconnect.elapsedTime 합산 36.0h + 갭 8명 추정 6.3h: 마지막 이벤트 + 20초). 시트 기준 참여자 49명 / BigQuery roomConnect 47명. 구간 분포 표는 정상 39명 기준. KST 자정 기준 GROUP BY (BigQuery <code>DATE(TIMESTAMP_ADD(EVENT_TIMESTAMP, INTERVAL 9 HOUR))</code>).</div>
+  <div class="section-desc">47명 보정 베이스 (정상 39명 roomDisconnect.elapsedTime 합산 36.0h + 갭 8명 추정 6.3h: 마지막 이벤트 + 20초). 시트 기준 참여자 49명 / BigQuery roomConnect 47명. 구간 분포·차트·모드별 모두 보정 베이스로 통일. KST 자정 기준 GROUP BY (BigQuery <code>DATE(TIMESTAMP_ADD(EVENT_TIMESTAMP, INTERVAL 9 HOUR))</code>).</div>
 
   <div class="grid-2">
     <div>
@@ -163,17 +163,16 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>구간</th><th class="r bold">11차</th><th class="r">10차</th><th class="r col-pt9">9차</th></tr></thead>
+          <thead><tr><th>구간 (보정 베이스)</th><th class="r bold">11차 (47명)</th><th class="r">10차 (80명)</th><th class="r col-pt9">9차 (66명)</th></tr></thead>
           <tbody>
-            <tr><td>0~5분</td><td class="r bold">6 (15%)</td><td class="r">10 (15%)</td><td class="r col-pt9">9 (16%)</td></tr>
-            <tr><td>5~15분</td><td class="r bold">3 (8%)</td><td class="r">15 (22%)</td><td class="r col-pt9">9 (16%)</td></tr>
-            <tr class="highlight-row"><td>15~30분</td><td class="r bold">11 (28%)</td><td class="r">3 (4%)</td><td class="r col-pt9">13 (24%)</td></tr>
-            <tr><td>30~60분</td><td class="r bold">5 (13%)</td><td class="r">14 (21%)</td><td class="r col-pt9">10 (18%)</td></tr>
-            <tr><td>60~120분</td><td class="r bold">10 (26%)</td><td class="r">12 (18%)</td><td class="r col-pt9">6 (11%)</td></tr>
-            <tr><td>120분+</td><td class="r bold">4 (10%)</td><td class="r">13 (19%)</td><td class="r col-pt9">8 (15%)</td></tr>
+            <tr><td>0~5분</td><td class="r bold">9 (19%)</td><td class="r">18 (23%)</td><td class="r col-pt9">15 (23%)</td></tr>
+            <tr><td>5~15분</td><td class="r bold">6 (13%)</td><td class="r">18 (23%)</td><td class="r col-pt9">13 (20%)</td></tr>
+            <tr class="highlight-row"><td>15~30분</td><td class="r bold">12 (26%)</td><td class="r">4 (5%)</td><td class="r col-pt9">13 (20%)</td></tr>
+            <tr><td>30~60분</td><td class="r bold">5 (11%)</td><td class="r">15 (19%)</td><td class="r col-pt9">11 (17%)</td></tr>
+            <tr><td>60~120분</td><td class="r bold">10 (21%)</td><td class="r">12 (15%)</td><td class="r col-pt9">6 (9%)</td></tr>
+            <tr><td>120분+</td><td class="r bold">5 (11%)</td><td class="r">13 (16%)</td><td class="r col-pt9">8 (12%)</td></tr>
             <tr><td>총 체류 (h, 보정)</td><td class="r bold">42.3</td><td class="r">71.6</td><td class="r col-pt9">57.0</td></tr>
-            <tr><td>보정 베이스 (명)</td><td class="r bold">47</td><td class="r">80</td><td class="r col-pt9">66</td></tr>
-            <tr><td>정상 베이스 (명, 분포 표 기준)</td><td class="r">39</td><td class="r">67</td><td class="r col-pt9">55</td></tr>
+            <tr><td>합계 (명, 보정)</td><td class="r bold">47</td><td class="r">80</td><td class="r col-pt9">66</td></tr>
           </tbody>
         </table>
       </div>
@@ -201,7 +200,7 @@
 
   <div class="obs">
     <div class="tag">관찰</div>
-    <strong>15~30분 구간이 11명(28%)으로 가장 큰 비중</strong> — PT10에서 3명까지 줄어들었던 중간 구간이 PT11에서 부각. <strong>60~120분 구간 10명(26%)으로 코어층 유지</strong>. 다만 <strong>120분+ 헤비 4명(10%)으로 PT10 13명(19%) 대비 -69%</strong>: 매우 장시간 체류 유저가 감소.<br>
+    <strong>15~30분 구간이 12명(26%)으로 가장 큰 비중</strong> — PT10 보정 80명에서 4명까지 줄었던 중간 구간이 PT11에서 부각. <strong>60~120분 구간 10명(21%)으로 코어층 유지</strong>. 다만 <strong>120분+ 헤비 5명(11%)으로 PT10 13명(16%) 대비 -62%</strong>: 매우 장시간 체류 유저가 감소. <strong>갭 8명 보정 분포</strong>: 0~5분 +3 / 5~15분 +3 / 15~30분 +1 / 120분+ +1 (rocketLauncherGrab 후 5.6h 풀세션 비정상 종료 케이스).<br>
     <strong>1일차(5/10 일)</strong>: DAU 36 / 8,747 events / 396 세션 — 18시간 동안 전체의 50%. <strong>2일차(5/11 월)</strong>: DAU 28 / 8,836 events. <strong>이벤트 수는 1일차와 거의 동일(+1%)</strong>한데 DAU·세션은 줄어 — <strong>2일차 코어 유저의 인당 활동 깊이가 높음</strong> (인당 이벤트 1일차 243 → 2일차 316, +30%).
   </div>
   <div class="review">
@@ -213,7 +212,7 @@
 <!-- ===== 4. 모드별 점유율 + 몰입도 ===== -->
 <div class="section">
   <div class="section-heading">4. 모드별 점유율 + 몰입도</div>
-  <div class="section-desc">gameplayType 합산 기준 — unique 유저(BQ COUNT DISTINCT) + 총 체류 + 평균/중앙값 세션 시간. 룸 분산 효과를 정확히 보기 위해 모드 합산.</div>
+  <div class="section-desc">gameplayType 합산 기준 — unique 유저(BQ COUNT DISTINCT) + 총 체류 + 평균/중앙값 세션 시간. 룸 분산 효과를 정확히 보기 위해 모드 합산. <strong>Casual 모드는 갭 보정 베이스(47명 / 25.6h)</strong>로 표기 — 갭 8명 모두 Casual에서 활동했고 다른 모드는 활동 없음. 다른 모드는 정상 disconnect 베이스 유지.</div>
   <div class="table-wrap">
     <table>
       <thead><tr>
@@ -226,7 +225,7 @@
         <th class="r">추세</th>
       </tr></thead>
       <tbody>
-        <tr><td><strong>Casual</strong> (로비/상점/캐주얼)</td><td class="r bold">39명</td><td class="r bold">19.3h</td><td class="r">2.9분 / 0.4분</td><td class="r">36.5h (67명)</td><td class="r col-pt9">32.2h (55명)</td><td class="r"><span class="delta-down">↘ -47%</span></td></tr>
+        <tr><td><strong>Casual</strong> (로비/상점/캐주얼, 갭 보정)</td><td class="r bold">47명</td><td class="r bold">25.6h</td><td class="r">2.9분 / 0.4분</td><td class="r">38.2h (80명)</td><td class="r col-pt9">33.7h (66명)</td><td class="r"><span class="delta-down">↘ -33%</span></td></tr>
         <tr class="highlight-row"><td><strong>Infection</strong> (Tag PvP) <span class="badge badge-indigo">§10 매치 단위 Analytics NEW</span></td><td class="r bold">25명</td><td class="r bold">8.7h</td><td class="r">6.0분 / 1.8분</td><td class="r">18.8h (43명)</td><td class="r col-pt9">14.6h (33명)</td><td class="r"><span class="delta-down">↘ -54%</span></td></tr>
         <tr><td><strong>Horror</strong></td><td class="r bold">12명</td><td class="r bold">1.6h</td><td class="r">6.7분 / 7.7분</td><td class="r">8.8h (34명)</td><td class="r col-pt9">2.1h (11명)</td><td class="r"><span class="alert">⬇ -82%</span></td></tr>
         <tr><td>ObbyR (Sky Tower)</td><td class="r">15명</td><td class="r">4.5h</td><td class="r">6.9분 / 2.4분</td><td class="r">2.0h (16명)</td><td class="r col-pt9">4.5h (11명)</td><td class="r"><span class="delta-up">↗ +125%</span></td></tr>
@@ -241,7 +240,7 @@
   </div>
   <div class="obs">
     <div class="tag">관찰</div>
-    <strong>모든 모드 체류 시간 감소</strong>는 참여자 -42% 영향 직접 반영. 그러나 <strong>ObbyR(Sky Tower)는 +125%(2.0→4.5h)·ObbyC는 +118%(0.6→1.4h)</strong>로 역으로 증가 — 참여자 감소에도 인당 시간이 늘어남(ObbyR 4.0→6.9분 / ObbyC 2.4→6.5분). <strong>Horror -82%</strong>는 PT10의 4.2배 폭증 효과 종료 + 신규 PvP 콘텐츠로 유저 시간 이동 가능성. <strong>Tag PvP 매치 시스템 도입에도 Infection -54%</strong>: 매치 자체는 71회로 활성화되었으나 모드 전체 체류는 PT10의 PvP-경험 풀 축소(43→25명) 영향이 더 큼.
+    <strong>대부분 모드 체류 시간 감소</strong>는 참여자 -42% 영향 직접 반영. <strong>Casual은 -33%(38.2→25.6h, 갭 보정 베이스)</strong>로 PT10 대비 감소 — 갭 8명 보정 6.3h 추가로 손실폭이 -47%(정상 베이스)에서 -33%로 완화됨. 그러나 <strong>ObbyR(Sky Tower)는 +125%(2.0→4.5h)·ObbyC는 +118%(0.6→1.4h)</strong>로 역으로 증가 — 참여자 감소에도 인당 시간이 늘어남(ObbyR 4.0→6.9분 / ObbyC 2.4→6.5분). <strong>Horror -82%</strong>는 PT10의 4.2배 폭증 효과 종료 + 신규 PvP 콘텐츠로 유저 시간 이동 가능성. <strong>Tag PvP 매치 시스템 도입에도 Infection -54%</strong>: 매치 자체는 71회로 활성화되었으나 모드 전체 체류는 PT10의 PvP-경험 풀 축소(43→25명) 영향이 더 큼.
   </div>
   <div class="review">
     <div class="tag">검토 사항</div>
@@ -956,9 +955,9 @@ new Chart(document.getElementById('chartPlaytime'),{
   type:'bar',
   data:{labels:['0~5분','5~15분','15~30분','30~60분','60~120분','120분+'],
     datasets:[
-      {label:'11차',data:[6,3,11,5,10,4],backgroundColor:C.primary,borderRadius:4},
-      {label:'10차',data:[10,15,3,14,12,13],backgroundColor:C.gray,borderRadius:4},
-      {label:'9차',data:[9,9,13,10,6,8],backgroundColor:C.slate,borderRadius:4}
+      {label:'11차 (47명 보정)',data:[9,6,12,5,10,5],backgroundColor:C.primary,borderRadius:4},
+      {label:'10차 (80명 보정)',data:[18,18,4,15,12,13],backgroundColor:C.gray,borderRadius:4},
+      {label:'9차 (66명 보정)',data:[15,13,13,11,6,8],backgroundColor:C.slate,borderRadius:4}
     ]},
   options:{responsive:true,maintainAspectRatio:false,
     plugins:{legend:{position:'top',labels:{font:{size:13},boxWidth:12}}},
@@ -989,9 +988,9 @@ new Chart(document.getElementById('chartModeTime'),{
   type:'bar',
   data:{labels:['Casual','Infection','Horror','ObbyR (Sky Tower)','Obby (Circuit)','ObbyC'],
     datasets:[
-      {label:'11차',data:[19.3,8.7,1.6,4.5,0.6,1.4],backgroundColor:C.primary,borderRadius:3},
-      {label:'10차',data:[36.5,18.8,8.8,2.0,3.2,0.6],backgroundColor:C.gray,borderRadius:3},
-      {label:'9차',data:[32.2,14.6,2.1,4.5,2.1,0.0],backgroundColor:C.slate,borderRadius:3}
+      {label:'11차 (Casual 47명 보정)',data:[25.6,8.7,1.6,4.5,0.6,1.4],backgroundColor:C.primary,borderRadius:3},
+      {label:'10차 (Casual 80명 보정)',data:[38.2,18.8,8.8,2.0,3.2,0.6],backgroundColor:C.gray,borderRadius:3},
+      {label:'9차 (Casual 66명 보정)',data:[33.6,14.6,2.1,4.5,2.1,0.0],backgroundColor:C.slate,borderRadius:3}
     ]},
   options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
     plugins:{legend:{position:'top',labels:{font:{size:13},boxWidth:12}}},

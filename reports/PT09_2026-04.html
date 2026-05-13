@@ -138,14 +138,15 @@
         <div class="kpi-box"><div class="label">중앙값 (보정)</div><div class="value">20.9분</div><div class="sub">정상 55명: 24.7분</div></div>
       </div>
       <table>
-        <thead><tr><th>구간</th><th class="r">인원</th><th class="r">비율</th></tr></thead>
+        <thead><tr><th>구간 (66명 보정)</th><th class="r">인원</th><th class="r">비율</th></tr></thead>
         <tbody>
-          <tr><td>0~5분</td><td class="r">9</td><td class="r">16%</td></tr>
-          <tr><td>5~15분</td><td class="r">9</td><td class="r">16%</td></tr>
-          <tr class="highlight-row"><td>15~30분</td><td class="r bold">13</td><td class="r bold">24%</td></tr>
-          <tr><td>30~60분</td><td class="r">10</td><td class="r">18%</td></tr>
-          <tr><td>60~120분</td><td class="r">6</td><td class="r">11%</td></tr>
-          <tr><td>120분+</td><td class="r">8</td><td class="r">15%</td></tr>
+          <tr class="highlight-row"><td>0~5분</td><td class="r bold">15</td><td class="r bold">23%</td></tr>
+          <tr><td>5~15분</td><td class="r">13</td><td class="r">20%</td></tr>
+          <tr><td>15~30분</td><td class="r">13</td><td class="r">20%</td></tr>
+          <tr><td>30~60분</td><td class="r">11</td><td class="r">17%</td></tr>
+          <tr><td>60~120분</td><td class="r">6</td><td class="r">9%</td></tr>
+          <tr><td>120분+</td><td class="r">8</td><td class="r">12%</td></tr>
+          <tr><td>합계</td><td class="r">66</td><td class="r">100%</td></tr>
         </tbody>
       </table>
     </div>
@@ -156,7 +157,7 @@
   </div>
   <div class="obs">
     <div class="tag">관찰</div>
-    중앙값(보정 20.9분 / 정상 24.7분)과 평균(보정 51.8분 / 정상 60.5분)의 차이가 크다. 소수의 장시간 유저(120분+ 8명, 15%)가 평균을 끌어올리고 있다. 최빈 구간은 15~30분(24%). 갭 11명(roomDisconnect 미발생)의 추정 체류 1.5h를 더해 보정 베이스 66명 기준 산출.
+    중앙값(보정 20.9분 / 정상 24.7분)과 평균(보정 51.8분 / 정상 60.5분)의 차이가 크다. 소수의 장시간 유저(120분+ 8명, 12%)가 평균을 끌어올리고 있다. 최빈 구간은 0~5분(23%) — <strong>갭 11명 분포</strong>: 0~5분 +6 / 5~15분 +4 / 30~60분 +1 (짧은 세션 비중이 큼)이 추가되며 0~5분 구간이 9 → 15명으로 확대.
   </div>
 </div>
 
@@ -167,7 +168,7 @@
   <table>
     <thead><tr><th>모드</th><th class="r">플레이어</th><th class="r">진입률</th><th class="r">인당 중앙값</th><th class="r">8차 인당 중앙값</th><th class="r">총 시간</th></tr></thead>
     <tbody>
-      <tr><td>Casual (로비/상점/튜토리얼)</td><td class="r">55</td><td class="r">81%</td><td class="r">18.3분</td><td class="r">15.0분</td><td class="r">32.1h</td></tr>
+      <tr><td>Casual (로비/상점/튜토리얼, 갭 보정)</td><td class="r">66</td><td class="r">97%</td><td class="r">18.3분</td><td class="r">15.0분</td><td class="r">33.6h</td></tr>
       <tr><td>Infection (태그)</td><td class="r">33</td><td class="r">49%</td><td class="r">18.3분</td><td class="r">12.1분</td><td class="r">14.6h</td></tr>
       <tr class="highlight-row"><td class="bold">Obby - Sky Tower</td><td class="r">11</td><td class="r">16%</td><td class="r bold">20.8분</td><td class="r">6.7분</td><td class="r">4.5h</td></tr>
       <tr><td>Horror</td><td class="r">11</td><td class="r">16%</td><td class="r">14.3분</td><td class="r">9.0분</td><td class="r">2.1h</td></tr>
@@ -478,7 +479,7 @@ const C={primary:'#FF9900',gray:'#d1d5db',green:'#22c55e',blue:'#60a5fa',yellow:
 // 체류시간 히스토그램
 new Chart(document.getElementById('chartPlaytime'),{
   type:'bar',
-  data:{labels:['0-5분','5-15분','15-30분','30-60분','60-120분','120분+'],datasets:[{label:'유저 수',data:[9,9,13,10,6,8],backgroundColor:[C.gray,C.gray,C.primary,C.blue,C.blue,C.green],borderRadius:4}]},
+  data:{labels:['0-5분','5-15분','15-30분','30-60분','60-120분','120분+'],datasets:[{label:'유저 수 (66명 보정)',data:[15,13,13,11,6,8],backgroundColor:[C.primary,C.gray,C.gray,C.blue,C.blue,C.green],borderRadius:4}]},
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'명',font:{size:11}},grid:{color:C.grid}},x:{grid:{display:false}}}}
 });
 
@@ -487,7 +488,7 @@ new Chart(document.getElementById('chartPlaytime'),{
 var chartModeInstance = new Chart(document.getElementById('chartModeTime'),{
   type:'bar',
   data:{labels:['Casual','Infection','Sky Tower','Horror','Circuit'],datasets:[
-    {label:'9차',data:[32.1,14.6,4.5,2.1,2.1],backgroundColor:C.primary,borderRadius:3},
+    {label:'9차 (Casual 66명 보정)',data:[33.6,14.6,4.5,2.1,2.1],backgroundColor:C.primary,borderRadius:3},
     {label:'8차',data:[32.1,9.7,0.7,2.6,3.4],backgroundColor:C.gray,borderRadius:3}
   ]},
   options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'top',labels:{font:{size:14},boxWidth:12}}},scales:{x:{beginAtZero:true,title:{display:true,text:'시간',font:{size:14}},grid:{color:C.grid}},y:{grid:{display:false},ticks:{font:{size:14}}}}}
