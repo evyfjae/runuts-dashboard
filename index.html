@@ -2001,6 +2001,9 @@ startAutoRefresh();
         <div class="section-title" style="margin-bottom:0">일일 순증감 (가입 - 이탈)</div>
         <button onclick="downloadChart('chartNetGrowth','일일_순증감')" style="font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;white-space:nowrap" title="PNG로 저장">⬇ PNG</button>
       </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5">
+        ⓘ 2026-03-30 ~ 04-27 메모리 카운터 누락분 백필 완료 (2026-05-13). 누적 약 5명(<code style="font-size:10px">left_no_data</code> 추정 분)의 이탈 시각이 미상이라 일별 막대에 분산되지 않음 — 정확한 멤버 총수는 위 라인 차트 기준.
+      </div>
       <div class="chart-canvas-wrap">
         <canvas id="chartNetGrowth"></canvas>
       </div>
